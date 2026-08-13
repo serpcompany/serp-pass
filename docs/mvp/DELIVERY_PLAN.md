@@ -91,6 +91,8 @@ Local evidence uses the signed billing-fixture boundary only to establish paid-t
 
 ## 6. Publisher Connect slice
 
+Status: **account-independent readiness projection is implemented and browser-verified locally; account creation, hosted onboarding, and deployed test-mode events await explicit Stripe approval**
+
 - create/reuse one connected account per Publisher;
 - Stripe-hosted Express onboarding;
 - refresh and return handling without treating redirect as completion;
@@ -98,6 +100,8 @@ Local evidence uses the signed billing-fixture boundary only to establish paid-t
 - Publisher view distinguishes onboarding, charges readiness, transfers readiness, and observed Payout status.
 
 Browser evidence: test Publisher completes onboarding and Apps Pass derives readiness from Stripe.
+
+Current evidence uses an official Stripe `account.updated` snapshot shape and generated signature against the real webhook route without an API request. The projection is mode-scoped, replay-safe, order-safe, binds an Express Account to exactly one known Publisher, stores no KYC fields or raw payload, and exposes details-submitted, charges, transfers, payouts, due-requirement count, and disabled state separately. A `return_url` query never changes readiness. This does not prove Account creation, an Account Link, Stripe-hosted onboarding, or a real connected-account Event.
 
 ## 7. Earnings and settlement slice
 

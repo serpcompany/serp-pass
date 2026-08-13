@@ -71,6 +71,7 @@ The account-independent Subscriber billing projection can be exercised locally w
 ```sh
 pnpm mvp:billing:test
 pnpm mvp:stripe-adapter:test
+pnpm mvp:connect:test
 ```
 
 The first command uses the local normalized fixture boundary. The second uses Stripe's official SDK to generate and verify real Stripe-format signatures and current Event shapes without accessing an account. Neither performs a Stripe API request. The exact authority rules and remaining sandbox work are documented in [docs/mvp/BILLING_PROJECTION.md](./docs/mvp/BILLING_PROJECTION.md).

@@ -390,6 +390,52 @@ export const billingCheckoutAttempts = sqliteTable(
   ],
 );
 
+export const publisherConnectedAccounts = sqliteTable(
+  "publisher_connected_account",
+  {
+    id: text("id").primaryKey(),
+    publisherId: text("publisher_id").notNull().references(() => publishers.id, { onDelete: "restrict" }),
+    provider: text("provider", { enum: ["stripe"] }).notNull(),
+    mode: text("mode", { enum: ["test", "live"] }).notNull(),
+    providerAccountId: text("provider_account_id").notNull(),
+    accountType: text("account_type", { enum: ["express"] }).notNull(),
+    detailsSubmitted: integer("details_submitted", { mode: "boolean" }).notNull().default(false),
+    chargesEnabled: integer("charges_enabled", { mode: "boolean" }).notNull().default(false),
+    payoutsEnabled: integer("payouts_enabled", { mode: "boolean" }).notNull().default(false),
+    transfersCapability: text("transfers_capability", { enum: ["active", "inactive", "pending", "unrequested"] }).notNull(),
+    requirementsCurrentlyDueCount: integer("requirements_currently_due_count").notNull().default(0),
+    disabledReason: text("disabled_reason"),
+    latestEventKey: text("latest_event_key").notNull(),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+  },
+  (table) => [
+    uniqueIndex("publisher_connected_account_identity_unique").on(table.provider, table.mode, table.providerAccountId),
+    uniqueIndex("publisher_connected_account_publisher_mode_unique").on(table.provider, table.mode, table.publisherId),
+  ],
+);
+
+export const stripeConnectEvents = sqliteTable(
+  "stripe_connect_event",
+  {
+    id: text("id").primaryKey(),
+    publisherConnectedAccountId: text("publisher_connected_account_id").notNull().references(() => publisherConnectedAccounts.id, { onDelete: "restrict" }),
+    publisherId: text("publisher_id").notNull().references(() => publishers.id, { onDelete: "restrict" }),
+    provider: text("provider", { enum: ["stripe"] }).notNull(),
+    mode: text("mode", { enum: ["test", "live"] }).notNull(),
+    providerEventId: text("provider_event_id").notNull(),
+    eventType: text("event_type", { enum: ["account.updated"] }).notNull(),
+    providerCreatedAt: integer("provider_created_at", { mode: "timestamp" }).notNull(),
+    receivedAt: integer("received_at", { mode: "timestamp" }).notNull(),
+    payloadSha256: text("payload_sha256").notNull(),
+    outcome: text("outcome", { enum: ["applied", "noop"] }).notNull(),
+  },
+  (table) => [
+    uniqueIndex("stripe_connect_event_provider_identity_unique").on(table.provider, table.mode, table.providerEventId),
+    index("stripe_connect_event_account_idx").on(table.publisherConnectedAccountId, table.providerCreatedAt),
+  ],
+);
+
 export const appLinkRequests = sqliteTable(
   "app_link_request",
   {

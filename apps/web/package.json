@@ -15,6 +15,7 @@
     "test:billing-projection": "tsx tests/billing-projection-browser.ts",
     "test:stripe-account-guard": "tsx tests/stripe-account-guard.ts",
     "test:stripe-webhook": "tsx tests/stripe-webhook-browser.ts",
+    "test:connect-projection": "tsx tests/connect-projection-browser.ts",
     "test:auth-rate-limit": "tsx tests/auth-rate-limit.ts",
     "typecheck": "tsc --noEmit",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",

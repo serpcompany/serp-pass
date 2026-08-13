@@ -7,6 +7,7 @@ import { createStripeClient, createStripeCryptoProvider } from "@/billing/stripe
 import { readStripeWebhookConfig } from "@/billing/stripe/config";
 import { projectStripeCheckoutEvent } from "@/billing/stripe/project-checkout-event";
 import { StripeEventRejected, translateStripeEvent } from "@/billing/stripe/translate-event";
+import { projectConnectAccountEvent } from "@/connect/projection";
 import { logEvent } from "@/observability/log";
 
 export const dynamic = "force-dynamic";
@@ -34,6 +35,16 @@ export async function POST(request: Request) {
       createStripeCryptoProvider(),
     );
     const payloadSha256 = await sha256Hex(rawBody);
+    if (stripeEvent.type === "account.updated") {
+      const result = await projectConnectAccountEvent({
+        db: env.DB,
+        event: stripeEvent,
+        mode: billingModeForEnvironment(env.APP_ENV),
+        payloadSha256,
+      });
+      logEvent("info", { event: "stripe_connect_projection", correlationId, environment: env.APP_ENV, outcome: result.outcome, providerEventId: stripeEvent.id, eventType: stripeEvent.type });
+      return Response.json({ received: true, ...result }, { status: result.outcome === "applied" ? 202 : 200, headers: { "cache-control": "no-store" } });
+    }
     if (stripeEvent.type === "checkout.session.completed" || stripeEvent.type === "checkout.session.expired") {
       const result = await projectStripeCheckoutEvent({
         db: env.DB,

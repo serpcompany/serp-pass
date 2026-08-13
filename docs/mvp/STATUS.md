@@ -4,15 +4,15 @@ Updated: **2026-08-13**
 
 ## Current slice
 
-Slices 1–3 are complete. Slice 4, Subscriber billing, remains approval-gated after its account-independent implementation. Slice 5, real activation and entitlement, is implemented and deployed; its real staging App session persists across Worker deployment and truthfully remains inactive until Slice 4 receives an actual paid-through projection. Stripe account `acct_1MwbFJI9EPtyKcIs` (currently **SERP Pass**) is the intended isolated sandbox, but it has not been accessed or configured. Account selection is not authorization to mutate it.
+Slices 1–3 are complete. Slice 4, Subscriber billing, remains approval-gated after its account-independent implementation. Slice 5, real activation and entitlement, is implemented and deployed. Slice 6 now has a deployed, inert Connect-readiness schema and an account-independent signed-Event/browser proof; real Express Account creation and hosted onboarding remain approval-gated. Stripe account `acct_1MwbFJI9EPtyKcIs` (currently **SERP Pass**) is the intended isolated sandbox, but it has not been accessed or configured. Account selection is not authorization to mutate it.
 
 ## Environment evidence
 
 | Environment | State | Evidence |
 | --- | --- | --- |
 | Local Next | built | Next.js `16.2.11` typecheck and optimized build pass. Runtime use requires an ignored local `BETTER_AUTH_SECRET`. |
-| Local workerd | passed | OpenNext `1.19.9` Worker reads migrated local D1; rendered Chromium passes human auth, role denials, Operator bootstrap, one-time Publisher invitation, normalized billing, official Stripe-format webhook projection, real extension activation/entitlement, replay/integrity rejection, and D1 rate limiting at `localhost:8788`. A fresh empty local state applies all 15 migrations successfully. |
-| Cloudflare staging | deployed and passed | [`serp-apps-pass-staging.serpcompany.workers.dev`](https://serp-apps-pass-staging.serpcompany.workers.dev), Worker version `c4edf729-284f-4d99-bbdc-6ff20c002044`, isolated `apps-pass-staging` D1 in APAC, health `200 ready`, all Slice 1–3 journeys and the unpaid Slice 5 activation/session path pass, and partial Slice 4 routes/schema remain inert with zero billing state and no Stripe Account ID, secret, or Price configuration. |
+| Local workerd | passed | OpenNext `1.19.9` Worker reads migrated local D1; rendered Chromium passes human auth, role denials, Operator bootstrap, one-time Publisher invitation, normalized billing, official Stripe-format billing and Connect projections, real extension activation/entitlement, replay/integrity rejection, and D1 rate limiting at `localhost:8788`. All 16 migrations apply locally. |
+| Cloudflare staging | deployed and passed | [`serp-apps-pass-staging.serpcompany.workers.dev`](https://serp-apps-pass-staging.serpcompany.workers.dev), Worker version `d6b1fe7e-69af-4d02-9240-efb30c0a8134`, isolated `apps-pass-staging` D1 in APAC, health `200 ready`, all Slice 1–3 journeys and the unpaid Slice 5 activation/session path pass. Partial Slice 4 and Slice 6 schema/routes remain inert with no Stripe Account ID, secret, Price, connected Account, or processed Connect Event. |
 | Production | not created or deployed | Production D1 still has a non-routable placeholder UUID; no production secret or Worker deployment exists. |
 | Stripe | selected but untouched | Intended isolated account: `acct_1MwbFJI9EPtyKcIs`, currently **SERP Pass**. It has not been accessed. No credentials, Product, Price, webhook, Checkout, Connect account, or payment exists. Every Stripe action remains approval-gated. |
 
@@ -82,6 +82,14 @@ Slices 1–3 are complete. Slice 4, Subscriber billing, remains approval-gated a
 - A fresh real App session was created before the Worker-only redeploy. The exact stored App-session token hash remained present and its entitlement remained `inactive` after deployment of Worker version `c4edf729-284f-4d99-bbdc-6ff20c002044`.
 - Local and staging SDK storage are namespaced by authority origin as well as App ID, preventing dev-browser environment crossover. The historical proof explicitly selects its preserved non-MVP API prefix.
 - The only staging secret is still `BETTER_AUTH_SECRET`; the deployed build contains none of the ignored local Stripe fixture values.
+
+## Partial Slice 6 evidence
+
+- Migration `0016_publisher_connect_projection.sql` stores exactly one mode-scoped Express Account projection per Publisher plus append-only, payload-hashed processed Connect Events. It stores operational readiness only, not raw webhook payloads or KYC fields.
+- The real `/api/stripe/webhook` verifies an official Stripe-generated signature for `account.updated`, rejects live/test crossover, unknown Publisher metadata, cross-Publisher Account reuse, and changed-payload Event replay.
+- Older Events are durably recorded without regressing newer readiness. A Publisher sees details-submitted, charges, transfers, bank-payout, due-requirement, and disabled states separately.
+- `/publisher?connect=returned` remains `Connect not started` until signed Stripe state exists; a redirect cannot assert readiness.
+- `pnpm mvp:connect:test` passes against local workerd without any Stripe API request. Migration `0016` and the inert projection code are deployed to staging, where zero connected Accounts and zero Connect Events exist because Stripe remains unconfigured.
 
 ## What it does not prove
 

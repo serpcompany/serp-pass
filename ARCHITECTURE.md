@@ -174,6 +174,30 @@ Interface:
 
 The module hides immutable ledger entries, balance validation, hold rules, Stripe idempotency keys, and correction entries. Stripe executes money movement but does not calculate Publisher earnings.
 
+### Connect readiness projection
+
+The Connect boundary consumes signature-verified `account.updated` Events and stores only operational readiness fields: Account identity, mode, details-submitted state, charges enabled, transfers capability, payouts enabled, due-requirement count, and disabled reason. It does not store KYC answers or raw webhook bodies.
+
+```mermaid
+sequenceDiagram
+    participant P as Invited Publisher
+    participant S as Stripe-hosted onboarding
+    participant W as Apps Pass Worker
+    participant D as Environment D1
+
+    P->>W: Request or resume onboarding
+    W->>S: Create/reuse Express Account and one-time Account Link
+    S-->>P: Hosted onboarding
+    P->>W: Return or refresh redirect
+    Note over W: Redirect alone never marks readiness
+    S->>W: Signed account.updated Event
+    W->>D: Replay-safe, monotonic readiness projection
+    P->>W: Load private Publisher area
+    W-->>P: Onboarding, charges, transfers, payouts, requirements
+```
+
+Only the Event projection is implemented before Stripe approval. Account creation and Account Link generation remain behind the exact-account guard and require a separately authorized test-mode integration.
+
 ## Request surfaces
 
 The exact route filenames may follow Next.js conventions, but the externally meaningful surfaces are:

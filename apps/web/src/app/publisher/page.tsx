@@ -1,9 +1,11 @@
 import Link from "next/link";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 import { getHumanIdentity } from "@/auth/identity";
+import { billingModeForEnvironment } from "@/billing/read";
 import { getDb } from "@/db/get-db";
-import { appAssignments, appSubmissions, publisherMemberships, publishers } from "@/db/schema";
+import { appAssignments, appSubmissions, publisherConnectedAccounts, publisherMemberships, publishers } from "@/db/schema";
 import { SubmissionForm } from "./submission-form";
 
 export const dynamic = "force-dynamic";
@@ -49,6 +51,21 @@ export default async function PublisherPage() {
     .from(appSubmissions)
     .innerJoin(publisherMemberships, eq(publisherMemberships.publisherId, appSubmissions.publisherId))
     .where(eq(publisherMemberships.userId, identity.session.user.id));
+  const { env } = getCloudflareContext();
+  const mode = billingModeForEnvironment(env.APP_ENV);
+  const connectAccounts = await getDb()
+    .select({
+      publisherId: publisherConnectedAccounts.publisherId,
+      detailsSubmitted: publisherConnectedAccounts.detailsSubmitted,
+      chargesEnabled: publisherConnectedAccounts.chargesEnabled,
+      payoutsEnabled: publisherConnectedAccounts.payoutsEnabled,
+      transfersCapability: publisherConnectedAccounts.transfersCapability,
+      requirementsCurrentlyDueCount: publisherConnectedAccounts.requirementsCurrentlyDueCount,
+      disabledReason: publisherConnectedAccounts.disabledReason,
+    })
+    .from(publisherConnectedAccounts)
+    .innerJoin(publisherMemberships, eq(publisherMemberships.publisherId, publisherConnectedAccounts.publisherId))
+    .where(and(eq(publisherMemberships.userId, identity.session.user.id), eq(publisherConnectedAccounts.mode, mode)));
 
   return (
     <main>
@@ -57,6 +74,27 @@ export default async function PublisherPage() {
         <span className="status active">Publisher role active</span>
         <h1>Publisher pilot area</h1>
         <p className="muted">Your public identifiers were assigned by a SERP Operator. Your manifest may reference them but cannot create or replace them.</p>
+        <h2>Stripe Connect</h2>
+        {connectAccounts.length === 0 ? (
+          <div>
+            <strong>Connect not started</strong>
+            <p className="muted">A Stripe return does not prove onboarding readiness.</p>
+          </div>
+        ) : connectAccounts.map((account) => {
+          const settlementReady = account.detailsSubmitted && account.chargesEnabled && account.payoutsEnabled && account.transfersCapability === "active" && account.requirementsCurrentlyDueCount === 0 && !account.disabledReason;
+          return (
+            <div key={account.publisherId}>
+              <strong>{settlementReady ? `Ready for ${mode} settlement` : "Connect onboarding incomplete"}</strong>
+              <ul>
+                <li>{account.chargesEnabled ? "Charges enabled" : "Charges disabled"}</li>
+                <li>Transfers {account.transfersCapability}</li>
+                <li>{account.payoutsEnabled ? "Bank payouts enabled" : "Bank payouts disabled"}</li>
+                <li>{account.requirementsCurrentlyDueCount} {account.requirementsCurrentlyDueCount === 1 ? "requirement" : "requirements"} currently due</li>
+              </ul>
+              {account.disabledReason && <p className="muted">Stripe reports the account disabled: {account.disabledReason}</p>}
+            </div>
+          );
+        })}
         <ul>
           {assignments.map((assignment) => (
             <li key={assignment.appId}><strong>{assignment.publisherName}</strong> · {assignment.publisherId} · <code>{assignment.appId}</code> · {assignment.appStatus}</li>

@@ -17,6 +17,8 @@ Evidence: local commit `6909bf0`, local tag `prototype-extension-inclusion-proof
 
 ## 1. Stack-composition spike
 
+Status: **completed on Cloudflare staging 2026-08-13**
+
 Build the smallest Next.js/OpenNext app that proves, in one deployed staging Worker:
 
 - App Router page and route handler;
@@ -27,6 +29,8 @@ Build the smallest Next.js/OpenNext app that proves, in one deployed staging Wor
 - local Next development, local OpenNext/workerd preview, and deployed staging as separately reported states.
 
 Do not port entitlement or payment behavior until this exact composition passes.
+
+Evidence: [STATUS.md](./STATUS.md). Email/password is the private-pilot spike method; invitation roles and session administration remain Slice 2 work. No Stripe configuration was used.
 
 ## 2. Identity and role slice
 

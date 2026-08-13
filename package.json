@@ -1,10 +1,16 @@
 {
-  "name": "serp-apps-pass-integration-proof",
+  "name": "serp-apps-pass",
   "version": "0.0.0",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@10.14.0",
   "scripts": {
+    "mvp:dev": "pnpm --filter @serp-apps-pass/web dev",
+    "mvp:build": "pnpm --filter @serp-apps-pass/web build",
+    "mvp:preview": "pnpm --filter @serp-apps-pass/web preview",
+    "mvp:typecheck": "pnpm --filter @serp-apps-pass/web typecheck",
+    "mvp:cf-typegen": "pnpm --filter @serp-apps-pass/web cf-typegen",
+    "mvp:db:migrate": "pnpm --filter @serp-apps-pass/web db:migrate:local",
     "db:reset": "tsx scripts/db/reset.ts",
     "db:migrate": "wrangler d1 migrations apply apps-pass-integration-proof --local --persist-to .wrangler/state",
     "extensions:build": "tsx scripts/extensions/build.ts",

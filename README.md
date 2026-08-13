@@ -6,7 +6,40 @@ The target and acceptance boundary are in [PRD.md](./PRD.md). The architecture i
 
 The completed proof remains executable local software, not a visual mockup, but it is not the launchable subscription product. Its PRD, architecture, freeze, evaluation, and plan are preserved under [docs/prototype/](./docs/prototype/).
 
-Current implementation has not started. The existing root runtime, example extensions, and proof tests remain reference/proof artifacts until deliberately ported or replaced by the delivery plan. Cloudflare staging and production have not been deployed, and no Stripe credentials or live money have been used.
+Implementation is in progress on `mvp/private-pilot`. Stack-composition Slice 1 is deployed at [serp-apps-pass-staging.serpcompany.workers.dev](https://serp-apps-pass-staging.serpcompany.workers.dev): one Next.js/OpenNext Worker, an isolated staging D1 database, reviewed migrations, Better Auth email/password human sessions, and structured Workers Logs. Production has not been deployed. Stripe is deliberately unconfigured: no account, credentials, Product, Price, webhook, Checkout, Connect account, or payment has been created or selected.
+
+## MVP stack walkthrough
+
+Install dependencies and apply the local D1 migrations:
+
+```sh
+pnpm install
+pnpm mvp:db:migrate
+```
+
+For local Next development, copy `apps/web/.dev.vars.example` to the ignored `apps/web/.dev.vars`, replace the placeholder with `openssl rand -hex 32`, then run:
+
+```sh
+pnpm mvp:dev
+```
+
+For the production-shaped local workerd path, build and preview the OpenNext Worker. The preview also reads the ignored `.dev.vars` file:
+
+```sh
+pnpm --filter @serp-apps-pass/web build:worker
+pnpm --filter @serp-apps-pass/web exec wrangler dev --port 8788 --persist-to ../../.wrangler/mvp-state
+```
+
+Open `http://localhost:8788/account` and create a disposable pilot account. The visible workflow creates a Better Auth user and human session in local D1, survives a page reload, and signs out. It does not grant a role, create a Subscription, or contact Stripe.
+
+Run the automated rendered-browser journey against a running local preview or the deployed staging Worker:
+
+```sh
+pnpm --filter @serp-apps-pass/web test:auth-browser
+APP_ORIGIN=https://serp-apps-pass-staging.serpcompany.workers.dev pnpm --filter @serp-apps-pass/web test:auth-browser
+```
+
+Current environment evidence and known limitations are recorded in [docs/mvp/STATUS.md](./docs/mvp/STATUS.md).
 
 ## Preserved proof walkthrough
 

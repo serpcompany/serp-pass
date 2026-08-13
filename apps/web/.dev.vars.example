@@ -1,0 +1,2 @@
+# Copy to .dev.vars and replace the placeholder with: openssl rand -hex 32
+BETTER_AUTH_SECRET=replace-with-a-local-secret-of-at-least-32-characters

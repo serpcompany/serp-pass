@@ -1,0 +1,38 @@
+{
+  "name": "@serp-apps-pass/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --port 3000",
+    "build": "next build",
+    "build:worker": "opennextjs-cloudflare build",
+    "test:auth-browser": "tsx tests/auth-browser.ts",
+    "typecheck": "tsc --noEmit",
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy:staging": "opennextjs-cloudflare build && opennextjs-cloudflare deploy --env staging",
+    "deploy:production": "opennextjs-cloudflare build && opennextjs-cloudflare deploy --env production",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv --include-runtime false ./cloudflare-env.d.ts",
+    "db:migrate:local": "wrangler d1 migrations apply apps-pass-local --local --persist-to ../../.wrangler/mvp-state",
+    "db:migrate:staging": "wrangler d1 migrations apply apps-pass-staging --env staging --remote",
+    "db:migrate:production": "wrangler d1 migrations apply apps-pass-production --env production --remote"
+  },
+  "dependencies": {
+    "@better-auth/drizzle-adapter": "1.6.27",
+    "@opennextjs/cloudflare": "1.19.9",
+    "better-auth": "1.6.27",
+    "drizzle-orm": "0.45.2",
+    "next": "16.2.11",
+    "react": "19.1.7",
+    "react-dom": "19.1.7"
+  },
+  "devDependencies": {
+    "@types/node": "26.2.0",
+    "@types/react": "19.1.7",
+    "@types/react-dom": "19.1.7",
+    "playwright": "1.62.1",
+    "tsx": "4.23.12",
+    "typescript": "5.9.3",
+    "wrangler": "4.122.0"
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "serp-apps-pass-local",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-08-13",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "binding": "ASSETS",
+    "directory": ".open-next/assets"
+  },
+  "vars": {
+    "APP_ENV": "local"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "apps-pass-local",
+      "database_id": "00000000-0000-0000-0000-000000000010",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1,
+    "traces": {
+      "enabled": true,
+      "head_sampling_rate": 1
+    }
+  },
+  "upload_source_maps": true,
+  "env": {
+    "staging": {
+      "name": "serp-apps-pass-staging",
+      "vars": {
+        "APP_ENV": "staging"
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "apps-pass-staging",
+          "database_id": "54d36df7-062d-4115-aabc-bcf984b9e2c8",
+          "migrations_dir": "migrations"
+        }
+      ],
+      "observability": {
+        "enabled": true,
+        "head_sampling_rate": 1,
+        "traces": {
+          "enabled": true,
+          "head_sampling_rate": 1
+        }
+      }
+    },
+    "production": {
+      "name": "serp-apps-pass-production",
+      "vars": {
+        "APP_ENV": "production"
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "apps-pass-production",
+          "database_id": "00000000-0000-0000-0000-000000000012",
+          "migrations_dir": "migrations"
+        }
+      ],
+      "observability": {
+        "enabled": true,
+        "head_sampling_rate": 0.1,
+        "traces": {
+          "enabled": true,
+          "head_sampling_rate": 0.05
+        }
+      }
+    }
+  }
+}

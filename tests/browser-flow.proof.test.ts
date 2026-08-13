@@ -1,4 +1,6 @@
-// Executable evidence for the disposable Chromium browser proof.
+// Historical executable evidence for the disposable Chromium browser proof.
+// It requires the retired examples/ browser topology and is intentionally not
+// part of `pnpm proof:test` or the current repo-owned MVP browser harness.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync } from "node:fs";
@@ -11,7 +13,7 @@ function runPnpm(args: string[]) {
 }
 
 test("every discovered unpacked extension links and receives active in Chromium", () => {
-  const result = spawnSync("pnpm", ["proof:browser"], {
+  const result = spawnSync("pnpm", ["proof:browser:historical"], {
     cwd: process.cwd(),
     encoding: "utf8",
     env: process.env,
@@ -38,7 +40,7 @@ test("browser harness exercises a synthetic third discovered submission", () => 
   try {
     assert.equal(runPnpm(["dev:browser:stop"]).status, 0);
     assert.equal(runPnpm(["dev:browser"]).status, 0);
-    const result = runPnpm(["proof:browser"]);
+    const result = runPnpm(["proof:browser:historical"]);
     assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
     const line = result.stdout.trim().split("\n").at(-1);
     assert.ok(line);

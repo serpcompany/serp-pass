@@ -97,82 +97,11 @@ pnpm operator:import-app <path-to-apppass.json>
 
 Migrations contain schema only. The trusted Operator import validates the versioned manifest, registers the assigned public Publisher and App identities atomically, and constitutes approval for this prototype.
 
-## Local walkthrough
+## Historical proof
 
-This is a disposable local proof. It uses local Wrangler D1 state and a project-owned Chromium profile; it does not contact preview or production infrastructure.
+The disposable pre-MVP authority, example submissions, and contract tests remain under `src/`, `scripts/`, `examples/`, and `tests/*.proof.test.ts` as historical evidence. They are not the current application, SDK integration, or browser topology. Their design contract is preserved in [`docs/prototype/PRD.md`](./docs/prototype/PRD.md).
 
-Install dependencies, build every discovered extension, reset the disposable database, and apply the schema-only migration:
-
-```sh
-pnpm install
-pnpm extensions:build
-pnpm db:reset
-pnpm db:migrate
-```
-
-Start the local authority Worker in one terminal and leave it running:
-
-```sh
-pnpm operator:serve
-```
-
-In another terminal, import all three manifests through the identical interface and activate the deterministic local Subscription:
-
-```sh
-pnpm operator:import-app examples/serp-reference/apppass.json
-pnpm operator:import-app examples/invited-publisher-reference/apppass.json
-pnpm operator:import-app examples/post-freeze-reference/apppass.json
-pnpm operator:activate-local-subscription
-pnpm operator:state
-```
-
-Inspect the project browser before starting it, as the status command distinguishes a reusable owner from a stopped browser:
-
-```sh
-pnpm dev:browser:status
-pnpm dev:browser
-```
-
-The default browser is headless for automation. For a visible manual session, stop only the recorded project owner and restart with the supported override:
-
-```sh
-pnpm dev:browser:stop
-EXTENSION_DEV_HEADLESS=0 pnpm dev:browser
-pnpm dev:browser:open -- chrome-extension://jgbkpnjlggkmeoomfpdjfmfjcdfdmjcl/popup.html
-```
-
-Select the opened extension tab if it is not already selected. In the popup:
-
-1. Select **Begin link** and copy the displayed request ID.
-2. Approve it from the second terminal:
-
-   ```sh
-   pnpm operator:approve-link <request-id>
-   ```
-
-3. Select **Finish link**.
-4. Select **Check access** and confirm the result is `{"status":"active","features":["premium"]}`.
-
-The single automated browser proof command resets local D1, migrates it, imports every discovered manifest, activates the local Subscription, and exercises every loaded extension:
-
-```sh
-pnpm proof:browser
-```
-
-Run the complete verification suite, typechecking, and diff validation with:
-
-```sh
-pnpm proof:test && pnpm typecheck && git diff --check
-```
-
-Stop the Worker with `Ctrl-C` in its terminal. Stop only the project-owned browser and optionally delete the disposable local database state with:
-
-```sh
-pnpm dev:browser:stop
-pnpm db:reset
-```
-
-The browser profile is preserved when stopped. D1 records, browser state, generated extension output, and other local runtime artifacts are ignored and disposable.
+`pnpm proof:test` runs the still-relevant importer, entitlement, and generic discovery contracts. The retired multi-fixture Chromium topology is isolated behind `pnpm proof:test:historical-browser`; it is not expected to run while the repo-owned browser is configured for the real MVP Publisher extension.
 
 ## Current documents
 

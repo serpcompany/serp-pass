@@ -76,7 +76,7 @@ Browser evidence: test purchase changes the Subscriber UI only after the webhook
 
 ## 5. Real activation and entitlement slice
 
-Status: **implemented and browser-verified locally; deployed staging verification pending**
+Status: **implemented and browser-verified locally and on Cloudflare staging; real paid activation awaits the Slice 4 Stripe test purchase**
 
 - port the proven link/App-session behavior behind authenticated activation UX;
 - SDK returns/opens an activation URL;
@@ -87,7 +87,7 @@ Status: **implemented and browser-verified locally; deployed staging verificatio
 
 Browser evidence: the real extension links and unlocks after purchase; another App cannot reuse its session; expiry and failure states are truthful.
 
-Local evidence uses the signed billing-fixture boundary only to establish paid-through authority without accessing Stripe. The independently built Publisher extension performs the request and exchange from its real `chrome-extension://` origin, the Subscriber approves through Better Auth, and D1 stores only the App-session token hash. Approve, deny, already-used, expiry, unpaid, paid-through active, cross-App rejection, scoped revocation, App suspension/reapproval, relinking, and temporary authority failure all pass in Chromium. Staging must still prove the same persistent App-session path; it cannot prove `active` until the approved Stripe test purchase exists.
+Local evidence uses the signed billing-fixture boundary only to establish paid-through authority without accessing Stripe. The independently built Publisher extension performs the request and exchange from its real `chrome-extension://` origin, the Subscriber approves through Better Auth, and D1 stores only the App-session token hash. Approve, deny, already-used, expiry, unpaid, paid-through active, cross-App rejection, scoped revocation, App suspension/reapproval, relinking, public-call rate limiting, and temporary authority failure all pass in Chromium. Staging proves the persistent hash-only App-session path across a Worker deployment and correctly remains `inactive`; it cannot prove real paid `active` until the approved Stripe test purchase exists.
 
 ## 6. Publisher Connect slice
 

@@ -15,10 +15,19 @@ const appManifest = JSON.parse(await readFile(path.join(repositoryRoot, "apps/in
 const runtimeId = appManifest.distributions[0]?.runtime_id;
 assert.ok(runtimeId);
 const storageKey = (item: "pending" | "session") => `app-pass:${new URL(appOrigin).origin}:${appManifest.app_id}:${item}`;
-const state = JSON.parse(await readFile(path.join(repositoryRoot, ".extension-dev-browser/state.json"), "utf8")) as {
+type BrowserState = {
   status: string; cdpUrl: string; extensions: Array<{ id: string; pageUrl: string }>;
 };
-assert.equal(state.status, "ready");
+async function readyBrowserState() {
+  const deadline = Date.now() + 30_000;
+  while (Date.now() < deadline) {
+    const current = JSON.parse(await readFile(path.join(repositoryRoot, ".extension-dev-browser/state.json"), "utf8")) as BrowserState;
+    if (current.status === "ready") return current;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  throw new Error("The repo-owned extension browser did not become ready");
+}
+const state = await readyBrowserState();
 const extension = state.extensions.find((candidate) => candidate.id === runtimeId);
 assert.ok(extension);
 
@@ -39,8 +48,10 @@ function remoteSql(sql: string) {
 const browser = await chromium.connectOverCDP(state.cdpUrl);
 const context = browser.contexts()[0];
 assert.ok(context);
-let popup = context.pages().find((candidate) => candidate.url().startsWith(extension.pageUrl));
+const extensionPages = context.pages().filter((candidate) => candidate.url().startsWith(extension.pageUrl));
+let popup = extensionPages[0];
 if (!popup) popup = await context.newPage();
+for (const stalePopup of extensionPages.slice(1)) await stalePopup.close();
 await popup.goto(`${extension.pageUrl}?authority=${encodeURIComponent(appOrigin)}`);
 
 if (!verifyExisting) {

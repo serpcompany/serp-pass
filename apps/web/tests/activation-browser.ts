@@ -17,10 +17,19 @@ const runtimeId = appManifest.distributions[0]?.runtime_id;
 assert.ok(runtimeId);
 const extensionOrigin = `chrome-extension://${runtimeId}`;
 const storageKey = (item: "pending" | "session") => `app-pass:${new URL(appOrigin).origin}:${appManifest.app_id}:${item}`;
-const state = JSON.parse(await readFile(path.join(repositoryRoot, ".extension-dev-browser/state.json"), "utf8")) as {
+type BrowserState = {
   status: string; cdpUrl: string; extensions: Array<{ id: string; pageUrl: string; path: string }>;
 };
-assert.equal(state.status, "ready");
+async function readyBrowserState() {
+  const deadline = Date.now() + 30_000;
+  while (Date.now() < deadline) {
+    const current = JSON.parse(await readFile(path.join(repositoryRoot, ".extension-dev-browser/state.json"), "utf8")) as BrowserState;
+    if (current.status === "ready") return current;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  throw new Error("The repo-owned extension browser did not become ready");
+}
+const state = await readyBrowserState();
 const extension = state.extensions.find((candidate) => candidate.id === runtimeId);
 assert.ok(extension, "The repo-owned browser must load the independently built Publisher extension");
 
@@ -135,10 +144,12 @@ assert.ok(persistentContext);
 await ensureRealApp(persistentContext);
 await persistentContext.clearCookies();
 
-let popup = persistentContext.pages().find((candidate) => candidate.url() === extension.pageUrl);
+const extensionPages = persistentContext.pages().filter((candidate) => candidate.url().startsWith(extension.pageUrl));
+let popup = extensionPages[0];
 if (!popup) {
   popup = await persistentContext.newPage();
 }
+for (const stalePopup of extensionPages.slice(1)) await stalePopup.close();
 await popup.goto(`${extension.pageUrl}?authority=${encodeURIComponent(appOrigin)}`);
 await popup.evaluate(async () => void await (globalThis as unknown as { chrome: ExtensionChrome }).chrome.storage.local.clear());
 
@@ -274,6 +285,30 @@ await expiredActivation.getByText("This activation request expired. Start again 
 await popup.reload();
 await popup.getByRole("button", { name: "Finish linking after approval" }).click();
 await popup.getByText("Link request expired.").waitFor();
+
+const nonExtensionOrigin = await fetch(`${appOrigin}/api/app-pass/link-requests`, {
+  method: "POST",
+  headers: { "content-type": "application/json", origin: appOrigin },
+  body: "{}",
+});
+assert.equal(nonExtensionOrigin.status, 403);
+const rateLimitStatuses: number[] = [];
+const rateLimitSource = `rate-limit-proof-${Date.now()}`;
+for (let attempt = 0; attempt < 21; attempt += 1) {
+  const response = await fetch(`${appOrigin}/api/app-pass/link-requests`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      origin: extensionOrigin,
+      "cf-connecting-ip": rateLimitSource,
+    },
+    body: "{}",
+  });
+  rateLimitStatuses.push(response.status);
+  if (attempt === 20) assert.match(response.headers.get("retry-after") ?? "", /^\d+$/);
+}
+assert.deepEqual(rateLimitStatuses.slice(0, 20), Array(20).fill(400));
+assert.equal(rateLimitStatuses[20], 429);
 
 assert.equal((await fetch(`${appOrigin}/api/health`)).status, 200);
 process.stdout.write("PASS real extension activates through a human Subscriber, paid-through authority, hashed App session, scoped revocation, suspension, and truthful outage state\n");

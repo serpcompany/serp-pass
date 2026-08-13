@@ -4,7 +4,7 @@ Updated: **2026-08-13**
 
 ## Current slice
 
-Slices 1–3 are complete. Slice 4, Subscriber billing, remains approval-gated after its account-independent implementation. Slice 5, real activation and entitlement, is complete locally and awaiting deployed staging verification. Stripe account `acct_1MwbFJI9EPtyKcIs` (currently **SERP Pass**) is the intended isolated sandbox, but it has not been accessed or configured. Account selection is not authorization to mutate it.
+Slices 1–3 are complete. Slice 4, Subscriber billing, remains approval-gated after its account-independent implementation. Slice 5, real activation and entitlement, is implemented and deployed; its real staging App session persists across Worker deployment and truthfully remains inactive until Slice 4 receives an actual paid-through projection. Stripe account `acct_1MwbFJI9EPtyKcIs` (currently **SERP Pass**) is the intended isolated sandbox, but it has not been accessed or configured. Account selection is not authorization to mutate it.
 
 ## Environment evidence
 
@@ -12,7 +12,7 @@ Slices 1–3 are complete. Slice 4, Subscriber billing, remains approval-gated a
 | --- | --- | --- |
 | Local Next | built | Next.js `16.2.11` typecheck and optimized build pass. Runtime use requires an ignored local `BETTER_AUTH_SECRET`. |
 | Local workerd | passed | OpenNext `1.19.9` Worker reads migrated local D1; rendered Chromium passes human auth, role denials, Operator bootstrap, one-time Publisher invitation, normalized billing, official Stripe-format webhook projection, real extension activation/entitlement, replay/integrity rejection, and D1 rate limiting at `localhost:8788`. A fresh empty local state applies all 15 migrations successfully. |
-| Cloudflare staging | deployed and passed | [`serp-apps-pass-staging.serpcompany.workers.dev`](https://serp-apps-pass-staging.serpcompany.workers.dev), Worker version `466986d0-3992-4b8e-89a7-9a06e73fc232`, isolated `apps-pass-staging` D1 in APAC, health `200 ready`, all Slice 1–3 journeys pass, and partial Slice 4 routes/schema are deployed with zero billing state and no Stripe Account ID, secret, or Price configuration. |
+| Cloudflare staging | deployed and passed | [`serp-apps-pass-staging.serpcompany.workers.dev`](https://serp-apps-pass-staging.serpcompany.workers.dev), Worker version `c4edf729-284f-4d99-bbdc-6ff20c002044`, isolated `apps-pass-staging` D1 in APAC, health `200 ready`, all Slice 1–3 journeys and the unpaid Slice 5 activation/session path pass, and partial Slice 4 routes/schema remain inert with zero billing state and no Stripe Account ID, secret, or Price configuration. |
 | Production | not created or deployed | Production D1 still has a non-routable placeholder UUID; no production secret or Worker deployment exists. |
 | Stripe | selected but untouched | Intended isolated account: `acct_1MwbFJI9EPtyKcIs`, currently **SERP Pass**. It has not been accessed. No credentials, Product, Price, webhook, Checkout, Connect account, or payment exists. Every Stripe action remains approval-gated. |
 
@@ -73,6 +73,15 @@ Slices 1–3 are complete. Slice 4, Subscriber billing, remains approval-gated a
 - Cross-App claims return `401`; one session can be revoked without changing another; App suspension returns `revoked`; reapproval restores a non-revoked session; the extension can deliberately relink after revocation.
 - Authority failure becomes `temporarily_unavailable`, not a false inactive decision. Denied, expired, exchanged, and already-used requests have distinct terminal UX.
 - `pnpm mvp:activation:test` connects to the repo-owned persistent browser over CDP, exercises the real extension and rendered website, and leaves the browser alive.
+
+## Deployed Slice 5 evidence
+
+- Migration `0015_app_activation.sql` is applied to staging and all 15 migrations report no pending work.
+- The real extension creates an activation request from its stable runtime origin, a staging Better Auth Subscriber approves it, and proof exchange creates a D1-backed App Link and hash-only App session.
+- The extension receives `inactive` because staging has no normalized paid-through Subscription; the local billing fixture route remains `404` and cannot manufacture staging access.
+- A fresh real App session was created before the Worker-only redeploy. The exact stored App-session token hash remained present and its entitlement remained `inactive` after deployment of Worker version `c4edf729-284f-4d99-bbdc-6ff20c002044`.
+- Local and staging SDK storage are namespaced by authority origin as well as App ID, preventing dev-browser environment crossover. The historical proof explicitly selects its preserved non-MVP API prefix.
+- The only staging secret is still `BETTER_AUTH_SECRET`; the deployed build contains none of the ignored local Stripe fixture values.
 
 ## What it does not prove
 

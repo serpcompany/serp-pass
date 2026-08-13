@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { after, before, test } from "node:test";
-import { createAppPass, type AppPassStorage } from "../packages/app-pass-sdk/src/index";
+import { appPassStorageKey, createAppPass, type AppPassStorage } from "../packages/app-pass-sdk/src/index";
 
 const authorityUrl = "http://127.0.0.1:8787";
 let authority: ChildProcess | undefined;
@@ -88,6 +88,7 @@ test("both imported Apps receive active through the shared SDK and Subscription"
       appId: app.app_id,
       runtimeId: app.distributions[0]!.runtime_id,
       authorityBaseUrl: authorityUrl,
+      apiPathPrefix: "/app-pass",
       storage,
     });
     const link = await client.beginLink();
@@ -113,11 +114,12 @@ test("link exchange is proof-bound and single-use", async () => {
     appId: app.app_id,
     runtimeId: app.distributions[0]!.runtime_id,
     authorityBaseUrl: authorityUrl,
+    apiPathPrefix: "/app-pass",
     storage,
   });
   const link = await client.beginLink();
   requireSuccess(runPnpm(["operator:approve-link", link.requestId]));
-  const pending = JSON.parse(storage.read(`app-pass:${app.app_id}:pending`)!) as {
+  const pending = JSON.parse(storage.read(appPassStorageKey(authorityUrl, app.app_id, "pending"))!) as {
     requestId: string;
     proofKey: string;
   };
@@ -139,7 +141,7 @@ test("link exchange is proof-bound and single-use", async () => {
 test("an App-session token cannot be claimed by another App", async () => {
   const [serp, invited] = activeClients;
   assert.ok(serp && invited);
-  const token = serp.storage.read(`app-pass:${serp.appId}:session`);
+  const token = serp.storage.read(appPassStorageKey(authorityUrl, serp.appId, "session"));
   assert.ok(token);
   const response = await fetch(`${authorityUrl}/app-pass/entitlements/check`, {
     method: "POST",
@@ -158,6 +160,7 @@ test("an approved link cannot exchange after expiry", async () => {
     appId: app.app_id,
     runtimeId: app.distributions[0]!.runtime_id,
     authorityBaseUrl: authorityUrl,
+    apiPathPrefix: "/app-pass",
     storage: memoryStorage(),
   });
   const link = await client.beginLink();
@@ -176,7 +179,7 @@ test("operator state exposes hashes but never App-session tokens", () => {
   for (const active of activeClients) {
     const session = state.sessions.find((candidate) => candidate.appId === active.appId);
     assert.ok(session);
-    const token = active.storage.read(`app-pass:${active.appId}:session`);
+    const token = active.storage.read(appPassStorageKey(authorityUrl, active.appId, "session"));
     assert.ok(token);
     assert.notEqual(session.tokenHash, token);
     assert.equal(JSON.stringify(state).includes(token), false);

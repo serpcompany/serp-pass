@@ -16,6 +16,7 @@ const appManifest = JSON.parse(await readFile(path.join(repositoryRoot, "apps/in
 const runtimeId = appManifest.distributions[0]?.runtime_id;
 assert.ok(runtimeId);
 const extensionOrigin = `chrome-extension://${runtimeId}`;
+const storageKey = (item: "pending" | "session") => `app-pass:${new URL(appOrigin).origin}:${appManifest.app_id}:${item}`;
 const state = JSON.parse(await readFile(path.join(repositoryRoot, ".extension-dev-browser/state.json"), "utf8")) as {
   status: string; cdpUrl: string; extensions: Array<{ id: string; pageUrl: string; path: string }>;
 };
@@ -164,10 +165,10 @@ assert.equal(await activationPage.getByText(`Published by ${appManifest.publishe
 await activationPage.getByRole("button", { name: "Approve this extension" }).click();
 await activationPage.getByText("Approved. Return to the extension and choose Finish linking.").waitFor();
 
-const pending = await popup.evaluate(async (appId) => {
-  const values = await (globalThis as unknown as { chrome: ExtensionChrome }).chrome.storage.local.get(`app-pass:${appId}:pending`);
-  return JSON.parse(String(values[`app-pass:${appId}:pending`])) as { requestId: string; proofKey: string };
-}, appManifest.app_id);
+const pending = await popup.evaluate(async (pendingKey) => {
+  const values = await (globalThis as unknown as { chrome: ExtensionChrome }).chrome.storage.local.get(pendingKey);
+  return JSON.parse(String(values[pendingKey])) as { requestId: string; proofKey: string };
+}, storageKey("pending"));
 await popup.reload();
 await popup.getByRole("button", { name: "Finish linking after approval" }).click();
 await popup.getByText("Linked. Apps Pass access can now be checked.").waitFor();
@@ -183,8 +184,9 @@ await popup.getByRole("button", { name: "Check Apps Pass access" }).click();
 await popup.getByText("active", { exact: true }).waitFor();
 await popup.getByText("Premium feature access is active.").waitFor();
 
-const stored = await popup.evaluate(async (appId) => await (globalThis as unknown as { chrome: ExtensionChrome }).chrome.storage.local.get(`app-pass:${appId}:session`), appManifest.app_id);
-const token = stored[`app-pass:${appManifest.app_id}:session`];
+const sessionKey = storageKey("session");
+const stored = await popup.evaluate(async (key) => await (globalThis as unknown as { chrome: ExtensionChrome }).chrome.storage.local.get(key), sessionKey);
+const token = stored[sessionKey];
 if (typeof token !== "string") throw new Error("The extension did not store an App-session token");
 const crossAppStatus = await popup.evaluate(async ({ appOrigin, runtimeId, token }) => {
   return (await fetch(`${appOrigin}/api/app-pass/entitlements/check`, {
@@ -244,7 +246,7 @@ try {
   await persistentContext.setOffline(false);
 }
 
-await popup.evaluate(async (appId) => void await (globalThis as unknown as { chrome: ExtensionChrome }).chrome.storage.local.remove(`app-pass:${appId}:session`), appManifest.app_id);
+await popup.evaluate(async (key) => void await (globalThis as unknown as { chrome: ExtensionChrome }).chrome.storage.local.remove(key), sessionKey);
 await popup.reload();
 const deniedActivationPromise = persistentContext.waitForEvent("page");
 await popup.getByRole("button", { name: "Link with Apps Pass" }).click();
@@ -262,10 +264,10 @@ await popup.getByRole("button", { name: "Link with Apps Pass" }).click();
 const expiredActivation = await expiredActivationPromise;
 await expiredActivation.waitForURL(`${appOrigin}/activate/**`);
 await expiredActivation.getByRole("button", { name: "Approve this extension" }).click();
-const expiringPending = await popup.evaluate(async (appId) => {
-  const values = await (globalThis as unknown as { chrome: ExtensionChrome }).chrome.storage.local.get(`app-pass:${appId}:pending`);
-  return JSON.parse(String(values[`app-pass:${appId}:pending`])) as { requestId: string };
-}, appManifest.app_id);
+const expiringPending = await popup.evaluate(async (pendingKey) => {
+  const values = await (globalThis as unknown as { chrome: ExtensionChrome }).chrome.storage.local.get(pendingKey);
+  return JSON.parse(String(values[pendingKey])) as { requestId: string };
+}, storageKey("pending"));
 localSql(`UPDATE app_link_request SET expires_at = 0 WHERE id = '${expiringPending.requestId}'`);
 await expiredActivation.reload();
 await expiredActivation.getByText("This activation request expired. Start again from the extension.").waitFor();

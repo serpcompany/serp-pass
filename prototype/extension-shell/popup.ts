@@ -13,6 +13,7 @@ const client = createAppPass({
   appId: APP_PASS_CONFIG.appId,
   runtimeId: chrome.runtime.id,
   authorityBaseUrl: APP_PASS_CONFIG.authorityBaseUrl,
+  apiPathPrefix: "/app-pass",
 });
 
 const appId = document.querySelector<HTMLElement>("#app-id")!;

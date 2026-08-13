@@ -12,9 +12,14 @@ export type AppPassClientOptions = {
   appId: string;
   runtimeId: string;
   authorityBaseUrl: string;
+  apiPathPrefix?: string;
   storage?: AppPassStorage;
   fetch?: typeof globalThis.fetch;
 };
+
+export function appPassStorageKey(authorityBaseUrl: string, appId: string, item: "installation" | "pending" | "session") {
+  return `app-pass:${new URL(authorityBaseUrl).origin}:${appId}:${item}`;
+}
 
 type PendingLink = { requestId: string; proofKey: string; activationUrl: string; expiresAt: string };
 
@@ -65,10 +70,10 @@ async function responseJson<T>(response: Response): Promise<T> {
 export function createAppPass(options: AppPassClientOptions) {
   const storage = options.storage ?? chromeStorage();
   const request = options.fetch ?? globalThis.fetch.bind(globalThis);
-  const prefix = `app-pass:${options.appId}`;
-  const installationKey = `${prefix}:installation`;
-  const pendingKey = `${prefix}:pending`;
-  const sessionKey = `${prefix}:session`;
+  const installationKey = appPassStorageKey(options.authorityBaseUrl, options.appId, "installation");
+  const pendingKey = appPassStorageKey(options.authorityBaseUrl, options.appId, "pending");
+  const sessionKey = appPassStorageKey(options.authorityBaseUrl, options.appId, "session");
+  const apiPathPrefix = options.apiPathPrefix ?? "/api/app-pass";
   const endpoint = (pathname: string) => new URL(pathname, options.authorityBaseUrl).toString();
 
   async function installationId() {
@@ -83,7 +88,7 @@ export function createAppPass(options: AppPassClientOptions) {
     async beginLink() {
       const proofKey = randomToken();
       const link = await responseJson<{ requestId: string; expiresAt: string; activationUrl: string }>(await request(
-        endpoint("/api/app-pass/link-requests"),
+        endpoint(`${apiPathPrefix}/link-requests`),
         {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -127,7 +132,7 @@ export function createAppPass(options: AppPassClientOptions) {
       if (!rawPending) throw new Error("No pending App Pass link");
       const pending = JSON.parse(rawPending) as PendingLink;
       const session = await responseJson<{ token: string }>(await request(
-        endpoint(`/api/app-pass/link-requests/${pending.requestId}/exchange`),
+        endpoint(`${apiPathPrefix}/link-requests/${pending.requestId}/exchange`),
         {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -142,7 +147,7 @@ export function createAppPass(options: AppPassClientOptions) {
       const token = await storage.get(sessionKey);
       if (!token) return { status: "unauthenticated", reason: "not_linked" };
       try {
-        const response = await request(endpoint("/api/app-pass/entitlements/check"), {
+        const response = await request(endpoint(`${apiPathPrefix}/entitlements/check`), {
           method: "POST",
           headers: {
             authorization: `Bearer ${token}`,

@@ -2,6 +2,7 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 import { EntitlementAuthorityError, exchangeLinkRequest } from "@/entitlements/authority";
 import { extensionCorsHeaders, extensionPreflight, runtimeIdFromExtensionOrigin } from "@/entitlements/origin";
+import { consumeAppLinkRateLimit } from "@/entitlements/rate-limit";
 import { logEvent } from "@/observability/log";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +18,8 @@ export async function POST(request: Request, context: { params: Promise<{ reques
   const { requestId } = await context.params;
   const body = await request.json().catch(() => null) as { proofKey?: unknown } | null;
   try {
+    const limit = await consumeAppLinkRateLimit(env.DB, request, "exchange");
+    if (!limit.allowed) return Response.json({ message: "Too many exchange attempts. Try again later." }, { status: 429, headers: { ...headers, "retry-after": String(limit.retryAfter) } });
     const result = await exchangeLinkRequest(env.DB, requestId, body?.proofKey, runtimeId);
     logEvent("info", { event: "app_link_exchanged", correlationId, environment: env.APP_ENV, outcome: "created", requestId });
     return Response.json(result, { headers });

@@ -23,7 +23,7 @@ An extension is not a trusted server, even when its runtime ID is approved. A ru
 | Checkout redirect granting access | Entitlement trusts normalized webhook projection only | Redirect-before-webhook remains inactive |
 | Publisher claiming another extension | Operator-issued IDs, recorded ownership evidence, globally unique browser-family/runtime identity regardless of distribution channel, manual approval | Rejected conflicting Submission and audit event |
 | Extension impersonating another App | Approved Distribution check plus App-scoped session token | Cross-App token/runtime tests |
-| Website client spoofing an extension request | Require the exact registered `chrome-extension://<runtime-id>` Origin and match it to the claimed runtime ID and approved Distribution | Wrong or mismatched origins reject before link creation, exchange, or entitlement |
+| Untrusted client fabricating an extension request | Treat runtime ID and Origin as public browser/CORS metadata, not authentication; show canonical identity, require human approval, require proof possession, and rate-limit public link/exchange calls | Wrong browser origins reject, abuse is bounded, and only the proof holder can exchange an approved request |
 | Stolen/replayed link proof | High entropy, short expiry, proof challenge, single exchange | Wrong, expired, and replayed proof tests |
 | App-session database disclosure | High-entropy opaque token; hash only in D1 | State/log scan exposes no token |
 | Human session leaking into an extension | Activation stays on the website; the extension receives only its separate opaque App-session token after proof exchange | Extension storage and bundle contain no Better Auth cookie or platform secret |

@@ -149,6 +149,9 @@ const subscriberUserId = await subscriberPage.evaluate(async () => {
   const body = await response.json() as { user: { id: string } };
   return body.user.id;
 });
+runPnpm(["mvp:operator:set-app-status", "--", "--local", subscriberEmail, appManifest.app_id, "suspended", "Unprivileged status mutation must remain a no-op"]);
+assert.match(localSql(`SELECT status FROM app WHERE id = '${appManifest.app_id}'`), /approved/);
+runPnpm(["mvp:operator:bootstrap", "--", "--local", subscriberEmail]);
 
 await popup.reload();
 await popup.getByText("Approved by Apps Pass").waitFor();
@@ -206,7 +209,7 @@ assert.equal(stateOutput.includes(tokenHash), true, "Operator state should expos
 const sessionQuery = localSql(`SELECT id FROM app_session WHERE token_hash = '${tokenHash}'`);
 const sessionId = sessionQuery.match(/appsession_[A-Za-z0-9_-]{24}/)?.[0];
 assert.ok(sessionId);
-runPnpm(["mvp:operator:revoke-session", "--", "--local", sessionId, "Private-pilot scoped revocation browser check"]);
+runPnpm(["mvp:operator:revoke-session", "--", "--local", subscriberEmail, sessionId, "Private-pilot scoped revocation browser check"]);
 await popup.getByRole("button", { name: "Check Apps Pass access" }).click();
 await popup.getByText("revoked", { exact: true }).waitFor();
 await popup.getByRole("button", { name: "Relink Apps Pass" }).click();
@@ -221,12 +224,17 @@ await popup.getByText("Linked. Apps Pass access can now be checked.").waitFor();
 await popup.getByRole("button", { name: "Check Apps Pass access" }).click();
 await popup.getByText("active", { exact: true }).waitFor();
 
-runPnpm(["mvp:operator:set-app-status", "--", "--local", appManifest.app_id, "suspended", "Private-pilot App suspension browser check"]);
+runPnpm(["mvp:operator:set-app-status", "--", "--local", subscriberEmail, appManifest.app_id, "suspended", "Private-pilot App suspension browser check"]);
 await popup.getByRole("button", { name: "Check Apps Pass access" }).click();
 await popup.getByText("revoked", { exact: true }).waitFor();
-runPnpm(["mvp:operator:set-app-status", "--", "--local", appManifest.app_id, "approved", "Restore App after private-pilot suspension check"]);
+runPnpm(["mvp:operator:set-app-status", "--", "--local", subscriberEmail, appManifest.app_id, "approved", "Restore App after private-pilot suspension check"]);
 await popup.getByRole("button", { name: "Check Apps Pass access" }).click();
 await popup.getByText("active", { exact: true }).waitFor();
+const operatorAudit = localSql(`SELECT action, actor_user_id FROM operator_audit_event WHERE target_id IN ('${sessionId}', '${appManifest.app_id}') ORDER BY occurred_at`);
+assert.equal(operatorAudit.includes(subscriberUserId), true, "Authority mutations must audit the authenticated Operator user ID");
+assert.match(localSql(`SELECT COUNT(*) AS count FROM operator_audit_event WHERE target_id = '${sessionId}' AND action = 'app_session_revoked' AND actor_user_id = '${subscriberUserId}'`), /"count": 1/);
+assert.match(localSql(`SELECT COUNT(*) AS count FROM operator_audit_event WHERE target_id = '${appManifest.app_id}' AND action IN ('app_suspended', 'app_reapproved') AND actor_user_id = '${subscriberUserId}'`), /"count": 2/);
+assert.match(localSql("SELECT COUNT(*) AS count FROM operator_audit_event WHERE reason = 'Unprivileged status mutation must remain a no-op'"), /"count": 0/);
 
 await persistentContext.setOffline(true);
 try {

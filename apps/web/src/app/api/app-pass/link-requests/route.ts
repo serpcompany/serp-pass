@@ -2,6 +2,7 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 import { createLinkRequest, EntitlementAuthorityError } from "@/entitlements/authority";
 import { extensionCorsHeaders, extensionPreflight, runtimeIdFromExtensionOrigin } from "@/entitlements/origin";
+import { consumeAppLinkRateLimit } from "@/entitlements/rate-limit";
 import { logEvent } from "@/observability/log";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +16,8 @@ export async function POST(request: Request) {
   const headers = extensionCorsHeaders(origin);
   const { env } = getCloudflareContext();
   try {
+    const limit = await consumeAppLinkRateLimit(env.DB, request, "request");
+    if (!limit.allowed) return Response.json({ message: "Too many link requests. Try again later." }, { status: 429, headers: { ...headers, "retry-after": String(limit.retryAfter) } });
     const result = await createLinkRequest(env.DB, await request.json().catch(() => null), runtimeId, new URL(request.url).origin);
     logEvent("info", { event: "app_link_requested", correlationId, environment: env.APP_ENV, outcome: "created", requestId: result.requestId });
     return Response.json(result, { status: 201, headers });

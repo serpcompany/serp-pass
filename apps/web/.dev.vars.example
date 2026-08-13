@@ -1,0 +1,11 @@
+# Copy to .dev.vars and replace each placeholder with an independent: openssl rand -hex 32
+BETTER_AUTH_SECRET=replace-with-a-local-secret-of-at-least-32-characters
+TEST_BILLING_WEBHOOK_SECRET=replace-with-a-different-local-secret-of-at-least-32-characters
+
+# Leave these unset until an isolated Stripe sandbox is explicitly approved.
+# STRIPE_EXPECTED_ACCOUNT_ID=
+# STRIPE_SECRET_KEY=
+# STRIPE_WEBHOOK_SECRET=
+# STRIPE_CONNECT_WEBHOOK_SECRET=
+# STRIPE_PASS_PRICE_ID=
+# STRIPE_CONNECT_ONBOARDING_ENABLED=

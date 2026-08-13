@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pass.serp.co/schema/app-manifest-v1.json",
+  "title": "SERP Apps Pass app manifest version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "publisher_id",
+    "publisher_name",
+    "app_id",
+    "name",
+    "features",
+    "distributions"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "https://pass.serp.co/schema/app-manifest-v1.json"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "publisher_id": {
+      "type": "string",
+      "pattern": "^pub_[a-z0-9][a-z0-9_]{2,59}$"
+    },
+    "publisher_name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "app_id": {
+      "type": "string",
+      "pattern": "^app_[a-z0-9][a-z0-9_]{2,59}$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "features": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 16,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]{0,63}$"
+      }
+    },
+    "distributions": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 8,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "browser_family",
+          "channel",
+          "runtime_id"
+        ],
+        "properties": {
+          "browser_family": {
+            "const": "chromium"
+          },
+          "channel": {
+            "enum": [
+              "unpacked",
+              "chrome_web_store"
+            ]
+          },
+          "runtime_id": {
+            "type": "string",
+            "pattern": "^[a-p]{32}$"
+          }
+        }
+      }
+    }
+  }
+}

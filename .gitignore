@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Build and test output
+.next/
+.open-next/
+.turbo/
+dist/
+coverage/
+*.tsbuildinfo
+*.log
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+
+# Local Cloudflare and D1 state
+.wrangler/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+# Project-owned browser profile and lifecycle state
+.extension-dev-browser/
+
+# OS metadata
+.DS_Store

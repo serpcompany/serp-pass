@@ -1,0 +1,124 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+
+export const metadata: Metadata = { title: "Developer docs" };
+
+const installExample = `npm install ./serp-apps-pass-sdk-0.1.0.tgz`;
+const clientExample = `import { createAppPass } from "@serp-apps-pass/sdk";
+
+const appPass = createAppPass({
+  appId: "app_your_assigned_id",
+  runtimeId: chrome.runtime.id,
+  authorityBaseUrl: "https://serp-apps-pass-staging.serpcompany.workers.dev",
+});
+
+const decision = await appPass.check();
+
+if (decision.status === "active") {
+  // Enable the premium feature in your extension.
+}`;
+const permissionExample = `{
+  "manifest_version": 3,
+  "host_permissions": [
+    "https://serp-apps-pass-staging.serpcompany.workers.dev/*"
+  ]
+}`;
+const manifestExample = `{
+  "$schema": "https://pass.serp.co/schema/app-manifest-v1.json",
+  "schema_version": 1,
+  "publisher_id": "pub_your_assigned_id",
+  "publisher_name": "Your Publisher Name",
+  "app_id": "app_your_assigned_id",
+  "name": "Your Extension Name",
+  "features": ["premium"],
+  "distributions": [
+    {
+      "browser_family": "chromium",
+      "channel": "chrome_web_store",
+      "runtime_id": "your_32_character_chrome_runtime_id"
+    }
+  ]
+}`;
+
+export default function DocsPage() {
+  return (
+    <main>
+      <div className="docs-layout">
+        <nav className="docs-nav" aria-label="On this page">
+          <strong>Integration guide</strong>
+          <a href="#overview">Overview</a>
+          <a href="#ids">Public IDs</a>
+          <a href="#sdk">Add the SDK</a>
+          <a href="#manifest">Submission file</a>
+          <a href="#review">Submit and review</a>
+          <a href="#activation">Subscriber activation</a>
+        </nav>
+
+        <div className="docs-content">
+          <section id="overview">
+            <span className="eyebrow">Private-pilot docs · version 1</span>
+            <h1>Add Apps Pass to an extension</h1>
+            <p>This guide shows what an invited extension developer changes, what SERP provides, and what happens after submission. The short version: add one small SDK client at your premium-feature boundary, rebuild normally, then submit a public JSON description for review.</p>
+            <div className="actions">
+              <Link className="primary-button" href="/publisher">Open Publisher workspace</Link>
+              <Link className="secondary-button" href="/submit">See the whole process</Link>
+            </div>
+          </section>
+
+          <section id="ids">
+            <h2>1. Receive two public IDs</h2>
+            <p>SERP assigns your <code>publisher_id</code> and <code>app_id</code> when it invites you. They are stable public labels—similar to a username—not passwords. They can appear in source control, your JSON Submission, and compiled extension code.</p>
+            <div className="info-panel">
+              <strong>Nothing here is a payment credential.</strong>
+              <p>Never put a Stripe key, Apps Pass platform secret, Publisher payment credential, or Subscriber browser cookie in an extension.</p>
+            </div>
+          </section>
+
+          <section id="sdk">
+            <h2>2. Add the SDK and rebuild</h2>
+            <p>For the private pilot, SERP sends you a versioned SDK tarball and its SHA-256 checksum. Install that exact file in the extension project:</p>
+            <pre><code>{installExample}</code></pre>
+            <p>Create a client using your assigned App ID and Chrome&apos;s real runtime ID. Put the access check at the same boundary where your extension currently decides whether a premium feature is available.</p>
+            <pre><code>{clientExample}</code></pre>
+            <h3>Allow the Apps Pass authority</h3>
+            <p>Add the staging authority to Manifest V3 <code>host_permissions</code>. This lets the extension call the entitlement API; it does not give Apps Pass access to arbitrary websites.</p>
+            <pre><code>{permissionExample}</code></pre>
+            <p>Then run your normal build. The SDK becomes part of the extension bundle. It does not rebundle or redistribute the rest of your source code for you.</p>
+          </section>
+
+          <section id="manifest">
+            <h2>3. Create <code>apppass.json</code></h2>
+            <p>This file describes the App you are asking SERP to include. It is submitted through the Publisher workspace and does not need to ship inside the extension itself.</p>
+            <pre><code>{manifestExample}</code></pre>
+            <p>The runtime ID must belong to the build SERP reviews. Unknown fields, malformed IDs, an App ID that was not assigned to you, or a runtime ID already claimed by another App will be rejected.</p>
+          </section>
+
+          <section id="review">
+            <h2>4. Submit it for review</h2>
+            <ol>
+              <li>Sign in using the email tied to the Publisher invitation.</li>
+              <li>Accept the invitation once at <Link href="/publisher/invitation">the invitation page</Link>.</li>
+              <li>Paste the complete JSON and ownership evidence into the <Link href="/publisher">Publisher workspace</Link>.</li>
+              <li>SERP validates it and stores a pending Submission.</li>
+              <li>An Operator reviews the extension and evidence. Only approval creates the App identity used by the entitlement authority.</li>
+            </ol>
+          </section>
+
+          <section id="activation">
+            <h2>5. A Subscriber connects the extension</h2>
+            <p>The first time the extension needs access, the SDK creates a short-lived activation link. The Subscriber opens it, sees the canonical App and Publisher names, and approves the connection using their Apps Pass account.</p>
+            <p>The extension receives its own revocable App-session token. It never receives the Subscriber&apos;s human session cookie or Stripe information. Later SDK checks return <code>active</code> only while the Subscription, App, Distribution, and App session all permit access.</p>
+            <div className="accent-panel">
+              <h2>Ready to test an extension?</h2>
+              <p>The private pilot is invitation-only. Start with the process overview, then use the assigned identities in a real Chromium extension build.</p>
+              <div className="actions">
+                <Link className="primary-button" href="/submit">Developer process</Link>
+                <Link className="secondary-button" href="/publisher">Publisher workspace</Link>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+  );
+}

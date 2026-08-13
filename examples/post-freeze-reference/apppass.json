@@ -1,0 +1,18 @@
+{
+  "$schema": "https://pass.serp.co/schema/app-manifest-v1.json",
+  "schema_version": 1,
+  "publisher_id": "pub_postfreeze_6717646f66b68964",
+  "publisher_name": "Post-Freeze Reference Publisher",
+  "app_id": "app_postfreeze_6717646f66b68964",
+  "name": "Post-Freeze Apps Pass Reference",
+  "features": [
+    "premium"
+  ],
+  "distributions": [
+    {
+      "browser_family": "chromium",
+      "channel": "unpacked",
+      "runtime_id": "jgbkpnjlggkmeoomfpdjfmfjcdfdmjcl"
+    }
+  ]
+}

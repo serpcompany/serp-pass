@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "Post-Freeze Apps Pass Reference",
+  "version": "0.0.1",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAoXtJmCoDq/7W9NGRm1139af3udf4w4I54LrGsBFvqLtcmpAsgtSMBYlxLtCcLPAYyHiZp0qHoc4wKGVh034qK8jNpKSyIQvL2tKIWeR4qyhvlZVE5t3aaePT6DbKzPHKnGUa/LPXeIpm4nydRVV6f9M1z+pivF9M7m7ufkmpa3yu14J1tZZeBjmHkSs9IkRAqSJkkrd5PpZM/VyDYWjCw2aIxgOAZAZ6F5YjjZa4nbuRkIHZqykKLQCNQVBhGmxpC3ZD87Gd2sjJyBk0DnkzFnYdoRyD2LUCE43XXXviiWD8wfXLPW6Hmk8S2VYfaBKhjCixsrLXGfD6TOqr0yobSQIDAQAB",
+  "permissions": ["storage"],
+  "host_permissions": ["http://127.0.0.1:8787/*"],
+  "action": {
+    "default_popup": "popup.html"
+  }
+}

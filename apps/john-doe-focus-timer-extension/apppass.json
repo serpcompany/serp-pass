@@ -1,0 +1,16 @@
+{
+  "$schema": "https://pass.serp.co/schema/app-manifest-v1.json",
+  "schema_version": 1,
+  "publisher_id": "pub_john_doe_studio",
+  "publisher_name": "John Doe Studio",
+  "app_id": "app_john_doe_focus_timer",
+  "name": "John Doe Focus Timer",
+  "features": ["premium"],
+  "distributions": [
+    {
+      "browser_family": "chromium",
+      "channel": "unpacked",
+      "runtime_id": "bpjnchabpcjomgncmbgphbdggkgkobdb"
+    }
+  ]
+}

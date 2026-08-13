@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Invited Publisher Video Notes",
+  "description": "A real private-pilot extension source project integrated with the SERP Apps Pass SDK.",
+  "version": "0.0.1",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvlMDPE7gqGhBby4xLTTCjgj9JU6u71TNOntFBfYI6z8IuXwOMkfxsRtz1zHwgdw37gwkfrEi7T66UJnjHpO/MSFCd3sTOK6pfnB0iOQYNyD3D3FtddX06S9XRTGgSgbQhpaSUbr2tTgjmJtTZPuzQjibxCZiWPZuqMrHE7PqlxC/XfWWEund/0duWtfld0Kn4hE7oZXxrn6kOvMBMf5+d1uCoHO9XamT6AYEASnwUZYbG5RvCQFnzy+ikI9Efd4kGsF0dJqWUmkPxNFo4Wx2RwILg7Z43cALMs2hQTwIUPL1vtcE9BUdDVPFUMU7ooLxEU17v+agbevZKUO/uCUkCQIDAQAB",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "http://localhost:8788/*",
+    "https://serp-apps-pass-staging.serpcompany.workers.dev/*"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  }
+}

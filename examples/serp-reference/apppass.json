@@ -1,0 +1,18 @@
+{
+  "$schema": "https://pass.serp.co/schema/app-manifest-v1.json",
+  "schema_version": 1,
+  "publisher_id": "pub_serp_reference",
+  "publisher_name": "SERP",
+  "app_id": "app_serp_reference",
+  "name": "SERP Reference Extension",
+  "features": [
+    "premium"
+  ],
+  "distributions": [
+    {
+      "browser_family": "chromium",
+      "channel": "unpacked",
+      "runtime_id": "gnofcoijgmmjbpbkflpnlflkgpmhppkh"
+    }
+  ]
+}

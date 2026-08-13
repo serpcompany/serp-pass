@@ -2,7 +2,11 @@ import { createAppPass } from "@serp-apps-pass/sdk";
 
 const APP_ID = "app_invited_pilot_real";
 declare const APP_PASS_AUTHORITY_URL: string;
-const AUTHORITY = APP_PASS_AUTHORITY_URL;
+declare const APP_PASS_ALLOW_AUTHORITY_OVERRIDE: boolean;
+const requestedAuthority = APP_PASS_ALLOW_AUTHORITY_OVERRIDE ? new URLSearchParams(location.search).get("authority") : null;
+const AUTHORITY = requestedAuthority && /^https?:\/\/(?:localhost|127\.0\.0\.1|serp-apps-pass-staging\.serpcompany\.workers\.dev)(?::\d+)?$/u.test(requestedAuthority)
+  ? requestedAuthority
+  : APP_PASS_AUTHORITY_URL;
 const runtimeId = chrome.runtime.id;
 const client = createAppPass({ appId: APP_ID, runtimeId, authorityBaseUrl: AUTHORITY });
 

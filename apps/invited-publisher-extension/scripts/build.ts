@@ -7,6 +7,7 @@ const appRoot = fileURLToPath(new URL("..", import.meta.url));
 const sourceRoot = fileURLToPath(new URL("../src/", import.meta.url));
 const outputRoot = fileURLToPath(new URL("../dist/", import.meta.url));
 const authorityBaseUrl = process.env.APP_PASS_AUTHORITY_URL ?? "https://serp-apps-pass-staging.serpcompany.workers.dev";
+const allowAuthorityOverride = process.env.EXTENSION_DEV_BROWSER === "1";
 
 await mkdir(outputRoot, { recursive: true });
 await Promise.all([
@@ -20,7 +21,10 @@ await Promise.all([
     format: "esm",
     platform: "browser",
     target: "chrome120",
-    define: { APP_PASS_AUTHORITY_URL: JSON.stringify(authorityBaseUrl) },
+    define: {
+      APP_PASS_AUTHORITY_URL: JSON.stringify(authorityBaseUrl),
+      APP_PASS_ALLOW_AUTHORITY_OVERRIDE: JSON.stringify(allowAuthorityOverride),
+    },
   }),
 ]);
 

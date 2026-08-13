@@ -137,8 +137,8 @@ await persistentContext.clearCookies();
 let popup = persistentContext.pages().find((candidate) => candidate.url() === extension.pageUrl);
 if (!popup) {
   popup = await persistentContext.newPage();
-  await popup.goto(extension.pageUrl);
 }
+await popup.goto(`${extension.pageUrl}?authority=${encodeURIComponent(appOrigin)}`);
 await popup.evaluate(async () => void await (globalThis as unknown as { chrome: ExtensionChrome }).chrome.storage.local.clear());
 
 const subscriberPage = await persistentContext.newPage();

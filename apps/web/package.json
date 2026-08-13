@@ -9,6 +9,7 @@
     "build:worker": "opennextjs-cloudflare build",
     "test:auth-browser": "tsx tests/auth-browser.ts",
     "test:activation-browser": "tsx tests/activation-browser.ts",
+    "test:activation-staging-browser": "tsx tests/activation-staging-browser.ts",
     "test:publisher-boundary": "tsx tests/publisher-boundary-browser.ts",
     "test:operator-bootstrap": "tsx tests/operator-bootstrap-browser.ts",
     "test:billing-projection": "tsx tests/billing-projection-browser.ts",

@@ -1,8 +1,7 @@
 {
   "buildCommand": ["pnpm", "--filter", "@serp-apps-pass/invited-publisher-extension", "build"],
   "buildEnvironment": {
-    "EXTENSION_DEV_BROWSER": "1",
-    "APP_PASS_AUTHORITY_URL": "http://localhost:8788"
+    "EXTENSION_DEV_BROWSER": "1"
   },
   "extensionDiscoveryRoot": "apps",
   "watch": ["apps/invited-publisher-extension/src", "apps/invited-publisher-extension/scripts", "packages/app-pass-sdk/src", "packages/app-pass-contracts/src"],

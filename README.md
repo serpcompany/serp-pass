@@ -8,6 +8,16 @@ The completed proof remains executable local software, not a visual mockup, but 
 
 Implementation is in progress on `mvp/private-pilot`. Invited Publisher submission, approved App identity, deployed Subscriber billing, real extension activation, paid-through entitlement, and one real-receipt `$7/$2/$1` Allocation work on [serp-apps-pass-staging.serpcompany.workers.dev](https://serp-apps-pass-staging.serpcompany.workers.dev). Stripe test account `acct_1MwbFJI9EPtyKcIs` (**SERP Pass**) handles Subscriber billing only. The local Operator/Publisher journey proves immutable external Publisher Payment evidence; staging correctly awaits a payment actually completed elsewhere. Connect is dormant post-MVP evidence. Production has not been created or deployed.
 
+## Product surfaces
+
+- `/` — public Pass overview and starting point
+- `/apps` — real approved-App catalog
+- `/submit` — invited-Publisher process
+- `/docs` — beginner-oriented extension integration guide
+- `/account` — Subscriber sign-in, Subscription, and billing
+- `/publisher` — authenticated Submission, Earning, and Payment workspace
+- `/operator` — protected invitation, review, allocation, and payment controls
+
 ## MVP stack walkthrough
 
 Install dependencies and apply the local D1 migrations:

@@ -120,6 +120,14 @@ Current evidence starts with one signed local paid Invoice and exercises the vis
 
 ## 8. Staging release gate
 
+Before the release gate, the deployed pilot must be understandable without reading repository documentation:
+
+- `/` explains the Pass and provides obvious Subscriber and Publisher entry points;
+- `/apps` lists only real approved D1 Apps and truthful availability;
+- `/submit` explains the invited-Publisher inclusion process;
+- `/docs` explains the SDK, public IDs, manifest, rebuild, Submission, review, and activation boundaries;
+- signed-in role surfaces remain reachable from the shared site navigation.
+
 - all PRD acceptance criteria pass against deployed staging and staging D1;
 - one SERP-owned and one invited-Publisher App are independently integrated;
 - browser E2E, contract/integration checks, and manual journey evidence are separate;

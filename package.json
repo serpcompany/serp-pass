@@ -17,6 +17,7 @@
     "mvp:operator:set-app-status": "tsx apps/web/scripts/operator/set-app-status.ts",
     "mvp:contracts:test": "pnpm --filter @serp-apps-pass/contracts test",
     "mvp:publisher:test": "pnpm --filter @serp-apps-pass/web test:operator-bootstrap",
+    "mvp:surfaces:test": "pnpm --filter @serp-apps-pass/web test:public-surfaces",
     "mvp:billing:test": "pnpm --filter @serp-apps-pass/web test:billing-projection",
     "mvp:activation:test": "pnpm --filter @serp-apps-pass/web test:activation-browser",
     "mvp:activation:test-staging": "pnpm --filter @serp-apps-pass/web test:activation-staging-browser",

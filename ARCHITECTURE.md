@@ -204,6 +204,8 @@ If Connect is reconsidered later, its trust boundary remains valid: a redirect c
 
 The exact route filenames may follow Next.js conventions, but the externally meaningful surfaces are:
 
+- `/`, `/apps`, `/submit`, and `/docs` as public product, catalog, developer-process, and integration-guide surfaces;
+- `/account`, `/publisher/invitation`, `/publisher`, and `/operator` as role-aware human workspaces;
 - Better Auth handlers for human sessions;
 - `POST /api/billing/checkout`;
 - `POST /api/billing/portal`;

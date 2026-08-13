@@ -84,11 +84,16 @@ Invites Publishers, assigns public IDs, reviews and approves App submissions, su
 
 ### Public and Subscriber
 
-- `/` — product explanation, configured price, sign-in, Checkout entry, Subscription status, and billing-portal entry.
+- `/` — public Pass explanation, Subscriber journey, approved-App preview, and clear entry points.
+- `/apps` — public catalog of approved Apps and their availability.
+- `/account` — sign-in, Checkout entry, normalized Subscription status, and billing-portal entry.
 - `/activate/[requestId]` — authenticated App-link approval or denial.
 
 ### Invited Publisher
 
+- `/submit` — public explanation of the invitation, integration, Submission, review, and payment process.
+- `/docs` — public private-pilot integration guide with SDK and manifest examples.
+- `/publisher/invitation` — authenticated one-time invitation acceptance.
 - `/publisher` — App Submission, approved App status, Earnings, and recorded Publisher Payment status.
 
 The Publisher area is private and invitation-only. It is not a public marketplace or general developer portal.

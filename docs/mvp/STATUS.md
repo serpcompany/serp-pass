@@ -4,17 +4,29 @@ Updated: **2026-08-13**
 
 ## Current slice
 
-Slices 1–3 are complete. Slice 4, Subscriber billing, is the next implementation slice. Stripe remains a hard approval boundary: no Stripe account may be selected or touched until the user explicitly chooses an isolated test-mode setup.
+Slices 1–3 are complete. Slice 4, Subscriber billing, is in progress. Its account-independent signed-fixture projection, normalized paid-through state, Subscriber UI, and protected Operator audit pass against workerd/D1, and its non-ingestion surfaces are deployed safely. Stripe account `acct_1MwbFJI9EPtyKcIs` (currently **SERP Pass**) is the intended isolated sandbox, but it has not been accessed or configured. Account selection is not authorization to mutate it.
 
 ## Environment evidence
 
 | Environment | State | Evidence |
 | --- | --- | --- |
 | Local Next | built | Next.js `16.2.11` typecheck and optimized build pass. Runtime use requires an ignored local `BETTER_AUTH_SECRET`. |
-| Local workerd | passed | OpenNext `1.19.9` Worker reads migrated local D1; rendered Chromium passes human auth, role denials, Operator bootstrap, one-time Publisher invitation, replay rejection, and D1 rate limiting at `localhost:8788`. |
-| Cloudflare staging | deployed and passed | [`serp-apps-pass-staging.serpcompany.workers.dev`](https://serp-apps-pass-staging.serpcompany.workers.dev), Worker version `c734a619-422b-48a0-9f31-8bd51a6d9509`, isolated `apps-pass-staging` D1 in APAC, health `200 ready`, all Slice 1–3 browser journeys and the D1 rate-limit proof passed. |
+| Local workerd | passed | OpenNext `1.19.9` Worker reads migrated local D1; rendered Chromium passes human auth, role denials, Operator bootstrap, one-time Publisher invitation, billing projection, replay/integrity rejection, and D1 rate limiting at `localhost:8788`. A fresh empty local state also applies all 13 migrations successfully. |
+| Cloudflare staging | deployed and passed | [`serp-apps-pass-staging.serpcompany.workers.dev`](https://serp-apps-pass-staging.serpcompany.workers.dev), Worker version `b42da35e-3f9b-44d1-86c5-65dc6604cdf2`, isolated `apps-pass-staging` D1 in APAC, health `200 ready`, all Slice 1–3 journeys pass and the partial Slice 4 schema/read surfaces are deployed without a Stripe or fixture-ingestion secret. |
 | Production | not created or deployed | Production D1 still has a non-routable placeholder UUID; no production secret or Worker deployment exists. |
-| Stripe | unconfigured | No Stripe account was selected; no credentials, Product, Price, webhook, Checkout, Connect account, or payment exists. |
+| Stripe | selected but untouched | Intended isolated account: `acct_1MwbFJI9EPtyKcIs`, currently **SERP Pass**. It has not been accessed. No credentials, Product, Price, webhook, Checkout, Connect account, or payment exists. Every Stripe action remains approval-gated. |
+
+## Partial Slice 4 evidence
+
+- Reviewed local migrations define mode-scoped Billing Customers, one current normalized Pass Subscription per Customer, Invoices, processed Billing Events, and one immutable Cash Receipt per paid Invoice.
+- A local-only HMAC adapter verifies the exact raw body and cannot run on staging or production; it is deliberately not named or presented as the Stripe webhook.
+- Exact duplicate Event IDs are replay-safe, while reuse of an Event ID with a changed raw payload is rejected as an integrity conflict. Provider Invoice IDs already bound to another Subscription are also rejected atomically.
+- Failed renewal and cancellation never extend paid-through access. Cancellation does not erase access already paid through a future date.
+- `/account` shows the normalized state; Checkout redirects do not participate in the decision.
+- A scoped Operator audit reports Customer, Subscription, Event, Invoice, and Cash Receipt counts and flags paid-Invoice/receipt inconsistencies. Subscriber access is rejected with `403`.
+- Browser/workerd command: `pnpm mvp:billing:test`.
+- Staging has all three billing migrations with zero Billing Events, normalized Subscriptions, or Cash Receipts. The local fixture route returns `404` on staging by construction; unauthenticated Subscription reads return `401`.
+- Detailed boundary: [BILLING_PROJECTION.md](./BILLING_PROJECTION.md).
 
 ## What Slice 1 proves
 

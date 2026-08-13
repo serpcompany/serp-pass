@@ -4,15 +4,16 @@ export const dynamic = "force-dynamic";
 
 const completed = [
   "Versioned extension submission contract",
-  "Shared linking and entitlement SDK proof",
   "Next.js / OpenNext Worker composition",
   "Environment-specific D1 and Drizzle path",
   "D1-backed private-pilot human sign-in",
+  "Subscriber, Publisher, and Operator role enforcement",
+  "Invited Publisher submission and real extension identity",
+  "Local signed billing projection and paid-through state",
 ];
 
 const upcoming = [
-  "Subscriber, Publisher, and Operator role enforcement",
-  "Stripe Checkout and webhook projection",
+  "Isolated Stripe sandbox Checkout and real webhook adapter",
   "Authenticated extension activation",
   "Publisher Connect onboarding and settlement",
 ];
@@ -47,8 +48,8 @@ export default function Home() {
       </section>
 
       <aside>
-        The account page now exercises Better Auth against D1. It still does not prove role enforcement, billing,
-        entitlement, or settlement—and it does not connect to Stripe.
+        The account page now reads normalized paid-through authority from D1. Local signed fixtures prove projection
+        behavior, but no Stripe account is connected and no Checkout, real webhook, entitlement, or settlement has occurred.
       </aside>
     </main>
   );

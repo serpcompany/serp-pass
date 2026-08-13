@@ -48,6 +48,18 @@ _Avoid_: Automatic verification, proof of copyright
 The normalized Apps Pass record describing a Subscriber's paid-through access state.
 _Avoid_: Stripe subscription, payment
 
+**Billing Customer**:
+The environment-scoped mapping between one Subscriber and one payment-provider customer identity.
+_Avoid_: Subscriber, Stripe user
+
+**Billing Event**:
+A signature-verified, replay-safe provider notification recorded before its normalized transition is trusted.
+_Avoid_: Webhook, Subscription
+
+**Invoice**:
+The provider invoice projection associated with a normalized Subscription; a paid Invoice may create one Cash Receipt.
+_Avoid_: Cash Receipt, payment
+
 **App Link**:
 The Subscriber-approved association between one App installation and the Subscriber.
 _Avoid_: Login, authorization

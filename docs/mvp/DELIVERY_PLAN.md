@@ -63,6 +63,8 @@ Evidence: [STATUS.md](./STATUS.md). The public manifest contract is isolated in 
 
 ## 4. Subscriber billing slice
 
+Status: **account-independent projection foundation passes locally and is safely deployed; the selected Stripe sandbox remains untouched pending explicit approval**
+
 - one configured Stripe test Price;
 - authenticated hosted Checkout and Customer Portal;
 - raw-body webhook verification;

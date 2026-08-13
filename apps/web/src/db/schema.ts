@@ -263,3 +263,103 @@ export const rateLimit = sqliteTable(
   },
   (table) => [uniqueIndex("rate_limit_key_unique").on(table.key)],
 );
+
+export const billingCustomers = sqliteTable(
+  "billing_customer",
+  {
+    id: text("id").primaryKey(),
+    subscriberUserId: text("subscriber_user_id").notNull().references(() => user.id, { onDelete: "restrict" }),
+    provider: text("provider", { enum: ["stripe"] }).notNull(),
+    mode: text("mode", { enum: ["test", "live"] }).notNull(),
+    providerCustomerId: text("provider_customer_id").notNull(),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+  },
+  (table) => [
+    uniqueIndex("billing_customer_provider_identity_unique").on(table.provider, table.mode, table.providerCustomerId),
+    uniqueIndex("billing_customer_subscriber_mode_unique").on(table.provider, table.mode, table.subscriberUserId),
+  ],
+);
+
+export const normalizedSubscriptions = sqliteTable(
+  "normalized_subscription",
+  {
+    id: text("id").primaryKey(),
+    billingCustomerId: text("billing_customer_id").notNull().references(() => billingCustomers.id, { onDelete: "restrict" }),
+    provider: text("provider", { enum: ["stripe"] }).notNull(),
+    mode: text("mode", { enum: ["test", "live"] }).notNull(),
+    providerSubscriptionId: text("provider_subscription_id").notNull(),
+    status: text("status", { enum: ["incomplete", "incomplete_expired", "trialing", "active", "past_due", "canceled", "unpaid", "paused"] }).notNull(),
+    cancelAtPeriodEnd: integer("cancel_at_period_end", { mode: "boolean" }).notNull().default(false),
+    currentPeriodEnd: integer("current_period_end", { mode: "timestamp" }),
+    entitledUntil: integer("entitled_until", { mode: "timestamp" }),
+    latestStatusEventKey: text("latest_status_event_key").notNull(),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+  },
+  (table) => [
+    uniqueIndex("normalized_subscription_provider_identity_unique").on(table.provider, table.mode, table.providerSubscriptionId),
+    uniqueIndex("normalized_subscription_customer_unique").on(table.billingCustomerId),
+    index("normalized_subscription_customer_idx").on(table.billingCustomerId),
+  ],
+);
+
+export const billingInvoices = sqliteTable(
+  "billing_invoice",
+  {
+    id: text("id").primaryKey(),
+    normalizedSubscriptionId: text("normalized_subscription_id").notNull().references(() => normalizedSubscriptions.id, { onDelete: "restrict" }),
+    provider: text("provider", { enum: ["stripe"] }).notNull(),
+    mode: text("mode", { enum: ["test", "live"] }).notNull(),
+    providerInvoiceId: text("provider_invoice_id").notNull(),
+    status: text("status", { enum: ["paid", "payment_failed"] }).notNull(),
+    amountPaid: integer("amount_paid").notNull().default(0),
+    currency: text("currency"),
+    periodStart: integer("period_start", { mode: "timestamp" }),
+    periodEnd: integer("period_end", { mode: "timestamp" }),
+    latestEventKey: text("latest_event_key").notNull(),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+  },
+  (table) => [
+    uniqueIndex("billing_invoice_provider_identity_unique").on(table.provider, table.mode, table.providerInvoiceId),
+    index("billing_invoice_subscription_idx").on(table.normalizedSubscriptionId),
+  ],
+);
+
+export const billingEvents = sqliteTable(
+  "billing_event",
+  {
+    id: text("id").primaryKey(),
+    provider: text("provider", { enum: ["stripe"] }).notNull(),
+    mode: text("mode", { enum: ["test", "live"] }).notNull(),
+    providerEventId: text("provider_event_id").notNull(),
+    eventType: text("event_type").notNull(),
+    providerCreatedAt: integer("provider_created_at", { mode: "timestamp" }).notNull(),
+    receivedAt: integer("received_at", { mode: "timestamp" }).notNull(),
+    payloadSha256: text("payload_sha256").notNull(),
+    outcome: text("outcome", { enum: ["applied", "noop"] }).notNull(),
+    detail: text("detail").notNull(),
+    billingCustomerId: text("billing_customer_id").references(() => billingCustomers.id, { onDelete: "restrict" }),
+    normalizedSubscriptionId: text("normalized_subscription_id").references(() => normalizedSubscriptions.id, { onDelete: "restrict" }),
+    billingInvoiceId: text("billing_invoice_id").references(() => billingInvoices.id, { onDelete: "restrict" }),
+  },
+  (table) => [
+    uniqueIndex("billing_event_provider_identity_unique").on(table.provider, table.mode, table.providerEventId),
+    index("billing_event_customer_idx").on(table.billingCustomerId),
+    index("billing_event_subscription_idx").on(table.normalizedSubscriptionId),
+  ],
+);
+
+export const cashReceipts = sqliteTable(
+  "cash_receipt",
+  {
+    id: text("id").primaryKey(),
+    billingInvoiceId: text("billing_invoice_id").notNull().references(() => billingInvoices.id, { onDelete: "restrict" }),
+    sourceBillingEventId: text("source_billing_event_id").notNull().references(() => billingEvents.id, { onDelete: "restrict" }),
+    amount: integer("amount").notNull(),
+    currency: text("currency").notNull(),
+    receivedAt: integer("received_at", { mode: "timestamp" }).notNull(),
+  },
+  (table) => [uniqueIndex("cash_receipt_invoice_unique").on(table.billingInvoiceId), uniqueIndex("cash_receipt_source_event_unique").on(table.sourceBillingEventId)],
+);

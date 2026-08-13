@@ -10,6 +10,7 @@
     "test:auth-browser": "tsx tests/auth-browser.ts",
     "test:publisher-boundary": "tsx tests/publisher-boundary-browser.ts",
     "test:operator-bootstrap": "tsx tests/operator-bootstrap-browser.ts",
+    "test:billing-projection": "tsx tests/billing-projection-browser.ts",
     "test:auth-rate-limit": "tsx tests/auth-rate-limit.ts",
     "typecheck": "tsc --noEmit",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",

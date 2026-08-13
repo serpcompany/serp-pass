@@ -57,6 +57,14 @@ The staging inclusion command performs the one-time real Publisher journey when 
 
 The exact Publisher handoff, including what the IDs and JSON file mean, is in [docs/mvp/PUBLISHER_INTEGRATION.md](./docs/mvp/PUBLISHER_INTEGRATION.md).
 
+The account-independent Subscriber billing projection can be exercised locally without any Stripe account:
+
+```sh
+pnpm mvp:billing:test
+```
+
+This uses a local-only signed fixture boundary, not Stripe. Its exact authority rules and remaining sandbox work are documented in [docs/mvp/BILLING_PROJECTION.md](./docs/mvp/BILLING_PROJECTION.md).
+
 Run the automated rendered-browser journey against a running local preview or the deployed staging Worker:
 
 ```sh
@@ -164,6 +172,8 @@ The browser profile is preserved when stopped. D1 records, browser state, genera
 - [docs/mvp/MONEY_MODEL.md](./docs/mvp/MONEY_MODEL.md) — earnings-ledger and settlement invariants.
 - [docs/mvp/SECURITY.md](./docs/mvp/SECURITY.md) — threat model and required evidence.
 - [docs/mvp/PUBLISHER_INTEGRATION.md](./docs/mvp/PUBLISHER_INTEGRATION.md) — the concrete extension integration and Submission handoff.
+- [docs/mvp/BILLING_PROJECTION.md](./docs/mvp/BILLING_PROJECTION.md) — replay-safe paid-through projection and the explicit Stripe-adapter boundary.
+- [docs/research/SETAPP_PRODUCT_REFERENCE.md](./docs/research/SETAPP_PRODUCT_REFERENCE.md) — non-binding reference for bundle positioning, website structure, branding patterns, and later pricing experiments.
 - [CONTEXT.md](./CONTEXT.md) — canonical domain language.
 - [docs/prototype/](./docs/prototype/) — preserved local proof contract, architecture, freeze, plan, and evaluation.
 - [docs/product/HISTORICAL_LAUNCHABLE_MVP_PRD.md](./docs/product/HISTORICAL_LAUNCHABLE_MVP_PRD.md) — preserved, non-binding launchable-product intent.

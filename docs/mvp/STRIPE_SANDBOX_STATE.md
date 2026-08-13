@@ -1,6 +1,6 @@
 # Stripe sandbox state
 
-Updated: **2026-08-13**
+Updated: **2026-08-14**
 
 This is the durable inventory and evidence record for the explicitly approved test-mode integration. It is not a live-mode or production authorization.
 
@@ -46,9 +46,18 @@ The first real purchase exposed that Dahlia Invoice top-level `period_end` is th
 
 The real Customer Portal represented scheduled cancellation with `cancel_at` while leaving `cancel_at_period_end` false and status active. The adapter now recognizes both provider representations and the UI says **Cancellation scheduled** rather than claiming cancellation is already complete.
 
+## Approved staging settlement proof
+
+- Synthetic Publisher: `pub_invited_pilot_real`; country fixed as `US`. This is test data, not a real person or business.
+- Source Cash Receipt: `receipt:test:in_1U3znNI9EPtyKcIs6md4w0SV`, created from a successful real Stripe test Checkout and not previously allocated.
+- Allocation Run: `alloc_staging_real_10usd_20260814`.
+- Immutable split: `$7.00` Publisher Earning (`earning_staging_pub_real_700_20260814`), `$2.00` platform, and `$1.00` reserve.
+- The first posting returned `posted`; replaying the exact request returned `duplicate` and created no second allocation.
+- Stripe Connect onboarding is enabled only in staging. The first Account-creation attempt was rejected by Stripe because this platform Account has not completed the one-time Connect platform signup. D1 preserves an idempotent `creating` onboarding row without a connected Account ID, so the same Publisher can safely continue after that platform setup.
+- Stripe test Transfer execution remains disabled. No Transfer or Payout exists.
+
 ## Still gated
 
-- No connected Account exists.
-- Connect onboarding is disabled until the synthetic test Publisher country is explicitly approved.
-- Test Transfers are disabled until one exact real-receipt Allocation and Earning amount is explicitly approved.
+- No connected Account exists. Account creation is blocked on the one-time Connect platform signup in the Stripe Dashboard.
+- Test Transfers remain disabled until signed `account.updated` evidence proves the synthetic Publisher Account is settlement-ready.
 - No live-mode object, real card, real bank account, production secret, production D1, or production Worker exists.

@@ -34,7 +34,8 @@
       "vars": {
         "APP_ENV": "staging",
         "STRIPE_EXPECTED_ACCOUNT_ID": "acct_1MwbFJI9EPtyKcIs",
-        "STRIPE_PASS_PRICE_ID": "price_1U3zRcI9EPtyKcIsot42EEhL"
+        "STRIPE_PASS_PRICE_ID": "price_1U3zRcI9EPtyKcIsot42EEhL",
+        "STRIPE_CONNECT_ONBOARDING_ENABLED": "1"
       },
       "d1_databases": [
         {

@@ -1,19 +1,19 @@
 # Repository guidance
 
-Read [README.md](./README.md), [ARCHITECTURE.md](./ARCHITECTURE.md), and [CONTEXT.md](./CONTEXT.md) before changing this repository.
+Read [PRD.md](./PRD.md), [ARCHITECTURE.md](./ARCHITECTURE.md), [CONTEXT.md](./CONTEXT.md), and [docs/mvp/DELIVERY_PLAN.md](./docs/mvp/DELIVERY_PLAN.md) before planning or changing this branch.
 
-This repository contains a **disposable local integration proof**, not a production Apps Pass implementation. The proof has already passed; [PRD.md](./PRD.md), [docs/prototype/PLAN.md](./docs/prototype/PLAN.md), [docs/prototype/FREEZE.md](./docs/prototype/FREEZE.md), and [docs/prototype/EVALUATION.md](./docs/prototype/EVALUATION.md) preserve the question, method, evidence boundary, and result.
+The current branch builds a trustworthy private-pilot MVP. The completed local proof is historical evidence under `docs/prototype/`; do not relabel its fake Subscriber, deterministic Subscription, unauthenticated Operator routes, example popup shell, browser harness, or proof tests as production mechanisms.
 
-- Keep prototype-only mechanisms visibly labeled. Do not present local Operator routes, the deterministic Subscriber or Subscription, the example-extension shell, or the proof tests as production-ready code.
-- Treat `apppass.json`, `pnpm operator:import-app <path>`, and `@serp-apps-pass/sdk` as the three demonstrated interfaces.
-- Keep migrations schema-only and never embed platform or Publisher secrets in extensions.
-- Treat runtime IDs as public allowlist identities, not credentials.
-- Do not add Stripe, authentication, Publisher self-service, payouts, or deployment merely to make the proof look more complete. Those require a new product decision.
-- Report local validation, Cloudflare preview, and production separately.
+- Follow the delivery slices in order. A created table, endpoint, or mocked test does not complete a slice.
+- Keep human sessions and App sessions separate.
+- Treat Checkout redirects as UX only; verified Stripe events project billing authority into D1.
+- Keep Cash Receipt, Publisher Earning, Transfer, and Payout distinct.
+- Never automate an allocation formula or live Transfer policy that the PRD leaves for explicit approval.
+- Keep local, staging, and production D1/Stripe state physically separate.
+- Never embed or log platform secrets, App-session tokens, proof keys, account-link URLs, raw webhooks, or sensitive payment/identity data.
+- Use reviewed SQL migrations and report local Next, local workerd preview, deployed staging, and production independently.
+- Do not deploy production or use live Stripe money without the explicit live gate in the PRD.
 
-## Project-owned browser
+## Prototype browser
 
-- Run `pnpm dev:browser:status` before browser automation.
-- Reuse the project-owned browser recorded under `.extension-dev-browser/`; do not launch a competing persistent browser.
-- Extension outputs are discovered generically under `examples/*/dist`.
-- Stop only the recorded owner PID with `pnpm dev:browser:stop`.
+The existing project-owned Chromium lifecycle is proof tooling only. Run `pnpm dev:browser:status` before using it, reuse the recorded owner, and stop only through `pnpm dev:browser:stop`. A real MVP extension integration must live in its own extension source rather than the shared prototype shell.

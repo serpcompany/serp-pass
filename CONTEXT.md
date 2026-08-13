@@ -1,27 +1,73 @@
-# SERP Apps Pass context
+# SERP Apps Pass
 
-## Proven question
+SERP Apps Pass is a subscription entitlement and Publisher-settlement system for approved independently distributed Apps.
 
-Yes: locally, a compatible Chromium extension can be submitted, validated, registered, linked, and entitled without modifying authority code, database migrations, or seed data.
+## Language
 
-This repository is a completed, single-context, disposable integration proof. The root `PRD.md` records its scope, `docs/prototype/PLAN.md` records the completed acceptance sequence, and `ARCHITECTURE.md` explains which parts are demonstrated interfaces versus prototype substitutions. Earlier launchable-product ideas under `docs/product/` are historical and non-binding.
+**Operator**:
+The trusted SERP role that controls invitations, identifiers, App approval, authority changes, allocations, and settlement release.
+_Avoid_: Admin, owner
 
-## Actors
+**Publisher**:
+A person or organization authorized to submit and earn from one or more Apps.
+_Avoid_: Partner, developer, vendor
 
-- **Operator** — assigns public `publisher_id` and `app_id` values, reviews a submitted manifest, and runs the trusted import command. The import constitutes approval for this prototype.
-- **Publisher** — owns an App and may place only its assigned public identifiers in its manifest. It cannot claim, replace, or redefine an existing Publisher or App.
-- **Subscriber** — links an App installation and receives access from the local test Subscription.
+**Subscriber**:
+A human customer whose paid-through Subscription may grant access to approved Apps.
+_Avoid_: Customer, user, member
 
-## Domain boundary
+**Pass**:
+The bundle of approved Apps governed by one Subscription.
+_Avoid_: Marketplace, plan, package
 
-- `apppass.json` is the versioned submission contract.
-- `pnpm operator:import-app <path-to-apppass.json>` is the sole participating registration boundary.
-- D1 is the system of record and is accessed through Drizzle.
-- Migrations define schema only; imported manifests create participating Publisher, App, and Distribution records.
-- Runtime IDs are public allowlist identities, not credentials.
-- The shared SDK handles linking and entitlement checks without a platform or Publisher secret.
-- Conflicting defining data or runtime identity ownership rejects the complete import with no partial writes.
+**App**:
+One approved product participating in the Pass; initially a Chromium extension.
+_Avoid_: Plugin, integration
 
-## Evidence boundary
+**Distribution**:
+An approved public browser/channel/runtime identity through which an App is installed.
+_Avoid_: Extension ID, store listing
 
-The initial SERP and invited-Publisher fixtures established the import path. A third extension created after the authority and migrations were frozen passed through the same path; the result is recorded in `docs/prototype/EVALUATION.md`.
+**Submission**:
+A versioned Publisher proposal to register one App and its Distributions, pending Operator review.
+_Avoid_: App, manifest
+
+**Subscription**:
+The normalized Apps Pass record describing a Subscriber's paid-through access state.
+_Avoid_: Stripe subscription, payment
+
+**App Link**:
+The Subscriber-approved association between one App installation and the Subscriber.
+_Avoid_: Login, authorization
+
+**App Session**:
+A revocable credential scoped to one App Link and stored as a hash by Apps Pass.
+_Avoid_: User session, API key
+
+**Entitlement**:
+The current authority decision for one App Session: active, inactive, unauthenticated, revoked, or temporarily unavailable.
+_Avoid_: Subscription, license
+
+**Cash Receipt**:
+The Apps Pass record that a Stripe Invoice was successfully paid and may later fund an Allocation Run.
+_Avoid_: Revenue, Earning, payout
+
+**Allocation Run**:
+An immutable balanced posting that divides eligible Cash Receipts among reserve, SERP, and one or more Publisher Earnings.
+_Avoid_: Revenue algorithm, payout
+
+**Publisher Earning**:
+An amount attributed to a Publisher by a posted Allocation Run, potentially held before settlement.
+_Avoid_: Transfer, payout, balance
+
+**Transfer**:
+A Stripe movement from the SERP platform balance to a Publisher connected account.
+_Avoid_: Earning, payout
+
+**Payout**:
+A Stripe-observed movement from a Publisher connected account to its external bank account.
+_Avoid_: Transfer, settlement
+
+**Settlement**:
+The controlled process of releasing eligible Publisher Earnings into Transfers and reconciling their outcomes.
+_Avoid_: Allocation, payout

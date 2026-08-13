@@ -1,14 +1,14 @@
-# SERP Apps Pass
+# SERP Apps Pass private-pilot MVP
 
-This repository answered one narrow question: can a compatible Chromium extension be submitted, validated, registered, linked, and entitled without changing authority code, migrations, or seed data?
+This branch converts the completed extension-inclusion proof into a minimal, trustworthy private-pilot product: invited Publisher submission, real Subscriber purchase, authenticated App activation, entitlement, auditable Publisher Earning, and Operator-controlled Stripe Connect settlement.
 
-The local extension-inclusion proof passed. A third extension created after the authority freeze entered through the same manifest importer, loaded through the same generic browser harness, linked through the shared SDK, and received an active entitlement from the existing local Subscription. Cloudflare preview and production were not attempted.
+The target and acceptance boundary are in [PRD.md](./PRD.md). The architecture is in [ARCHITECTURE.md](./ARCHITECTURE.md), delivery order in [docs/mvp/DELIVERY_PLAN.md](./docs/mvp/DELIVERY_PLAN.md), money invariants in [docs/mvp/MONEY_MODEL.md](./docs/mvp/MONEY_MODEL.md), and threats in [docs/mvp/SECURITY.md](./docs/mvp/SECURITY.md).
 
-This is executable local software, not a visual mockup, but it is also not a launchable subscription product. [ARCHITECTURE.md](./ARCHITECTURE.md) shows the working flow and labels every demonstrated interface, prototype substitution, and missing production capability.
+The completed proof remains executable local software, not a visual mockup, but it is not the launchable subscription product. Its PRD, architecture, freeze, evaluation, and plan are preserved under [docs/prototype/](./docs/prototype/).
 
-The proof contract is preserved in [PRD.md](./PRD.md). The completed acceptance sequence is in [docs/prototype/PLAN.md](./docs/prototype/PLAN.md), the immutable evidence boundary is in [docs/prototype/FREEZE.md](./docs/prototype/FREEZE.md), and the results are in [docs/prototype/EVALUATION.md](./docs/prototype/EVALUATION.md). Earlier launchable-product ideas under [docs/product/](./docs/product/) remain non-binding historical intent.
+Current implementation has not started. The existing root runtime, example extensions, and proof tests remain reference/proof artifacts until deliberately ported or replaced by the delivery plan. Cloudflare staging and production have not been deployed, and no Stripe credentials or live money have been used.
 
-## Proof interface
+## Preserved proof walkthrough
 
 Every participating extension enters through:
 
@@ -95,14 +95,15 @@ pnpm db:reset
 
 The browser profile is preserved when stopped. D1 records, browser state, generated extension output, and other local runtime artifacts are ignored and disposable.
 
-## Documents
+## Current documents
 
-- [PRD.md](./PRD.md) — binding extension-inclusion proof contract.
-- [ARCHITECTURE.md](./ARCHITECTURE.md) — system diagrams, module map, and prototype-versus-production boundaries.
-- [docs/prototype/PLAN.md](./docs/prototype/PLAN.md) — binding execution order and acceptance sequence.
-- [docs/prototype/FREEZE.md](./docs/prototype/FREEZE.md) — frozen authority revision, migration checksum, and immutable scope.
-- [docs/prototype/EVALUATION.md](./docs/prototype/EVALUATION.md) — observed proof results and architectural conclusion.
-- [CONTEXT.md](./CONTEXT.md) — actors, terminology, and domain boundary.
+- [PRD.md](./PRD.md) — binding private-pilot outcome and acceptance criteria.
+- [ARCHITECTURE.md](./ARCHITECTURE.md) — target system, modules, trust domains, and environment path.
+- [docs/mvp/DELIVERY_PLAN.md](./docs/mvp/DELIVERY_PLAN.md) — binding vertical-slice order and promotion gates.
+- [docs/mvp/MONEY_MODEL.md](./docs/mvp/MONEY_MODEL.md) — earnings-ledger and settlement invariants.
+- [docs/mvp/SECURITY.md](./docs/mvp/SECURITY.md) — threat model and required evidence.
+- [CONTEXT.md](./CONTEXT.md) — canonical domain language.
+- [docs/prototype/](./docs/prototype/) — preserved local proof contract, architecture, freeze, plan, and evaluation.
 - [docs/product/HISTORICAL_LAUNCHABLE_MVP_PRD.md](./docs/product/HISTORICAL_LAUNCHABLE_MVP_PRD.md) — preserved, non-binding launchable-product intent.
 - [AGENTS.md](./AGENTS.md) — instructions for contributors and coding agents.
 - [examples/README.md](./examples/README.md) — what the example extension submissions represent.

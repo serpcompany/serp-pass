@@ -1,6 +1,6 @@
 # SERP Apps Pass MVP PRD
 
-> **Historical, non-binding product intent.** This document preserves the earlier launchable-product direction for later reconsideration. It does not control the current extension-inclusion proof. The binding product contract is [the root PRD](../../PRD.md), and its immediate delivery sequence is [the prototype plan](../prototype/PLAN.md).
+> **Historical, non-binding product intent.** This document preserves an earlier launchable-product direction for comparison. It controls neither the completed extension-inclusion proof nor the current private-pilot MVP. The current binding product contract is [the root PRD](../../PRD.md).
 
 Historical status: **Formerly binding; now non-binding**
 Date: **2026-08-13**

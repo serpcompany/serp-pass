@@ -1,118 +1,199 @@
-# Architecture of the extension-inclusion proof
+# SERP Apps Pass private-pilot architecture
 
-Status: **working local prototype; not production architecture**
+Status: **target MVP architecture; implementation in progress**
 
-This repository proves one architectural claim: an extension that the authority did not know about when it was built can register through a versioned manifest, link through a shared SDK, and receive an entitlement from the same Subscription as other extensions.
+This architecture deliberately keeps one deployable application while separating four trust domains: human identity, App inclusion, Subscriber entitlement, and Publisher money. The interfaces between them are explicit because confusing their states is a financial or access-control bug.
 
-It does **not** prove checkout, human authentication, Publisher onboarding, payouts, deployment, operational security, or production scale.
-
-## System at a glance
+## System map
 
 ```mermaid
 flowchart LR
-    Publisher["Publisher-owned extension"]
-    Manifest["apppass.json submission"]
-    Operator["SERP Operator CLI"]
-    SDK["Shared App Pass SDK"]
-    Authority["Local Cloudflare Worker authority"]
-    D1[("Local D1 database")]
-    Subscriber["Local test Subscriber"]
+    Subscriber["Subscriber browser"]
+    Publisher["Invited Publisher browser"]
+    Extension["Publisher-owned Chromium extension"]
+    Operator["Protected Operator CLI"]
+    App["Next.js / OpenNext Worker"]
+    D1[("Environment-specific D1")]
+    Billing["Stripe Billing"]
+    Connect["Stripe Connect Express"]
+    Logs["Cloudflare Workers Logs"]
 
-    Publisher -->|"bundles"| SDK
-    Publisher -->|"submits"| Manifest
-    Manifest -->|"trusted import"| Operator
-    Operator -->|"validate and register"| Authority
-    Subscriber -->|"approves link through prototype command"| Operator
-    SDK -->|"create and exchange link request"| Authority
-    SDK -->|"check App-scoped access"| Authority
-    Authority --> D1
+    Subscriber -->|"human session, Checkout, activation"| App
+    Publisher -->|"human session, manifest, onboarding"| App
+    Extension -->|"App session, entitlement"| App
+    Operator -->|"review, allocation, release"| App
+    App --> D1
+    App -->|"Checkout and Portal"| Billing
+    Billing -->|"signed webhooks"| App
+    App -->|"hosted onboarding and Transfers"| Connect
+    Connect -->|"account, transfer, payout events"| App
+    App --> Logs
 ```
 
-The browser extension never receives a platform secret. It knows only public App and runtime identifiers plus an opaque App-session token issued after linking.
+There is one Worker deployment, not a collection of microservices. Internal modules remain separate because they own different invariants; they do not require separate network services.
 
-## The working end-to-end path
+## Repository target
+
+```text
+apps/
+  web/                         Next.js App Router and OpenNext Worker
+    app/                       pages and route handlers
+    src/
+      auth/                    human identity and roles
+      apps/                    submissions, approval, distributions
+      billing/                 Stripe event projection
+      entitlements/            linking, App sessions, decisions
+      earnings/                receipts, allocations, ledger, transfers
+      operator/                protected use cases
+      db/                      D1 client and schema composition
+
+packages/
+  app-pass-sdk/                extension-facing SDK
+  app-pass-contracts/          only public versioned contracts shared by web and SDK
+
+docs/
+  mvp/                         binding delivery, money, security, operations
+  prototype/                   completed local-proof evidence
+  research/                    primary-source platform research
+```
+
+`app-pass-contracts` should exist only for genuinely public shared types such as the manifest and entitlement response. Internal database or Stripe types must not leak into it.
+
+## Domain state flow
 
 ```mermaid
-sequenceDiagram
-    participant P as Publisher
-    participant O as SERP Operator
-    participant A as Apps Pass authority
-    participant D as D1
-    participant E as Installed extension
-
-    P->>O: apppass.json plus SDK-enabled extension
-    O->>A: Import submitted manifest
-    A->>A: Validate the complete document
-    A->>D: Register Publisher, App, and Distribution atomically
-    E->>A: Begin link with proof challenge
-    A->>D: Store expiring link request
-    O->>A: Approve for local test Subscriber
-    E->>A: Exchange one-time proof
-    A->>D: Store hash of App-session token
-    A-->>E: Return opaque App-session token
-    E->>A: Check entitlement
-    A->>D: Read App, session, and Subscription state
-    A-->>E: active, inactive, revoked, or unavailable
+flowchart TD
+    Event["Verified Stripe Event"] --> Projection["Billing projection"]
+    Projection --> Receipt["Paid Cash Receipt"]
+    Projection --> Subscription["Normalized Subscription with entitled_until"]
+    Subscription --> Decision["Entitlement decision"]
+    Receipt --> Allocation["Posted Allocation Run"]
+    Allocation --> Earning["Publisher Earning"]
+    Earning -->|"hold passed + Operator release"| Transfer["Stripe Transfer"]
+    Transfer --> Payout["Observed connected-account Payout"]
 ```
 
-## Repository map
+The following are intentionally not synonyms:
 
-| Path | Role | Status |
-| --- | --- | --- |
-| `schemas/` | Versioned `apppass.json` contract | Demonstrated interface; candidate for reuse |
-| `src/manifest.ts`, `src/import-app.ts` | Validation and atomic registration | Working proof implementation |
-| `packages/app-pass-sdk/` | Extension linking and entitlement interface | Working prototype package; not published or hardened |
-| `src/app-pass.ts` | Link, session, revocation, and entitlement behavior | Working proof implementation |
-| `src/db/`, `migrations/` | D1/Drizzle persistence model | Working local model; not a production migration history |
-| `src/worker.ts` | Composition root, local Operator routes, and explanatory page | Prototype-only Worker; unsafe to deploy unchanged |
-| `scripts/operator/` | Trusted local actions replacing real account/admin experiences | Prototype-only adapters |
-| `examples/` | Three unpacked Chromium submissions | Disposable examples and proof evidence |
-| `prototype/extension-shell/` | Shared popup used to manufacture the example extensions | Demonstration shell, not the integration developers copy wholesale |
-| `scripts/proof/`, `tests/*.proof.test.ts` | Executable evidence for the product hypothesis | Proof harness, not a production QA suite |
-| `docs/prototype/` | Plan, freeze record, and evaluation | Historical proof evidence |
-| `docs/product/` | Earlier launchable-product thinking | Historical and non-binding |
+- A successful Checkout redirect is not a paid Invoice.
+- A paid Invoice is not directly an entitlement decision; it extends normalized paid-through state.
+- A Cash Receipt is not a Publisher Earning until an Allocation Run is posted.
+- A Publisher Earning is not a Stripe Transfer until deliberately released.
+- A Stripe Transfer to a connected account is not a bank Payout.
 
-## Demonstrated interfaces
+## Deep module interfaces
 
-The proof deliberately concentrates behavior behind three small interfaces:
+### App inclusion
 
-1. **Submission interface:** a Publisher supplies one versioned `apppass.json` document.
-2. **Operator import interface:** SERP runs `pnpm operator:import-app <path>`; validation, conflict detection, and D1 writes stay behind that command.
-3. **Extension interface:** the extension calls `beginLink()`, `finishLink()`, and `check()` from `@serp-apps-pass/sdk`.
+Interface:
 
-These are the valuable architectural seams. The surrounding local commands and example UI exist to exercise them, not to prescribe the launchable product.
+- submit a complete versioned manifest;
+- approve or reject a Submission;
+- read the approved App and Distribution identity.
 
-## Prototype substitutions
+The module hides whole-document validation, ID assignment rules, ownership evidence, conflict detection, atomic writes, and audit events.
 
-| Product concern | What the prototype uses | What production still needs to decide |
-| --- | --- | --- |
-| Subscriber identity | Hard-coded local test Subscriber | Better Auth or another authenticated account system |
-| Paid access | Deterministic local active Subscription | Stripe or another provider feeding normalized Subscription state |
-| Link approval | Trusted Operator CLI command | Subscriber-facing authenticated approval page |
-| Publisher approval | Trusted manifest-import command | Ownership verification, review policy, and possibly a Publisher portal |
-| App distribution | Unpacked Chromium extensions | Chrome Web Store identities, release and update workflow |
-| Operator security | Unauthenticated localhost routes | Protected administrative interface and authorization policy |
-| Runtime | Local Wrangler Worker and local D1 | Cloudflare environments, secrets, migrations, monitoring, and recovery |
-| Verification | Focused proof tests and one browser harness | Production threat model, broader tests, deployment checks, and operational validation |
+### Billing projection
 
-No billing or authentication adapter is modeled yet. Introducing provider interfaces now would be speculative because the production providers and requirements have not been selected.
+Interface:
 
-## What the proof tests mean
+- ingest one raw, signature-verified Stripe Event;
+- return whether it was newly applied, previously applied, or deliberately ignored;
+- read normalized Subscription state.
 
-The proof tests answer narrow architectural questions:
+The module hides out-of-order reconciliation, Stripe object mapping, idempotency, and paid-through transitions. Entitlement callers never receive Stripe objects.
 
-- Can an unknown manifest be imported without seeded identities?
-- Are malformed or conflicting submissions rejected atomically?
-- Can separate Apps link through the same SDK and Subscription?
-- Are sessions scoped and revocable per App?
-- Can a newly discovered extension build, load in Chromium, link, and receive `active`?
+### Entitlement authority
 
-They do not claim production coverage, browser-store compatibility, billing correctness, authentication security, uptime, scalability, or operational readiness. See [tests/README.md](./tests/README.md).
+Interface:
 
-## Evidence versus current files
+- begin a proof-bound link;
+- approve or deny it as an authenticated Subscriber;
+- exchange it once for an App session;
+- check access;
+- revoke a session or suspend an App.
 
-The decisive proof is preserved by Git commits and the recorded migration checksum in [docs/prototype/FREEZE.md](./docs/prototype/FREEZE.md). Later documentation and naming cleanup does not rewrite that evidence. The observed results are recorded in [docs/prototype/EVALUATION.md](./docs/prototype/EVALUATION.md).
+The module hides proof storage, token hashing, App/Distribution validation, Subscription lookup, and public decision mapping.
 
-## Next architectural decision
+### Earnings ledger
 
-The next build should start only after choosing the next question. The smallest likely candidate is: “Can a real existing extension integrate the SDK using a documented developer kit and link through a minimal Subscriber account page?” That decision does not require a marketplace, payouts, or production deployment by default.
+Interface:
+
+- record a paid Cash Receipt exactly once;
+- post one balanced Allocation Run;
+- release an eligible Publisher Earning;
+- reconcile Transfer, reversal, and Payout events.
+
+The module hides immutable ledger entries, balance validation, hold rules, Stripe idempotency keys, and correction entries. Stripe executes money movement but does not calculate Publisher earnings.
+
+## Request surfaces
+
+The exact route filenames may follow Next.js conventions, but the externally meaningful surfaces are:
+
+- Better Auth handlers for human sessions;
+- `POST /api/billing/checkout`;
+- `POST /api/billing/portal`;
+- `POST /api/stripe/webhook` using the raw body;
+- `POST /api/publisher/submissions`;
+- `POST /api/publisher/connect/onboarding`;
+- `POST /api/app-pass/link-requests`;
+- `POST /api/app-pass/link-requests/:id/exchange`;
+- authenticated `/activate/:id` approval and denial;
+- `POST /api/app-pass/entitlements/check`;
+- protected Operator use cases exposed primarily through the CLI.
+
+## Human and App credentials
+
+Human sessions and App sessions are separate credential systems:
+
+| Credential | Represents | Stored by client | Server storage | Used for |
+| --- | --- | --- | --- | --- |
+| Better Auth session | Human user | Secure browser cookie | Better Auth session record | Subscriber, Publisher, Operator UI |
+| App-session token | One linked App installation | `chrome.storage.local` | Hash only | Entitlement checks |
+| Stripe secret | SERP platform | Never in browsers/extensions | Cloudflare secret | Server-to-Stripe calls |
+
+No App-session token grants access to human pages, and no human session cookie is embedded in an extension.
+
+## Environments and promotion
+
+```mermaid
+flowchart LR
+    Local["Local workerd + local D1 + Stripe fixtures"] --> Staging["Cloudflare staging + staging D1 + Stripe test mode"]
+    Staging -->|"explicit live gate"| Production["Cloudflare production + production D1 + Stripe live mode"]
+```
+
+- Local, staging, and production use different databases and secrets.
+- Stripe test and live identifiers are never stored together.
+- Next development-server success is insufficient; every slice must pass OpenNext/workerd preview.
+- Staging deployment is required for the exact Better Auth cookie, D1 binding, Stripe webhook, and extension-host-permission composition.
+- Production is never an implicit consequence of merging or passing staging tests during the private pilot.
+
+## Prototype reuse boundary
+
+Candidates for deliberate porting:
+
+- manifest schema and importer semantics;
+- proof-bound linking;
+- opaque, hashed, App-scoped sessions;
+- explicit entitlement states;
+- generic Chromium SDK interface;
+- D1 domain concepts and focused proof scenarios.
+
+Must be replaced rather than relabeled:
+
+- hard-coded Subscriber and active Subscription;
+- unauthenticated Operator HTTP routes;
+- local approval commands acting as Subscriber UX;
+- prototype explanatory Worker page;
+- shared example-extension popup shell;
+- local fixture identities and local browser lifecycle as product code;
+- proof tests presented as production coverage.
+
+## Operational minimum
+
+- Structured events for auth failures, App review, Stripe ingestion, normalized Subscription transitions, link exchange, entitlement errors, Allocation posting, Transfer creation, reversals, and reconciliation.
+- Stable correlation identifiers without logging tokens, secrets, proof keys, account-link URLs, or payment/identity payloads.
+- D1 migration, Time Travel/recovery, Stripe reconciliation, Transfer retry, App suspension, and credential-rotation runbooks.
+- Native Cloudflare Workers Logs and modest tracing are sufficient initially. Sentry is not a prerequisite.
+
+See [`docs/mvp/SECURITY.md`](./docs/mvp/SECURITY.md), [`docs/mvp/MONEY_MODEL.md`](./docs/mvp/MONEY_MODEL.md), and [`docs/mvp/DELIVERY_PLAN.md`](./docs/mvp/DELIVERY_PLAN.md).

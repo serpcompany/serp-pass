@@ -4,7 +4,7 @@ Status: **Completed locally**
 Branch: `prototype/apps-pass-integration-proof`
 Base: `fe65faa`
 
-The root [PRD](../../PRD.md) records the question this plan tested. All twelve steps passed; the immutable evidence is recorded in [FREEZE.md](./FREEZE.md) and the observed result in [EVALUATION.md](./EVALUATION.md). This remains a disposable, local-only integration proof and must not be described as a launchable product or production implementation.
+The preserved [proof PRD](./PRD.md) records the question this plan tested. All twelve steps passed; the immutable evidence is recorded in [FREEZE.md](./FREEZE.md) and the observed result in [EVALUATION.md](./EVALUATION.md). This remains a disposable, local-only integration proof and must not be described as a launchable product or production implementation.
 
 ## Implementation constraints
 

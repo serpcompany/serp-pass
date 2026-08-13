@@ -44,7 +44,7 @@ No fixture loader, direct SQL registration, migration seed, or extension-specifi
 - Version 1 must carry the assigned `publisher_id` and `app_id`, Publisher and App defining data, features, and at least one supported Chromium Distribution.
 - The manifest must not control approval state; invoking the trusted import command is the approval boundary.
 - Validate the entire document before writing.
-- Reject malformed JSON, unsupported versions, missing or unknown required fields, invalid field types, invalid identifiers or URLs, unsupported browser/channel combinations, duplicate Distributions, and invalid Chromium runtime IDs.
+- Reject malformed JSON, unsupported versions, missing or unknown required fields, invalid field types, invalid identifiers, unsupported browser/channel combinations, duplicate Distributions, and invalid Chromium runtime IDs.
 - Report an actionable error and make no database change after any validation failure.
 
 ## 5. Registration semantics

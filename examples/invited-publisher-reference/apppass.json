@@ -1,0 +1,18 @@
+{
+  "$schema": "https://pass.serp.co/schema/app-manifest-v1.json",
+  "schema_version": 1,
+  "publisher_id": "pub_invited_phase1",
+  "publisher_name": "Invited Publisher",
+  "app_id": "app_invited_phase1",
+  "name": "Invited Publisher Phase 1 App",
+  "features": [
+    "premium"
+  ],
+  "distributions": [
+    {
+      "browser_family": "chromium",
+      "channel": "unpacked",
+      "runtime_id": "ponmlkjihgfedcbaponmlkjihgfedcba"
+    }
+  ]
+}

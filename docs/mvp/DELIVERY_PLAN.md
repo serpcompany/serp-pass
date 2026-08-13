@@ -130,6 +130,8 @@ Current evidence starts with one signed local paid Invoice and exercises the vis
 
 Staging completion does not authorize live mode.
 
+Current recovery evidence: the actual D1 Time Travel mechanism was rehearsed against a named disposable APAC database and the restored sentinel was verified before the database was deleted. The real staging database was not rewound. [D1_RECOVERY.md](./D1_RECOVERY.md) records the exact evidence and the remaining maintenance-mode and full-domain reconciliation gap.
+
 ## 9. Controlled live gate
 
 After explicit approval of every live-money policy in the PRD:

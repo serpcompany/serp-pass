@@ -118,6 +118,7 @@ The disposable pre-MVP authority, example submissions, and contract tests remain
 - [docs/mvp/STRIPE_SANDBOX_APPROVAL.md](./docs/mvp/STRIPE_SANDBOX_APPROVAL.md) — exact test-mode account mutations, proposed Price, validation, and rollback awaiting approval.
 - [docs/mvp/STRIPE_CONNECT_APPROVAL.md](./docs/mvp/STRIPE_CONNECT_APPROVAL.md) — separate approval boundary for Express onboarding, connected webhooks, one test Transfer, and reversal.
 - [docs/mvp/D1_MIGRATIONS.md](./docs/mvp/D1_MIGRATIONS.md) — reviewed staging migration procedure and the bounded trigger-rich migration fallback.
+- [docs/mvp/D1_RECOVERY.md](./docs/mvp/D1_RECOVERY.md) — destructive Time Travel guardrails and the disposable remote recovery rehearsal.
 - [docs/research/SETAPP_PRODUCT_REFERENCE.md](./docs/research/SETAPP_PRODUCT_REFERENCE.md) — non-binding reference for bundle positioning, website structure, branding patterns, and later pricing experiments.
 - [CONTEXT.md](./CONTEXT.md) — canonical domain language.
 - [docs/prototype/](./docs/prototype/) — preserved local proof contract, architecture, freeze, plan, and evaluation.

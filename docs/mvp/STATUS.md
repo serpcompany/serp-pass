@@ -16,6 +16,13 @@ Slices 1–3 are complete. Slice 4, Subscriber billing, remains approval-gated a
 | Production | not created or deployed | Production D1 still has a non-routable placeholder UUID; no production secret or Worker deployment exists. |
 | Stripe | selected but untouched | Intended isolated account: `acct_1MwbFJI9EPtyKcIs`, currently **SERP Pass**. It has not been accessed. No credentials, Product, Price, webhook, Checkout, Connect account, or payment exists. Every Stripe action remains approval-gated. |
 
+## D1 recovery evidence
+
+- Cloudflare Time Travel was exercised against a disposable APAC D1 database, not `apps-pass-staging`.
+- A remote sentinel was written as `before-incident`, its bookmark captured, changed to `after-incident`, restored to the exact bookmark, and remotely verified as `before-incident`.
+- The restore returned the previous bookmark required for an undo. The disposable database contained no Apps Pass or personal data and was permanently deleted after verification.
+- [D1_RECOVERY.md](./D1_RECOVERY.md) records the destructive-operation guardrails, exact rehearsal evidence, and the remaining maintenance-mode/full-domain reconciliation gap.
+
 ## Partial Slice 4 evidence
 
 - Reviewed local migrations define mode-scoped Billing Customers, one current normalized Pass Subscription per Customer, Invoices, processed Billing Events, and one immutable Cash Receipt per paid Invoice.

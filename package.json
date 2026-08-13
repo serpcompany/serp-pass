@@ -11,6 +11,7 @@
     "mvp:typecheck": "pnpm --filter @serp-apps-pass/web typecheck",
     "mvp:cf-typegen": "pnpm --filter @serp-apps-pass/web cf-typegen",
     "mvp:db:migrate": "pnpm --filter @serp-apps-pass/web db:migrate:local",
+    "mvp:operator:bootstrap": "tsx apps/web/scripts/operator/bootstrap-operator.ts",
     "db:reset": "tsx scripts/db/reset.ts",
     "db:migrate": "wrangler d1 migrations apply apps-pass-integration-proof --local --persist-to .wrangler/state",
     "extensions:build": "tsx scripts/extensions/build.ts",

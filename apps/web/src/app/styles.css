@@ -81,6 +81,8 @@ h1 {
 .status { display: inline-flex; padding: 5px 9px; border-radius: 999px; color: #6c4f1e; background: #fff4ce; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
 .status.active { color: #166534; background: #dcfce7; }
 .form-message { color: #9f2d20; }
+.sensitive-result { display: grid; gap: 8px; margin-top: 8px; padding: 12px; border-radius: 10px; background: #fff7df; overflow-wrap: anywhere; }
+.sensitive-result output { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 
 .grid {
   display: grid;

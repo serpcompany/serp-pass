@@ -1,6 +1,6 @@
 # Private-pilot MVP delivery plan
 
-Status: **binding sequence; implementation not started**
+Status: **binding sequence; implementation in progress**
 
 Each slice must finish with a human-observable workflow, automated evidence at the relevant interface, and a written local/staging/production status. Created files, tables, or mocked endpoints do not complete a slice.
 
@@ -34,6 +34,8 @@ Evidence: [STATUS.md](./STATUS.md). Email/password is the private-pilot spike me
 
 ## 2. Identity and role slice
 
+Status: **completed on Cloudflare staging 2026-08-13**
+
 - Subscriber sign-in/sign-out/session revocation.
 - invitation-only Publisher sign-in and role.
 - explicit Operator allowlist/role.
@@ -41,6 +43,8 @@ Evidence: [STATUS.md](./STATUS.md). Email/password is the private-pilot spike me
 - session persistence across deployments.
 
 Browser evidence: one account per role sees only its permitted surface; anonymous and wrong-role mutations fail.
+
+Evidence: [STATUS.md](./STATUS.md). The initial Operator is explicitly bootstrapped through the trusted local/Cloudflare CLI; all later Publisher role grants require an Operator-created, hashed, expiring, email-bound, single-use invitation. Email verification and recovery remain required before the controlled live gate.
 
 ## 3. Publisher inclusion slice
 

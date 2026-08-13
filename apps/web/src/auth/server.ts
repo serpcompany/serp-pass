@@ -30,17 +30,47 @@ export function createAuth(origin: string) {
       enabled: true,
       requireEmailVerification: false,
     },
+    databaseHooks: {
+      user: {
+        create: {
+          after: async (createdUser) => {
+            await getDb()
+              .insert(schema.humanRoleAssignments)
+              .values({
+                userId: createdUser.id,
+                role: "subscriber",
+                source: "signup",
+                grantedAt: new Date(),
+              })
+              .onConflictDoNothing();
+          },
+        },
+      },
+    },
     session: {
       expiresIn: 60 * 60 * 24 * 7,
       updateAge: 60 * 60 * 24,
     },
+    rateLimit: {
+      enabled: true,
+      storage: "database",
+      window: 60,
+      max: 100,
+      customRules: {
+        "/sign-in/email": { window: 10, max: 3 },
+        "/sign-up/email": { window: 60, max: 20 },
+      },
+    },
     advanced: {
       useSecureCookies: origin.startsWith("https://"),
+      ipAddress: {
+        ipAddressHeaders: ["cf-connecting-ip"],
+      },
     },
   });
 }
 
-export function originFromHeaders(requestHeaders: Headers) {
+export function originFromHeaders(requestHeaders: Pick<Headers, "get">) {
   const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
   if (!host) {
     throw new Error("Cannot derive the request origin without a host header");

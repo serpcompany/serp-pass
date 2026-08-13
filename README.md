@@ -30,13 +30,26 @@ pnpm --filter @serp-apps-pass/web build:worker
 pnpm --filter @serp-apps-pass/web exec wrangler dev --port 8788 --persist-to ../../.wrangler/mvp-state
 ```
 
-Open `http://localhost:8788/account` and create a disposable pilot account. The visible workflow creates a Better Auth user and human session in local D1, survives a page reload, and signs out. It does not grant a role, create a Subscription, or contact Stripe.
+Open `http://localhost:8788/account` and create a disposable pilot account. The visible workflow creates a Better Auth user and human session in local D1, grants only the Subscriber role, survives a page reload, and signs out. It does not create a Subscription or contact Stripe.
+
+Every new account starts as a Subscriber. To bootstrap the first trusted Operator, create that account through `/account`, then run exactly one environment-specific command:
+
+```sh
+pnpm mvp:operator:bootstrap -- --local operator@example.com
+# or, deliberately against staging:
+pnpm mvp:operator:bootstrap -- --staging operator@example.com
+```
+
+The command requires the trusted local shell or authenticated SERP Cloudflare CLI; there is no public bootstrap endpoint. Visit `/operator`, enter the intended Publisher email, and copy the returned invitation code once. The signed-in Publisher enters it at `/publisher/invitation`. Codes expire after seven days, are bound to that email, are consumed once, and are stored only as hashes.
 
 Run the automated rendered-browser journey against a running local preview or the deployed staging Worker:
 
 ```sh
 pnpm --filter @serp-apps-pass/web test:auth-browser
 APP_ORIGIN=https://serp-apps-pass-staging.serpcompany.workers.dev pnpm --filter @serp-apps-pass/web test:auth-browser
+APP_ORIGIN=https://serp-apps-pass-staging.serpcompany.workers.dev pnpm --filter @serp-apps-pass/web test:publisher-boundary
+APP_ORIGIN=https://serp-apps-pass-staging.serpcompany.workers.dev pnpm --filter @serp-apps-pass/web test:operator-bootstrap
+APP_ORIGIN=https://serp-apps-pass-staging.serpcompany.workers.dev pnpm --filter @serp-apps-pass/web test:auth-rate-limit
 ```
 
 Current environment evidence and known limitations are recorded in [docs/mvp/STATUS.md](./docs/mvp/STATUS.md).

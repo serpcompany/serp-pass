@@ -9,7 +9,7 @@ const password = "correct-horse-battery-staple";
 const browser = await chromium.launch({ headless: true });
 
 try {
-  const context = await browser.newContext();
+  const context = await browser.newContext(appOrigin.includes("localhost") ? { extraHTTPHeaders: { "cf-connecting-ip": "192.0.2.10" } } : {});
   const page = await context.newPage();
   await page.goto(`${appOrigin}/account`);
 

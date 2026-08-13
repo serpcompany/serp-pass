@@ -1,6 +1,6 @@
 # Invited Publisher Video Notes
 
-This is a real private-pilot Chromium extension source project, not a proof fixture or shared popup shell. It owns its manifest, popup UI, and build. It imports `@serp-apps-pass/sdk` as a normal Publisher extension would.
+This is a real private-pilot Chromium extension source project, not a proof fixture or shared popup shell. It owns its manifest, popup UI, and build. It imports `@serp-apps-pass/sdk` as a normal Publisher extension would. This in-repository reference uses the pnpm workspace link for live development; the separate `pnpm mvp:sdk:test` check proves the compiled `0.1.0` tarball installs and bundles from a clean project without workspace access.
 
 Build it with:
 

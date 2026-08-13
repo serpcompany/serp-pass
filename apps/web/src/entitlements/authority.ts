@@ -1,4 +1,4 @@
-import type { Entitlement } from "@serp-apps-pass/contracts";
+import type { Entitlement } from "@serp-apps-pass/sdk";
 
 import { billingModeForEnvironment } from "@/billing/read";
 import { randomOpaqueValue, sha256Base64Url, sha256Hex, timingSafeStringEqual } from "./crypto";

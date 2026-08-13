@@ -48,8 +48,8 @@ apps/
       db/                      D1 client and schema composition
 
 packages/
-  app-pass-sdk/                extension-facing SDK
-  app-pass-contracts/          only public versioned contracts shared by web and SDK
+  app-pass-sdk/                compiled extension-facing client and Entitlement contract
+  app-pass-contracts/          versioned App Submission schema and validator
 
 docs/
   mvp/                         binding delivery, money, security, operations
@@ -57,7 +57,7 @@ docs/
   research/                    primary-source platform research
 ```
 
-`app-pass-contracts` should exist only for genuinely public shared types such as the manifest and entitlement response. Internal database or Stripe types must not leak into it.
+Neither package may expose internal database or Stripe types. `app-pass-contracts` owns the public Submission document. `app-pass-sdk` owns the extension-facing Entitlement response and is packed as self-contained JavaScript plus TypeScript declarations.
 
 ## Domain state flow
 
@@ -114,7 +114,9 @@ sequenceDiagram
     W-->>E: Approved identity or not found
 ```
 
-The public contract lives in `packages/app-pass-contracts`. It contains the JSON Schema, generated Worker-safe validator, canonicalization, and public types. The real pilot integration lives in `apps/invited-publisher-extension`; its public Chrome manifest key stabilizes `chrome.runtime.id`, while its `apppass.json` binds that runtime identity to the Operator-issued App and Publisher IDs. Neither file contains a secret.
+The Submission contract lives in `packages/app-pass-contracts`. It contains the JSON Schema, generated Worker-safe validator, canonicalization, and public manifest types. The extension client lives in `packages/app-pass-sdk`; its packed `0.1.0` pilot artifact has no runtime or workspace dependency. The real pilot integration lives in `apps/invited-publisher-extension`; its public Chrome manifest key stabilizes `chrome.runtime.id`, while its `apppass.json` binds that runtime identity to the Operator-issued App and Publisher IDs. None of these public artifacts contains a secret.
+
+The monorepo reference extension uses a workspace link for live development. That is not the distribution proof. A separate clean-project check packs the SDK, installs the tarball with npm, imports its compiled module, exercises the public client, and bundles an extension entry without monorepo resolution. The SDK remains non-publishable until the Operator chooses and approves a registry; a pilot Publisher receives the exact tarball and checksum privately.
 
 ### Billing projection
 
@@ -206,6 +208,7 @@ The exact route filenames may follow Next.js conventions, but the externally mea
 - `POST /api/billing/checkout`;
 - `POST /api/billing/portal`;
 - `POST /api/stripe/webhook` using the raw body;
+- `POST /api/stripe/connect-webhook` using the raw body and its distinct signing secret;
 - `POST /api/publisher/submissions`;
 - `POST /api/publisher/connect/onboarding`;
 - `POST /api/app-pass/link-requests`;
@@ -213,6 +216,7 @@ The exact route filenames may follow Next.js conventions, but the externally mea
 - authenticated `/activate/:id` approval and denial;
 - `POST /api/app-pass/entitlements/check`;
 - protected Operator use cases exposed primarily through the CLI.
+- `POST /api/operator/allocations` and `POST /api/operator/settlements` as protected same-origin Operator use cases.
 
 ## Human and App credentials
 

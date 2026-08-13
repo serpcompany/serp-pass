@@ -1,6 +1,9 @@
-import type { Entitlement } from "@serp-apps-pass/contracts";
-
-export type { Entitlement } from "@serp-apps-pass/contracts";
+export type Entitlement =
+  | { status: "active"; features: string[] }
+  | { status: "inactive"; reason: "no_subscription" }
+  | { status: "unauthenticated"; reason: "not_linked" | "session_expired" }
+  | { status: "revoked"; reason: "session_revoked" | "app_suspended" }
+  | { status: "temporarily_unavailable" };
 
 export type AppPassStorage = {
   get(key: string): Promise<string | undefined>;

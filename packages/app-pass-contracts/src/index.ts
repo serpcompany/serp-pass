@@ -1,12 +1,5 @@
 import validate from "./generated/app-manifest-v1-validator.js";
 
-export type Entitlement =
-  | { status: "active"; features: string[] }
-  | { status: "inactive"; reason: "no_subscription" }
-  | { status: "unauthenticated"; reason: "not_linked" | "session_expired" }
-  | { status: "revoked"; reason: "session_revoked" | "app_suspended" }
-  | { status: "temporarily_unavailable" };
-
 export type AppManifestV1 = {
   $schema: "https://pass.serp.co/schema/app-manifest-v1.json";
   schema_version: 1;

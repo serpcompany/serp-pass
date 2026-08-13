@@ -60,6 +60,7 @@ Slices 1–3 are complete. Slice 4, Subscriber billing, remains approval-gated a
 - Rejection releases the Distribution claim and restores the App Assignment so the Publisher can correct and resubmit.
 - Approval creates canonical App and Distribution authority records, while the public identity route returns only approved state.
 - `apps/invited-publisher-extension` is an independently built Manifest V3 source project importing the shared SDK—not the preserved prototype shell.
+- The SDK is a self-contained, compiled, typed `0.1.0` pilot tarball with no runtime/workspace dependency. `pnpm mvp:sdk:test` proves npm installation, module import, public-client behavior, and extension bundling from an empty temporary project. It remains `private: true`, so no package registry publication is implied or possible by accident.
 - Chromium loads that source with stable runtime ID `deigfiokgenocbkifhkognjkhfljcfgi`; staging recognizes it as approved under `app_invited_pilot_real` and `pub_invited_pilot_real`.
 - The same rendered-browser flow passes locally and against deployed staging; the fixed real-extension staging check is safely repeatable once approved.
 
@@ -105,7 +106,7 @@ Slices 1–3 are complete. Slice 4, Subscriber billing, remains approval-gated a
 ## What it does not prove
 
 - Email ownership or password recovery. Email/password currently avoids choosing an email provider during the composition spike.
-- A separately owned external repository consuming a published SDK package. The real reference extension has its own source/build boundary but currently consumes the private workspace SDK; package distribution and an invited developer handoff remain before the external pilot.
+- A separately owned external repository or invited Publisher consuming the supplied SDK. A clean temporary project now installs and bundles the packed artifact without workspace access, but no registry has been selected, no package has been published, and no external Publisher has independently reviewed the handoff.
 - A real Stripe-hosted purchase or Portal session. No Stripe account has been accessed, so real API idempotency, Product/Price binding, and webhook delivery remain unproved.
 - A real Stripe-paid entitlement, Earning, Transfer, or Payout. App linking, paid-through entitlement behavior, allocation posting, Settlement state, Transfer/reversal projection, and Payout projection are real locally, but their Cash Receipt and provider Events are deliberately signed local fixtures until Stripe test actions are explicitly authorized.
 - Production readiness or permission to use Stripe.

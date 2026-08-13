@@ -48,6 +48,7 @@ The real invited-Publisher source project is [`apps/invited-publisher-extension`
 
 ```sh
 pnpm mvp:contracts:test
+pnpm mvp:sdk:test
 pnpm mvp:extension:build
 pnpm mvp:extension:test
 pnpm mvp:extension:test-staging

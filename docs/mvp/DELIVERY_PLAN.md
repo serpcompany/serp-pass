@@ -59,7 +59,7 @@ Status: **completed on Cloudflare staging 2026-08-13**
 
 Browser evidence: Publisher submits; Operator approves; the real unpacked extension identifies itself through the approved Distribution without any fixture enumeration.
 
-Evidence: [STATUS.md](./STATUS.md). The public manifest contract is isolated in `packages/app-pass-contracts`; the independently built extension source is `apps/invited-publisher-extension`. The deployed journey also proves wrong-role and mismatched-identity rejection, Operator rejection, corrected resubmission, and approval.
+Evidence: [STATUS.md](./STATUS.md). The public manifest contract is isolated in `packages/app-pass-contracts`; the independently built extension source is `apps/invited-publisher-extension`. The deployed journey also proves wrong-role and mismatched-identity rejection, Operator rejection, corrected resubmission, and approval. The versioned private-pilot SDK now packs as compiled JavaScript plus declarations with no runtime/workspace dependency; `pnpm mvp:sdk:test` installs that tarball in a clean temporary project and bundles a clean extension entry. Registry publication and an actual invited-Publisher handoff remain open.
 
 ## 4. Subscriber billing slice
 

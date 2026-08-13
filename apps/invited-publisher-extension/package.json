@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "prebuild": "pnpm --filter @serp-apps-pass/sdk build",
     "build": "tsx scripts/build.ts",
     "test:browser": "tsx tests/browser.ts",
     "test:staging-inclusion": "tsx tests/staging-inclusion.ts"

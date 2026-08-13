@@ -239,6 +239,7 @@ try {
       appSessions: [],
       allocationRuns: [],
       publisherEarnings: [],
+      publisherPayments: [],
       settlements: [],
       transfers: [],
     },

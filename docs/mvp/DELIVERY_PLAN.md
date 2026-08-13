@@ -89,35 +89,34 @@ Browser evidence: the real extension links and unlocks after purchase; another A
 
 Local evidence uses the signed billing-fixture boundary only to establish paid-through authority without accessing Stripe. The independently built Publisher extension performs the request and exchange from its real `chrome-extension://` origin, the Subscriber approves through Better Auth, and D1 stores only the App-session token hash. Approve, deny, already-used, expiry, unpaid, paid-through active, cross-App rejection, scoped revocation, App suspension/reapproval, relinking, public-call rate limiting, and temporary authority failure all pass in Chromium. Staging proves the persistent hash-only App-session path across a Worker deployment and correctly remains `inactive`; it cannot prove real paid `active` until the approved Stripe test purchase exists.
 
-## 6. Publisher Connect slice
+## 6. Publisher payment-boundary slice
 
-Status: **account-independent Account creation/onboarding seam and readiness projection are browser-verified locally; real execution awaits correct Stripe authentication and Publisher country**
+Status: **product direction corrected; Stripe Connect is not an MVP dependency**
 
-- create/reuse one connected account per Publisher;
-- Stripe-hosted Express onboarding;
-- refresh and return handling without treating redirect as completion;
-- readiness projection from Stripe account state/events;
-- Publisher view distinguishes onboarding, charges readiness, transfers readiness, and observed Payout status.
+- collect Publisher payment instructions and tax information outside Apps Pass under an approved SERP operating process;
+- store no payment-account credentials in Apps Pass;
+- show the Publisher that Stripe bills Subscribers only;
+- preserve Connect code as dormant post-MVP evidence rather than enabling it in staging.
 
-Browser evidence: test Publisher completes onboarding and Apps Pass derives readiness from Stripe.
+Evidence: an invited Publisher can submit and earn without a Stripe connected account. The active Publisher page contains no Connect onboarding control.
 
-Current evidence includes an authenticated, same-origin Publisher POST that creates/reuses one idempotent Express Account record, asks an executor for a fresh single-use Account Link, stores the Account ID but never the hosted URL, fixes the Account country on first creation, and renders the return/refresh states without asserting readiness. The real executor is disabled unless explicitly enabled with a mode-correct key and exact expected platform Account ID; the local executor exists only for the account-independent browser proof. Official signed `account.updated` projections remain mode-scoped, replay-safe, order-safe, and bound to the created Account. This does not yet prove a real Account, Stripe-hosted onboarding, or provider-delivered Event.
+Historical evidence includes an account-independent Connect onboarding and readiness experiment. It remains useful if payout automation is reconsidered, but Stripe rejected the first real Account attempt because the platform had not enrolled in Connect. The MVP deliberately avoids that dependency instead of making Connect enrollment a launch blocker.
 
 ## 7. Earnings and settlement slice
 
-Status: **allocation, Earning, local-only release simulation, Transfer/reversal reconciliation, and connected-account Payout projection are browser-verified; real test Transfer and Payout evidence remain approval-gated**
+Status: **allocation, Earning, and external Publisher Payment recording are browser-verified locally; staging payment evidence awaits a payment actually completed outside Apps Pass**
 
 - immutable Cash Receipt and ledger model;
 - Operator-created balanced Allocation Run;
 - Publisher Earning and hold state;
-- Operator release;
-- idempotent separate Stripe Transfer;
-- reversal/failure/retry and Payout-event reconciliation;
+- Operator recording of one already-completed external payment;
+- idempotent Payment evidence with immutable method/reference/time;
+- explicit correction and failed-payment operating policy before live money;
 - Publisher-readable history.
 
-Browser/Operator evidence: one paid test Invoice becomes one allocated Earning, one approved Transfer, and a separately reported Payout state without duplication.
+Browser/Operator evidence: one paid test Invoice becomes one allocated Earning and one recorded external Publisher Payment without duplication or stored credentials.
 
-Current evidence starts with one signed local paid Invoice and exercises the visible protected Operator controls and Publisher page. The Operator supplies every receipt amount, reserve, platform amount, Publisher amount, agreement reference, reason, and hold time. D1 atomically posts the immutable balanced ledger and Earning. Release fails before the hold and signed Connect readiness pass, is Operator-only, and uses one deterministic local simulation whose UI never presents it as a real Stripe object. Exact retry is a no-op; changed reuse conflicts. Signed Stripe-shaped Transfer Events confirm and fully reverse the Transfer/Settlement/Earning state, while signed connected-account Payout Events remain a separate order-safe observation. The Stripe test adapter and routes are deployed disabled until explicit account authorization and configuration.
+Current evidence starts with one signed local paid Invoice and exercises the visible protected Operator controls and Publisher page. The Operator supplies every receipt amount, reserve, platform amount, Publisher amount, agreement reference, reason, and hold time. D1 atomically posts the immutable balanced ledger and Earning. After the hold, only an Operator can record a completed external Payment. D1 derives the exact Publisher, amount, currency, and mode from the Earning; exact retry is a no-op, changed reuse conflicts, and mutation rejects. The Publisher sees **paid externally** plus an opaque reference. Apps Pass never initiates the payment or stores payment credentials.
 
 ## 8. Staging release gate
 
@@ -125,7 +124,7 @@ Current evidence starts with one signed local paid Invoice and exercises the vis
 - one SERP-owned and one invited-Publisher App are independently integrated;
 - browser E2E, contract/integration checks, and manual journey evidence are separate;
 - structured logs trace each journey without secret leakage;
-- migration, rollback, D1 recovery, webhook reconciliation, App suspension, and Transfer recovery runbooks are rehearsed;
+- migration, rollback, D1 recovery, webhook reconciliation, App suspension, and Publisher Payment correction runbooks are rehearsed;
 - limitations, residual risks, and production inputs are recorded.
 
 Staging completion does not authorize live mode.
@@ -138,14 +137,13 @@ After explicit approval of every live-money policy in the PRD:
 
 - create production Cloudflare/D1 resources and secrets;
 - apply reviewed production migrations;
-- configure Stripe live Product/Price, webhook, Connect, and portal;
-- onboard one real Publisher;
+- configure Stripe live Product/Price, webhook, and portal;
+- onboard one real Publisher under an approved agreement and external payment process;
 - perform one deliberately limited live purchase;
 - link and verify one real extension;
-- post one approved allocation and small Transfer;
-- verify Transfer and Payout separately;
+- post one approved Allocation, complete one deliberately small external Publisher payment, and record its opaque confirmation evidence;
 - exercise the agreed cancellation/refund path;
-- reconcile Stripe, D1, and bank/Payout evidence;
+- reconcile Stripe subscriber receipts, D1 Allocation/Payment evidence, and the separately controlled external payment record;
 - publish the pilot evaluation and operating decision.
 
 ## Mandatory stop conditions
@@ -157,5 +155,5 @@ Stop promotion—not local development—when:
 - a migration or recovery path has not passed staging;
 - a security control has only a mocked test where deployed behavior matters;
 - the real extension integration has been replaced by the prototype popup shell;
-- Stripe/Connect country or responsibility rules contradict the planned money flow;
+- payment-provider country or responsibility rules contradict the planned money flow;
 - a user-visible success depends on an Operator manually editing D1.

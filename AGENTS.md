@@ -7,8 +7,8 @@ The current branch builds a trustworthy private-pilot MVP. The completed local p
 - Follow the delivery slices in order. A created table, endpoint, or mocked test does not complete a slice.
 - Keep human sessions and App sessions separate.
 - Treat Checkout redirects as UX only; verified Stripe events project billing authority into D1.
-- Keep Cash Receipt, Publisher Earning, Transfer, and Payout distinct.
-- Never automate an allocation formula or live Transfer policy that the PRD leaves for explicit approval.
+- Keep Cash Receipt, Publisher Earning, Publisher Payment, historical Stripe Transfer, and bank Payout distinct.
+- Never automate an allocation formula or Publisher payment policy that the PRD leaves for explicit approval.
 - Keep local, staging, and production D1/Stripe state physically separate.
 - Never embed or log platform secrets, App-session tokens, proof keys, account-link URLs, raw webhooks, or sensitive payment/identity data.
 - Use reviewed SQL migrations and report local Next, local workerd preview, deployed staging, and production independently.

@@ -1,12 +1,12 @@
 # SERP Apps Pass private-pilot MVP
 
-This branch converts the completed extension-inclusion proof into a minimal, trustworthy private-pilot product: invited Publisher submission, real Subscriber purchase, authenticated App activation, entitlement, auditable Publisher Earning, and Operator-controlled Stripe Connect settlement.
+This branch converts the completed extension-inclusion proof into a minimal, trustworthy private-pilot product: invited Publisher submission, real Subscriber purchase, authenticated App activation, entitlement, auditable Publisher Earning, and Operator-recorded evidence of Publisher payments completed outside Apps Pass.
 
 The target and acceptance boundary are in [PRD.md](./PRD.md). The architecture is in [ARCHITECTURE.md](./ARCHITECTURE.md), delivery order in [docs/mvp/DELIVERY_PLAN.md](./docs/mvp/DELIVERY_PLAN.md), current criterion-by-criterion evidence in [docs/mvp/ACCEPTANCE_MATRIX.md](./docs/mvp/ACCEPTANCE_MATRIX.md), money invariants in [docs/mvp/MONEY_MODEL.md](./docs/mvp/MONEY_MODEL.md), and threats in [docs/mvp/SECURITY.md](./docs/mvp/SECURITY.md).
 
 The completed proof remains executable local software, not a visual mockup, but it is not the launchable subscription product. Its PRD, architecture, freeze, evaluation, and plan are preserved under [docs/prototype/](./docs/prototype/).
 
-Implementation is in progress on `mvp/private-pilot`. Invited Publisher submission, approved App identity, deployed Subscriber billing, real extension activation, and paid-through entitlement are working on [serp-apps-pass-staging.serpcompany.workers.dev](https://serp-apps-pass-staging.serpcompany.workers.dev). Stripe test account `acct_1MwbFJI9EPtyKcIs` (**SERP Pass**) now has the one approved `$10/month` Product/Price, Portal, and split platform/Connect webhooks. Real hosted test Checkout, signed Event projection, Portal cancellation, and the paid extension journey pass. Connect onboarding, real-receipt allocation, test Transfer/reversal, and external-Publisher review remain. Production has not been created or deployed.
+Implementation is in progress on `mvp/private-pilot`. Invited Publisher submission, approved App identity, deployed Subscriber billing, real extension activation, paid-through entitlement, and one real-receipt `$7/$2/$1` Allocation work on [serp-apps-pass-staging.serpcompany.workers.dev](https://serp-apps-pass-staging.serpcompany.workers.dev). Stripe test account `acct_1MwbFJI9EPtyKcIs` (**SERP Pass**) handles Subscriber billing only. The local Operator/Publisher journey proves immutable external Publisher Payment evidence; staging correctly awaits a payment actually completed elsewhere. Connect is dormant post-MVP evidence. Production has not been created or deployed.
 
 ## MVP stack walkthrough
 
@@ -67,16 +67,16 @@ pnpm mvp:activation:test
 
 The check leaves the shared browser running. The standalone extension test builds into a disposable directory, so it cannot overwrite the live dev-browser bundle or change its authority configuration. Together they prove a real extension-origin request, authenticated Subscriber approve/deny UX, one-time proof exchange, hash-only App-session storage, normalized paid-through decisions, cross-App rejection, expiry, scoped revocation, App suspension, relinking, and a truthful `temporarily_unavailable` state. Its paid-through setup is the local signed fixture boundary; it does not access Stripe or represent a real purchase.
 
-The account-independent Subscriber billing projection can be exercised locally without any Stripe account:
+The account-independent Subscriber billing and money boundaries can be exercised locally without any Stripe account:
 
 ```sh
 pnpm mvp:billing:test
 pnpm mvp:stripe-adapter:test
-pnpm mvp:connect:test
+pnpm postmvp:connect:test
 pnpm mvp:earnings:test
 ```
 
-The first command uses the local normalized fixture boundary. The second uses Stripe's official SDK to generate and verify real Stripe-format signatures and current Event shapes without accessing an account. Neither performs a Stripe API request. The exact authority rules and remaining sandbox work are documented in [docs/mvp/BILLING_PROJECTION.md](./docs/mvp/BILLING_PROJECTION.md).
+The first command uses the local normalized fixture boundary. The second uses Stripe's official SDK to generate and verify real Stripe-format signatures and current Event shapes without accessing an account. `postmvp:connect:test` preserves the dormant Connect projection experiment at its API and database boundaries; it is not an MVP dependency or active Publisher UI. `mvp:earnings:test` proves Allocation and completed external Publisher Payment evidence. None performs a Stripe API request.
 
 The approved real-provider staging journey is deliberately separate:
 
@@ -87,7 +87,7 @@ pnpm mvp:stripe-checkout:test-redirect-boundary
 
 These commands create test-mode Customers and Subscriptions, use Stripe-hosted test Checkout and Portal, reconcile signed Events, and exercise the real extension. They require the isolated `serp-appspass` Stripe CLI profile and mutate only the documented sandbox. Exact resource IDs, evidence, credential expiry, and remaining gates are in [docs/mvp/STRIPE_SANDBOX_STATE.md](./docs/mvp/STRIPE_SANDBOX_STATE.md).
 
-An authenticated Operator can inspect `/api/operator/billing/audit?subscriberUserId=<id>` to reconcile counts and obtain the allowlisted journey trace linking Checkout, billing, App-session, Allocation, Earning, Settlement, and Transfer records. The response includes `x-apps-pass-correlation-id`; search Workers Logs for the matching `operator_journey_trace` event. The trace never returns extension credentials, proof material, raw/payload hashes, idempotency keys, personal email, hosted URLs, installation identifiers, or payment/KYC data.
+An authenticated Operator can inspect `/api/operator/billing/audit?subscriberUserId=<id>` to reconcile counts and obtain the allowlisted journey trace linking Checkout, billing, App-session, Allocation, Earning, and Publisher Payment records. The response includes `x-apps-pass-correlation-id`; search Workers Logs for the matching `operator_journey_trace` event. The trace never returns extension credentials, proof material, raw/payload hashes, idempotency keys, personal email, hosted URLs, installation identifiers, payment credentials, or KYC data.
 
 Run the automated rendered-browser journey against a running local preview or the deployed staging Worker:
 
@@ -129,7 +129,7 @@ The disposable pre-MVP authority, example submissions, and contract tests remain
 - [docs/mvp/BILLING_PROJECTION.md](./docs/mvp/BILLING_PROJECTION.md) — replay-safe paid-through projection and the explicit Stripe-adapter boundary.
 - [docs/mvp/STRIPE_SANDBOX_APPROVAL.md](./docs/mvp/STRIPE_SANDBOX_APPROVAL.md) — approved test-mode billing actions, exact-account guard, validation, and rollback.
 - [docs/mvp/STRIPE_SANDBOX_STATE.md](./docs/mvp/STRIPE_SANDBOX_STATE.md) — current test objects, real-provider evidence, credential boundary, and known failed acceptance artifact.
-- [docs/mvp/STRIPE_CONNECT_APPROVAL.md](./docs/mvp/STRIPE_CONNECT_APPROVAL.md) — bounded approval and remaining inputs for Express onboarding, connected webhooks, one test Transfer, and reversal.
+- [docs/mvp/STRIPE_CONNECT_APPROVAL.md](./docs/mvp/STRIPE_CONNECT_APPROVAL.md) — superseded Connect experiment packet retained as post-MVP history.
 - [docs/mvp/D1_MIGRATIONS.md](./docs/mvp/D1_MIGRATIONS.md) — reviewed staging migration procedure and the bounded trigger-rich migration fallback.
 - [docs/mvp/D1_RECOVERY.md](./docs/mvp/D1_RECOVERY.md) — destructive Time Travel guardrails and the disposable remote recovery rehearsal.
 - [docs/research/SETAPP_PRODUCT_REFERENCE.md](./docs/research/SETAPP_PRODUCT_REFERENCE.md) — non-binding reference for bundle positioning, website structure, branding patterns, and later pricing experiments.

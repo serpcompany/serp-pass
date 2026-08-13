@@ -196,9 +196,8 @@ try {
   await publisherPage.reload();
   await publisherPage.getByText("Publisher Earnings").waitFor();
   assert.equal(await publisherPage.getByText("$7.00 USD").isVisible(), true);
-  assert.equal(await publisherPage.getByText("Accrued — Connect not ready").isVisible(), true);
-  assert.equal(await publisherPage.getByText("No Transfer created").isVisible(), true);
-  assert.equal(await publisherPage.getByText("No bank Payout observed.", { exact: true }).isVisible(), true);
+  assert.equal(await publisherPage.getByText("Accrued — awaiting SERP payment").isVisible(), true);
+  assert.equal(await publisherPage.getByText("No Publisher Payment recorded").isVisible(), true);
 
   const immutable = spawnSync("pnpm", ["exec", "wrangler", "d1", "execute", "apps-pass-local", "--local", "--config", "wrangler.jsonc", "--persist-to", "../../.wrangler/mvp-state", "--command", `UPDATE ledger_entry SET amount = 999 WHERE allocation_run_id = '${allocationRunId}'`], { cwd: webRoot, encoding: "utf8" });
   assert.notEqual(immutable.status, 0, "Posted ledger entries must reject mutation at the database boundary");
@@ -240,11 +239,9 @@ try {
 
   const connectedAccountId = `acct_settlement_${suffix}`;
   await projectReadyConnectAccount(publisherId, connectedAccountId);
-  await operatorPage.reload();
-  const earningControl = operatorPage.getByTestId(`operator-earning-${earningId}`);
-  await earningControl.getByLabel("Release reason").fill("Private-pilot local settlement state-machine proof.");
-  await earningControl.getByRole("button", { name: "Release Publisher Earning" }).click();
-  await earningControl.waitFor({ state: "detached" });
+  const firstRelease = await release("Private-pilot local settlement state-machine proof.");
+  assert.equal(firstRelease.status, 201);
+  assert.equal(firstRelease.body.outcome, "transferred");
   const repeated = await release("Private-pilot local settlement state-machine proof.");
   assert.equal(repeated.status, 200);
   assert.equal(repeated.body.outcome, "duplicate");
@@ -260,14 +257,12 @@ try {
 
   await publisherPage.reload();
   await publisherPage.getByText("Released to connected Stripe balance").waitFor();
-  assert.equal(await publisherPage.getByText("Local transfer simulation recorded").isVisible(), true);
-  assert.equal(await publisherPage.getByText("No bank Payout observed.", { exact: true }).isVisible(), true);
+  assert.equal(await publisherPage.getByText("No Publisher Payment recorded").isVisible(), true);
 
   const reversed = await sendTransferEvent({ ...transferEvent, eventId: `evt_transfer_reversed_${suffix}`, created: 1_900_500_100, amountReversed: 700 });
   assert.equal(reversed.status, 202, await reversed.text());
   await publisherPage.reload();
   await publisherPage.getByText("Reversed after Transfer reversal").waitFor();
-  assert.equal(await publisherPage.getByText("No bank Payout observed.", { exact: true }).isVisible(), true);
 
   const journeyTrace = await operatorPage.evaluate(async (subscriberUserId) => {
     const response = await fetch(`/api/operator/billing/audit?subscriberUserId=${encodeURIComponent(subscriberUserId)}`);
@@ -286,6 +281,7 @@ try {
     appSessions: [],
     allocationRuns: [{ allocationRunId, status: "posted", distributableAmount: 1_000, reserveAmount: 100, platformAmount: 200, currency: "usd" }],
     publisherEarnings: [{ earningId, allocationRunId, publisherId, amount: 700, currency: "usd", status: "reversed" }],
+    publisherPayments: [],
     settlements: [{ settlementId: repeated.body.settlementId, earningId, publisherId, amount: 700, currency: "usd", status: "reversed" }],
     transfers: [{ providerTransferId: repeated.body.providerTransferId, settlementId: repeated.body.settlementId, amount: 700, currency: "usd", status: "reversed", executionMode: "local_simulation" }],
   });
@@ -299,7 +295,26 @@ try {
   const fabricatedRelease = spawnSync("pnpm", ["exec", "wrangler", "d1", "execute", "apps-pass-local", "--local", "--config", "wrangler.jsonc", "--persist-to", "../../.wrangler/mvp-state", "--command", `UPDATE publisher_earning SET status = 'released', released_at = ${now} WHERE id = '${unreleasedEarningId}'`], { cwd: webRoot, encoding: "utf8" });
   assert.notEqual(fabricatedRelease.status, 0, "An Earning cannot become released without a transferred Settlement");
 
-  process.stdout.write("PASS an Operator posts one balanced immutable Allocation and releases one Earning through an idempotent local-only Transfer simulation distinct from bank Payout\n");
+  const paymentId = `payment_external_${suffix}`;
+  const providerReference = `test-confirmation-${suffix}`;
+  const payment = { schemaVersion: 1, paymentId, earningId: unreleasedEarningId, method: "other", providerReference, paidAt: new Date().toISOString(), reason: "Private-pilot external Publisher Payment acceptance proof." };
+  const recordPayment = async (body: unknown) => operatorPage.evaluate(async (value) => {
+    const response = await fetch("/api/operator/publisher-payments", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(value) });
+    return { status: response.status, body: await response.json() as Record<string, unknown> };
+  }, body);
+  const publisherPaymentStatus = await publisherPage.evaluate(async (value) => (await fetch("/api/operator/publisher-payments", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(value) })).status, payment);
+  assert.equal(publisherPaymentStatus, 403, "A Publisher cannot mark their own Earning paid");
+  assert.equal((await recordPayment({ ...payment, providerReference: "publisher@example.test" })).status, 400, "A Publisher email address cannot be stored as payment evidence");
+  assert.deepEqual(await recordPayment(payment), { status: 201, body: { outcome: "recorded", paymentId, earningId: unreleasedEarningId, amount: 700, currency: "usd" } });
+  assert.deepEqual(await recordPayment(payment), { status: 200, body: { outcome: "duplicate", paymentId, earningId: unreleasedEarningId, amount: 700, currency: "usd" } });
+  assert.equal((await recordPayment({ ...payment, reason: "Conflicting evidence must not replace the original payment record." })).status, 409);
+  const mutatePayment = spawnSync("pnpm", ["exec", "wrangler", "d1", "execute", "apps-pass-local", "--local", "--config", "wrangler.jsonc", "--persist-to", "../../.wrangler/mvp-state", "--command", `UPDATE publisher_payment SET provider_reference = 'changed' WHERE id = '${paymentId}'`], { cwd: webRoot, encoding: "utf8" });
+  assert.notEqual(mutatePayment.status, 0, "Recorded Publisher Payment evidence must be immutable");
+  await publisherPage.reload();
+  await publisherPage.getByText(/Paid externally on/u).waitFor();
+  assert.equal(await publisherPage.getByText(new RegExp(providerReference, "u")).isVisible(), true);
+
+  process.stdout.write("PASS an Operator posts one balanced immutable Allocation and records one idempotent external Publisher Payment without storing payment credentials\n");
   await publisherContext.close();
   await operatorContext.close();
 } finally {

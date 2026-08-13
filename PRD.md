@@ -12,7 +12,7 @@ SERP Apps Pass is one subscription that grants a Subscriber access to every appr
 
 The private-pilot MVP is complete only when this loop works on deployed Cloudflare staging:
 
-> An invited Publisher submits a real SDK-enabled Chromium extension, a Subscriber buys the Pass through Stripe Checkout, the Subscriber links the extension and receives active access, the payment creates an auditable Publisher Earning, and an Operator settles that Earning through Stripe Connect in test mode.
+> An invited Publisher submits a real SDK-enabled Chromium extension, a Subscriber buys the Pass through Stripe Checkout, the Subscriber links the extension and receives active access, the payment creates an auditable Publisher Earning, and an Operator records evidence that SERP paid that Earning through an approved external payment method.
 
 The local extension-inclusion proof is preserved under [`docs/prototype/`](./docs/prototype/). It established useful interfaces but is not the MVP implementation.
 
@@ -24,11 +24,11 @@ Creates an account, purchases the Pass, approves App links, sees Subscription st
 
 ### Publisher
 
-Is invited by SERP, completes Stripe-hosted Connect onboarding, integrates the SDK into an extension, submits the assigned manifest, and sees App, Earning, Transfer, and Payout status relevant to that Publisher.
+Is invited by SERP, integrates the SDK into an extension, submits the assigned manifest, and sees App, Earning, and Publisher Payment status relevant to that Publisher. Payment-account credentials are exchanged with SERP outside Apps Pass.
 
 ### Operator
 
-Invites Publishers, assigns public IDs, reviews and approves App submissions, suspends Apps, revokes App sessions, posts Publisher allocations, releases eligible Earnings, reconciles Stripe events, and controls production rollout.
+Invites Publishers, assigns public IDs, reviews and approves App submissions, suspends Apps, revokes App sessions, posts Publisher allocations, records completed Publisher Payments, reconciles Stripe billing events, and controls production rollout.
 
 ## 3. Required end-to-end journeys
 
@@ -36,13 +36,11 @@ Invites Publishers, assigns public IDs, reviews and approves App submissions, su
 
 1. The Operator creates an invitation and assigns `publisher_id` and `app_id` values.
 2. The Publisher signs in through the invitation.
-3. The Publisher starts Stripe Connect Express hosted onboarding.
-4. The system checks connected-account readiness; returning from Stripe alone does not imply readiness.
-5. The Publisher integrates the public SDK into a real Chromium extension and rebuilds it.
-6. The Publisher submits the versioned `apppass.json` manifest through the authenticated pilot area.
-7. The system validates the complete manifest and records a pending Submission without approving the App.
-8. The Operator reviews ownership evidence and approves the Submission.
-9. The approved Publisher, App, and Distribution become eligible for linking.
+3. The Publisher integrates the public SDK into a real Chromium extension and rebuilds it.
+4. The Publisher submits the versioned `apppass.json` manifest through the authenticated pilot area.
+5. The system validates the complete manifest and records a pending Submission without approving the App.
+6. The Operator reviews ownership evidence and approves the Submission.
+7. The approved Publisher, App, and Distribution become eligible for linking.
 
 ### Purchase
 
@@ -77,10 +75,10 @@ Invites Publishers, assigns public IDs, reviews and approves App submissions, su
 2. The Operator creates a balanced Allocation Run for eligible Cash Receipts.
 3. The run explicitly records the distributable amount, reserve, platform amount, and Publisher Earning amounts; no hidden usage formula exists.
 4. Posted ledger entries are immutable. Corrections use compensating entries.
-5. A Publisher Earning becomes transferable only after its configured hold and Connect readiness checks pass.
-6. The Operator deliberately releases the Earning.
-7. The system creates one idempotent Stripe Transfer and records its result.
-8. Transfer status and connected-account bank Payout status remain distinct.
+5. A Publisher Earning becomes payable only after its configured hold passes.
+6. SERP completes payment outside Apps Pass using the separately agreed Publisher payment method.
+7. The Operator records one immutable, idempotent Publisher Payment containing the exact Earning amount, method, completion time, and opaque provider confirmation reference.
+8. Apps Pass never stores bank credentials, payment-account credentials, or a Publisher email address as the payment reference. Recording evidence never initiates money movement.
 
 ## 4. Product surfaces
 
@@ -91,13 +89,13 @@ Invites Publishers, assigns public IDs, reviews and approves App submissions, su
 
 ### Invited Publisher
 
-- `/publisher` — Connect readiness, App Submission, approved App status, Earnings, Transfers, and Payout status.
+- `/publisher` — App Submission, approved App status, Earnings, and recorded Publisher Payment status.
 
 The Publisher area is private and invitation-only. It is not a public marketplace or general developer portal.
 
 ### Operator
 
-A protected CLI is sufficient for invitations, identifier assignment, Submission approval, App suspension, session revocation, allocation posting, transfer release, and reconciliation. There is no Operator dashboard requirement.
+A protected CLI or minimal protected form is sufficient for invitations, identifier assignment, Submission approval, App suspension, session revocation, allocation posting, completed-payment recording, and reconciliation. There is no polished Operator dashboard requirement.
 
 ## 5. Required implementation shape
 
@@ -108,8 +106,8 @@ A protected CLI is sufficient for invitations, identifier assignment, Submission
 - Better Auth for human Subscriber, Publisher, and Operator sessions after the exact pinned stack passes a deployed staging spike.
 - Opaque App sessions remain separate from human sessions.
 - Stripe-hosted Checkout and Customer Portal for Subscriber billing.
-- Stripe Connect Express hosted onboarding for Publishers.
-- Platform-owned subscriptions plus separate charges and transfers.
+- Platform-owned Stripe subscriptions. Stripe does not calculate Publisher shares or pay Publishers in the private-pilot MVP.
+- Publisher payments completed outside Apps Pass and recorded through an audited provider-neutral boundary.
 - Cloudflare Workers Logs with structured, secret-safe events.
 - No additional backend service unless a demonstrated constraint requires it.
 
@@ -119,12 +117,12 @@ The MVP requires durable records for:
 
 - human users, sessions, accounts, and verification state;
 - Operator invitations and role assignments;
-- Publishers and connected-account readiness;
+- Publishers and Publisher Memberships;
 - App Submissions, Apps, and Distributions;
 - Subscribers and normalized Subscriptions;
 - Stripe Customers, Subscriptions, Invoices, and processed Events;
 - Link Requests, App Links, and App Sessions;
-- Cash Receipts, Allocation Runs, ledger entries, Publisher Earnings, Transfers, reversals, and observed Payouts;
+- Cash Receipts, Allocation Runs, ledger entries, Publisher Earnings, and immutable Publisher Payment evidence;
 - append-only Operator audit events for money movement and authority changes.
 
 Every external Stripe object is stored with its mode (`test` or `live`). Test and live identifiers may never share a database environment.
@@ -133,13 +131,13 @@ Every external Stripe object is stored with its mode (`test` or `live`). Test an
 
 - Verify Stripe signatures against the raw request body.
 - Store every processed Stripe Event ID under a unique constraint before applying its transition.
-- Make Checkout creation, Connect onboarding, allocation posting, and Transfer creation idempotent.
+- Make Checkout creation, allocation posting, and Publisher Payment recording idempotent.
 - Require an authenticated role and CSRF-safe method for every human state change.
 - Keep Operator mutation surfaces unavailable to unauthenticated public traffic.
 - Validate Publisher ownership evidence before approval; the exact pilot evidence is recorded per Submission.
 - Never embed platform, Stripe, or Publisher secrets in an extension.
 - Store App-session tokens only as hashes and redact credentials, proof keys, account-link URLs, and personal/payment details from logs.
-- Preserve an audit trail for App approval, suspension, allocation, release, Transfer, reversal, and reconciliation.
+- Preserve an audit trail for App approval, suspension, allocation, Publisher Payment recording, and reconciliation.
 - Treat Worker rollback and D1 migration/recovery as separate operations.
 
 The detailed threat model is in [`docs/mvp/SECURITY.md`](./docs/mvp/SECURITY.md).
@@ -150,7 +148,7 @@ The MVP is staging-complete only when all of the following have durable evidence
 
 1. The pinned Next.js/OpenNext/Better Auth/D1 combination runs on deployed Cloudflare staging.
 2. Subscriber and invited-Publisher human sessions survive Worker restarts and enforce roles.
-3. An invited Publisher completes Stripe test-mode Connect onboarding and readiness is derived from Stripe state.
+3. An invited Publisher can participate without a Stripe connected account or payment credentials stored in Apps Pass.
 4. A real Chromium extension integrates the SDK in its own source, submits the standard manifest, is approved, and loads without prototype fixture enumeration.
 5. A Subscriber completes Stripe test-mode hosted Checkout.
 6. Signed, duplicate, delayed, and deliberately reordered webhook fixtures produce the correct normalized Subscription without double application.
@@ -158,9 +156,9 @@ The MVP is staging-complete only when all of the following have durable evidence
 8. Cancellation and failed renewal stop extending access; paid-through expiry produces `inactive`.
 9. Cross-App token use, link replay, expired links, session revocation, and App suspension behave correctly.
 10. The paid Invoice produces one Cash Receipt and a balanced, auditable Allocation Run.
-11. One Publisher Earning is deliberately released through one idempotent Stripe test-mode Transfer.
-12. The Publisher can distinguish accrued Earning, Transfer state, and bank Payout state.
-13. Structured staging logs allow an Operator to trace the Checkout, webhook, link, entitlement, allocation, and Transfer using identifiers without exposing secrets.
+11. One completed external Publisher payment is deliberately recorded once against the exact eligible Earning; exact retry is a no-op and conflicting evidence rejects.
+12. The Publisher can distinguish an accrued Earning from a recorded Publisher Payment, while Apps Pass makes no claim that an unobserved bank deposit succeeded.
+13. Structured staging logs allow an Operator to trace the Checkout, webhook, link, entitlement, allocation, and Publisher Payment using identifiers without exposing secrets.
 14. D1 state persists across deployments and a documented backup/recovery rehearsal succeeds in staging.
 15. Automated contract/integration checks and real Chromium browser checks are reported separately and pass.
 
@@ -172,8 +170,8 @@ Before one controlled live purchase and Publisher settlement, the Operator must 
 
 - SERP's seller/merchant, tax, invoice, refund, dispute, and customer-support responsibilities;
 - the pilot Publisher agreement and ownership evidence;
-- the distributable basis, Publisher amount, reserve, hold, payout cadence, minimum, currency, and negative-balance policy;
-- supported platform and Publisher countries under Stripe Connect;
+- the distributable basis, Publisher amount, reserve, hold, payment cadence, minimum, currency, approved payment methods, and negative-balance policy;
+- Publisher agreement, tax-information collection, reporting, and supported-country policy;
 - production hostname, price, email sender/provider, terms, privacy policy, and refund policy;
 - production D1 creation/migration, secrets, rollback, recovery, and reconciliation runbooks.
 
@@ -187,7 +185,8 @@ The live smoke test must use a deliberately limited price and settlement amount,
 - Usage analytics or usage-weighted revenue allocation.
 - Automatic allocation or automatic Transfer release.
 - Multiple Pass plans, currencies, coupons, affiliates, teams, or seats.
-- Custom payment UI, custom Publisher KYC UI, or custom bank-payout UI.
+- Custom payment UI, custom Publisher KYC UI, or storage of Publisher bank/payment-account credentials.
+- Automated Publisher payouts or Stripe Connect; both are post-MVP options after the manual operating model is validated.
 - A polished Operator dashboard.
 - Firefox, Safari, or native Apps.
 - Production Sentry, data warehouse, analytics suite, or microservices.

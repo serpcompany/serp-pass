@@ -128,10 +128,6 @@ try {
   assert.equal(preMembership.status(), 403, "A Subscriber cannot start Publisher onboarding");
   localSql(`INSERT INTO publisher (id, name, status, created_at, created_by_user_id) VALUES ('${publisherId}', 'Connect Projection Publisher', 'active', ${Math.floor(Date.now() / 1000)}, '${userId}'); INSERT INTO publisher_membership (publisher_id, user_id, created_at) VALUES ('${publisherId}', '${userId}', ${Math.floor(Date.now() / 1000)}); INSERT INTO human_role_assignment (user_id, role, source, granted_at, granted_by_user_id) VALUES ('${userId}', 'publisher', 'invitation', ${Math.floor(Date.now() / 1000)}, '${userId}');`);
 
-  await page.goto(`${appOrigin}/publisher?connect=returned`);
-  await page.getByText("Connect not started").waitFor();
-  assert.equal(await page.getByText("Returning from Stripe does not mark this Publisher ready.").isVisible(), true);
-
   const unsupportedRequest = await context.request.post(`${appOrigin}/api/publisher/connect/onboarding`, {
     form: { schemaVersion: "2", publisherId, country: "US" },
     headers: { origin: appOrigin },
@@ -174,10 +170,6 @@ try {
     maxRedirects: 0,
   });
   assert.equal(countryConflict.status(), 409, "A retry cannot silently change the connected Account country");
-  await page.goto(`${appOrigin}/publisher?connect=returned`);
-  await page.getByText("Onboarding started — awaiting verified Stripe state").waitFor();
-  assert.equal(await page.getByText("Returning from Stripe does not mark this Publisher ready.").isVisible(), true);
-
   assert.equal((await sendAccountEvent({
     eventId: `evt_connect_wrong_account_${suffix}`,
     accountId: `acct_wrong_${suffix}`,
@@ -200,10 +192,10 @@ try {
     currentlyDue: ["individual.id_number"],
   });
   assert.equal(pending.status, 202, await pending.text());
-  await page.reload();
-  await page.getByText("Connect onboarding incomplete").waitFor();
-  assert.equal(await page.getByText("Transfers pending").isVisible(), true);
-  assert.equal(await page.getByText("1 requirement currently due").isVisible(), true);
+  const pendingState = localSql(`SELECT details_submitted, charges_enabled, payouts_enabled, transfers_capability, requirements_currently_due_count FROM publisher_connected_account WHERE publisher_id = '${publisherId}'`);
+  assert.match(pendingState, /"details_submitted": 0/u);
+  assert.match(pendingState, /"transfers_capability": "pending"/u);
+  assert.match(pendingState, /"requirements_currently_due_count": 1/u);
 
   const readyEvent = {
     eventId: `evt_connect_ready_${suffix}`,
@@ -218,11 +210,11 @@ try {
   const ready = await sendAccountEvent(readyEvent);
   assert.equal(ready.status, 202, await ready.text());
   assert.equal((await sendAccountEvent(readyEvent)).status, 200, "Exact replay must be idempotent");
-  await page.reload();
-  await page.getByText("Ready for test settlement").waitFor();
-  assert.equal(await page.getByText("Charges enabled").isVisible(), true);
-  assert.equal(await page.getByText("Transfers active").isVisible(), true);
-  assert.equal(await page.getByText("Bank payouts enabled").isVisible(), true);
+  const readyState = localSql(`SELECT details_submitted, charges_enabled, payouts_enabled, transfers_capability, requirements_currently_due_count FROM publisher_connected_account WHERE publisher_id = '${publisherId}'`);
+  assert.match(readyState, /"details_submitted": 1/u);
+  assert.match(readyState, /"charges_enabled": 1/u);
+  assert.match(readyState, /"payouts_enabled": 1/u);
+  assert.match(readyState, /"transfers_capability": "active"/u);
 
   const stale = await sendAccountEvent({
     eventId: `evt_connect_stale_${suffix}`,
@@ -236,8 +228,7 @@ try {
     currentlyDue: ["stale.requirement"],
   });
   assert.equal(stale.status, 202, await stale.text());
-  await page.reload();
-  await page.getByText("Ready for test settlement").waitFor();
+  assert.match(localSql(`SELECT details_submitted, transfers_capability FROM publisher_connected_account WHERE publisher_id = '${publisherId}'`), /"transfers_capability": "active"/u, "A stale Event must not regress projected Account state");
 
   const collisionPayload = {
     ...readyEvent,
@@ -262,12 +253,13 @@ try {
   assert.equal(payoutPaid.status, 202, await payoutPaid.text());
   const stalePayout = await sendPayoutEvent({ ...payoutCreated, eventId: `evt_payout_stale_${suffix}`, created: 1_900_200_100, status: "failed", failureCode: "stale_failure" });
   assert.equal(stalePayout.status, 200, await stalePayout.text());
-  await page.reload();
-  await page.getByText("Bank Payouts observed").waitFor();
-  assert.equal(await page.getByText("$7.00 USD · paid").isVisible(), true);
-  assert.equal(await page.getByText("Transfer and Earning records are separate from this bank Payout observation.").isVisible(), true);
+  const payoutState = localSql(`SELECT amount, currency, status, failure_code FROM connected_account_payout WHERE provider_payout_id = '${payoutId}'`);
+  assert.match(payoutState, /"amount": 700/u);
+  assert.match(payoutState, /"currency": "usd"/u);
+  assert.match(payoutState, /"status": "paid"/u);
+  assert.match(localSql(`SELECT COUNT(*) AS count FROM stripe_payout_event WHERE publisher_id = '${publisherId}'`), /"count": 3/u);
 
-  process.stdout.write("PASS signed Connect account and bank Payout state are replay-safe, order-safe, mode-scoped, and Publisher-visible\n");
+  process.stdout.write("PASS dormant post-MVP Connect projections remain replay-safe, order-safe, and mode-scoped without an active Publisher UI\n");
   await context.close();
 } finally {
   await browser.close();

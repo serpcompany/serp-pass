@@ -505,6 +505,30 @@ export const publisherEarnings = sqliteTable(
   (table) => [index("publisher_earning_publisher_status_idx").on(table.publisherId, table.status, table.availableAt), index("publisher_earning_allocation_idx").on(table.allocationRunId)],
 );
 
+export const publisherPayments = sqliteTable(
+  "publisher_payment",
+  {
+    id: text("id").primaryKey(),
+    publisherEarningId: text("publisher_earning_id").notNull().references(() => publisherEarnings.id, { onDelete: "restrict" }),
+    publisherId: text("publisher_id").notNull().references(() => publishers.id, { onDelete: "restrict" }),
+    mode: text("mode", { enum: ["test", "live"] }).notNull(),
+    method: text("method", { enum: ["ach", "bank_transfer", "paypal", "wise", "other"] }).notNull(),
+    providerReference: text("provider_reference").notNull(),
+    amount: integer("amount").notNull(),
+    currency: text("currency").notNull(),
+    paidAt: integer("paid_at", { mode: "timestamp" }).notNull(),
+    requestSha256: text("request_sha256").notNull(),
+    reason: text("reason").notNull(),
+    recordedByUserId: text("recorded_by_user_id").notNull().references(() => user.id, { onDelete: "restrict" }),
+    recordedAt: integer("recorded_at", { mode: "timestamp" }).notNull(),
+  },
+  (table) => [
+    uniqueIndex("publisher_payment_earning_unique").on(table.publisherEarningId),
+    uniqueIndex("publisher_payment_reference_unique").on(table.mode, table.method, table.providerReference),
+    index("publisher_payment_publisher_paid_idx").on(table.publisherId, table.paidAt),
+  ],
+);
+
 export const ledgerEntries = sqliteTable(
   "ledger_entry",
   {

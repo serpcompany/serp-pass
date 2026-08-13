@@ -53,11 +53,11 @@ The real Customer Portal represented scheduled cancellation with `cancel_at` whi
 - Allocation Run: `alloc_staging_real_10usd_20260814`.
 - Immutable split: `$7.00` Publisher Earning (`earning_staging_pub_real_700_20260814`), `$2.00` platform, and `$1.00` reserve.
 - The first posting returned `posted`; replaying the exact request returned `duplicate` and created no second allocation.
-- Stripe Connect onboarding is enabled only in staging. The first Account-creation attempt was rejected by Stripe because this platform Account has not completed the one-time Connect platform signup. D1 preserves an idempotent `creating` onboarding row without a connected Account ID, so the same Publisher can safely continue after that platform setup.
-- Stripe test Transfer execution remains disabled. No Transfer or Payout exists.
+- The first Connect Account-creation experiment was rejected because this platform Account has not completed Connect signup. Product direction then changed: Connect is no longer an MVP dependency. The historical D1 `creating` row contains no connected Account ID and is retained as evidence.
+- Connect onboarding and Stripe test Transfer execution are disabled by active staging configuration. No Transfer or Payout exists.
 
 ## Still gated
 
-- No connected Account exists. Account creation is blocked on the one-time Connect platform signup in the Stripe Dashboard.
-- Test Transfers remain disabled until signed `account.updated` evidence proves the synthetic Publisher Account is settlement-ready.
+- No connected Account exists or is required for the MVP.
+- The existing Connect webhook is unused and may be removed in a later deliberate Stripe-account cleanup; it must not be confused with the active platform billing webhook.
 - No live-mode object, real card, real bank account, production secret, production D1, or production Worker exists.

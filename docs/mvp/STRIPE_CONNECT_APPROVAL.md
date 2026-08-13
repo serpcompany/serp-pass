@@ -1,10 +1,12 @@
 # Stripe Connect sandbox approval packet
 
-Status: **bounded test-mode actions approved; exact account and Connect webhook are configured; country and exact Earning amount remain unresolved**
+Status: **superseded 2026-08-14; retained as post-MVP experiment history**
 
 Date: **2026-08-13**
 
 ## Hard boundary
+
+The active private-pilot PRD no longer uses Stripe Connect. Stripe bills Subscribers only; SERP completes Publisher payments outside Apps Pass and records provider-neutral evidence afterward. Do not execute this packet or enable `STRIPE_CONNECT_ONBOARDING_ENABLED` or `STRIPE_TEST_TRANSFERS_ENABLED` without a new explicit decision.
 
 The intended platform account is `acct_1MwbFJI9EPtyKcIs`, currently named **SERP Pass**. On 2026-08-13 the user approved test-mode Connect onboarding, staging webhooks, one small test Transfer, and its full reversal on that exact account. This does not authorize another account, live mode, production, a real bank account, or real money.
 

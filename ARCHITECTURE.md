@@ -15,18 +15,18 @@ flowchart LR
     App["Next.js / OpenNext Worker"]
     D1[("Environment-specific D1")]
     Billing["Stripe Billing"]
-    Connect["Stripe Connect Express"]
+    PaymentRail["External payment rail\n(outside Apps Pass)"]
     Logs["Cloudflare Workers Logs"]
 
     Subscriber -->|"human session, Checkout, activation"| App
-    Publisher -->|"human session, manifest, onboarding"| App
+    Publisher -->|"human session, manifest, payment status"| App
     Extension -->|"App session, entitlement"| App
-    Operator -->|"review, allocation, release"| App
+    Operator -->|"review, allocation, payment evidence"| App
     App --> D1
     App -->|"Checkout and Portal"| Billing
     Billing -->|"signed webhooks"| App
-    App -->|"hosted onboarding and Transfers"| Connect
-    Connect -->|"account, transfer, payout events"| App
+    Operator -->|"complete payment separately"| PaymentRail
+    Operator -->|"record opaque confirmation"| App
     App --> Logs
 ```
 
@@ -69,8 +69,8 @@ flowchart TD
     Subscription --> Decision["Entitlement decision"]
     Receipt --> Allocation["Posted Allocation Run"]
     Allocation --> Earning["Publisher Earning"]
-    Earning -->|"hold passed + Operator release"| Transfer["Stripe Transfer"]
-    Transfer --> Payout["Observed connected-account Payout"]
+    Earning -->|"hold passed"| External["SERP completes payment outside Apps Pass"]
+    External --> Payment["Recorded Publisher Payment"]
 ```
 
 The following are intentionally not synonyms:
@@ -78,8 +78,8 @@ The following are intentionally not synonyms:
 - A successful Checkout redirect is not a paid Invoice.
 - A paid Invoice is not directly an entitlement decision; it extends normalized paid-through state.
 - A Cash Receipt is not a Publisher Earning until an Allocation Run is posted.
-- A Publisher Earning is not a Stripe Transfer until deliberately released.
-- A Stripe Transfer to a connected account is not a bank Payout.
+- A Publisher Earning is not paid merely because it was allocated.
+- A Publisher Payment is evidence recorded after an external payment; recording it does not move money or prove an unobserved bank deposit.
 
 ## Deep module interfaces
 
@@ -171,14 +171,14 @@ Interface:
 
 - record a paid Cash Receipt exactly once;
 - post one balanced Allocation Run;
-- release an eligible Publisher Earning;
-- reconcile Transfer, reversal, and Payout events.
+- record one completed external payment for an eligible Publisher Earning;
+- read accrued versus paid state without exposing payment credentials.
 
-The module hides immutable ledger entries, balance validation, hold rules, Stripe idempotency keys, and correction entries. Stripe executes money movement but does not calculate Publisher earnings.
+The module hides immutable ledger entries, balance validation, hold rules, payment-record idempotency, and correction boundaries. Stripe bills Subscribers but does not calculate Publisher earnings or execute Publisher payments in the private pilot.
 
-### Connect readiness projection
+### Dormant post-MVP Connect experiment
 
-The Connect boundary consumes signature-verified `account.updated` Events and stores only operational readiness fields: Account identity, mode, details-submitted state, charges enabled, transfers capability, payouts enabled, due-requirement count, and disabled reason. It does not store KYC answers or raw webhook bodies.
+The repository contains a completed local experiment for Stripe Connect onboarding, readiness, Transfers, reversals, and Payout observation. It is preserved as post-MVP evidence, not an active product dependency. Staging does not enable Connect onboarding or Stripe Transfers.
 
 ```mermaid
 sequenceDiagram
@@ -198,7 +198,7 @@ sequenceDiagram
     W-->>P: Onboarding, charges, transfers, payouts, requirements
 ```
 
-The Publisher request, idempotent Account record, real Stripe executor, single-use Account Link generation, and Event projection are implemented. The real executor remains inert unless the environment explicitly enables it with a mode-correct API key and exact expected platform Account ID. Returning from an Account Link never mutates readiness; only a signed Event bound to the created Account can do that. Local browser proofs use an unmistakable fake Account ID and never call Stripe.
+If Connect is reconsidered later, its trust boundary remains valid: a redirect cannot assert readiness, Account Links must not be stored, and only signed Events bound to the created Account may project readiness. Re-enabling it requires a new explicit product and operational decision.
 
 ## Request surfaces
 
@@ -208,15 +208,15 @@ The exact route filenames may follow Next.js conventions, but the externally mea
 - `POST /api/billing/checkout`;
 - `POST /api/billing/portal`;
 - `POST /api/stripe/webhook` using the raw body;
-- `POST /api/stripe/connect-webhook` using the raw body and its distinct signing secret;
 - `POST /api/publisher/submissions`;
-- `POST /api/publisher/connect/onboarding`;
 - `POST /api/app-pass/link-requests`;
 - `POST /api/app-pass/link-requests/:id/exchange`;
 - authenticated `/activate/:id` approval and denial;
 - `POST /api/app-pass/entitlements/check`;
 - protected Operator use cases exposed primarily through the CLI.
-- `POST /api/operator/allocations` and `POST /api/operator/settlements` as protected same-origin Operator use cases.
+- `POST /api/operator/allocations` and `POST /api/operator/publisher-payments` as protected same-origin Operator use cases.
+
+The Connect webhook, onboarding route, and Stripe settlement route remain dormant post-MVP experiment surfaces and are not enabled by staging configuration.
 
 ## Human and App credentials
 
@@ -267,10 +267,10 @@ Must be replaced rather than relabeled:
 
 ## Operational minimum
 
-- Structured events for auth failures, App review, Stripe ingestion, normalized Subscription transitions, link exchange, entitlement errors, Allocation posting, Transfer creation, reversals, and reconciliation.
+- Structured events for auth failures, App review, Stripe ingestion, normalized Subscription transitions, link exchange, entitlement errors, Allocation posting, Publisher Payment recording, and reconciliation.
 - Stable correlation identifiers without logging tokens, secrets, proof keys, account-link URLs, or payment/identity payloads.
-- A protected Operator journey trace follows one Subscriber through Checkout Attempts, provider billing identities, Cash Receipts, App Link Requests, App Sessions, Allocation Runs, Publisher Earnings, Settlements, and Transfers. The response exposes only operational IDs, state, and money amounts; it returns a correlation ID and logs only that ID plus relationship counts.
-- D1 migration, Time Travel/recovery, Stripe reconciliation, Transfer retry, App suspension, and credential-rotation runbooks.
+- A protected Operator journey trace follows one Subscriber through Checkout Attempts, provider billing identities, Cash Receipts, App Link Requests, App Sessions, Allocation Runs, Publisher Earnings, and Publisher Payments. The response exposes only operational IDs, state, method, and money amounts; it returns a correlation ID and logs only that ID plus relationship counts.
+- D1 migration, Time Travel/recovery, Stripe billing reconciliation, Publisher Payment correction, App suspension, and credential-rotation runbooks.
 - Native Cloudflare Workers Logs and modest tracing are sufficient initially. Sentry is not a prerequisite.
 
 See [`docs/mvp/SECURITY.md`](./docs/mvp/SECURITY.md), [`docs/mvp/MONEY_MODEL.md`](./docs/mvp/MONEY_MODEL.md), and [`docs/mvp/DELIVERY_PLAN.md`](./docs/mvp/DELIVERY_PLAN.md).

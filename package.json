@@ -21,7 +21,7 @@
     "mvp:activation:test": "pnpm --filter @serp-apps-pass/web test:activation-browser",
     "mvp:activation:test-staging": "pnpm --filter @serp-apps-pass/web test:activation-staging-browser",
     "mvp:stripe-adapter:test": "pnpm --filter @serp-apps-pass/web test:stripe-account-guard && pnpm --filter @serp-apps-pass/web test:stripe-webhook",
-    "mvp:connect:test": "pnpm --filter @serp-apps-pass/web test:connect-projection",
+    "postmvp:connect:test": "pnpm --filter @serp-apps-pass/web test:connect-projection",
     "mvp:earnings:test": "pnpm --filter @serp-apps-pass/web test:earnings-allocation",
     "mvp:operator-trace:test-staging": "pnpm --filter @serp-apps-pass/web test:operator-trace-staging",
     "mvp:stripe-checkout:test-staging": "pnpm --filter @serp-apps-pass/web test:stripe-checkout-staging",

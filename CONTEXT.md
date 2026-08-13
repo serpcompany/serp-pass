@@ -86,16 +86,20 @@ _Avoid_: Revenue algorithm, payout
 
 **Publisher Earning**:
 An amount attributed to a Publisher by a posted Allocation Run, potentially held before settlement.
-_Avoid_: Transfer, payout, balance
+_Avoid_: Publisher Payment, payout, balance
+
+**Publisher Payment**:
+Immutable Apps Pass evidence that SERP completed payment of one eligible Publisher Earning outside Apps Pass. It records method, amount, time, and an opaque provider confirmation reference, but never initiates payment or stores payment credentials.
+_Avoid_: Earning, Stripe Transfer, bank credentials
 
 **Transfer**:
-A Stripe movement from the SERP platform balance to a Publisher connected account.
+A post-MVP or historical Stripe Connect movement from the SERP platform balance to a Publisher connected account. It is not part of the active private-pilot settlement path.
 _Avoid_: Earning, payout
 
 **Payout**:
-A Stripe-observed movement from a Publisher connected account to its external bank account.
+A post-MVP or historical Stripe-observed movement from a Publisher connected account to its external bank account.
 _Avoid_: Transfer, settlement
 
 **Settlement**:
-The controlled process of releasing eligible Publisher Earnings into Transfers and reconciling their outcomes.
+The controlled process of paying eligible Publisher Earnings and recording evidence. In the private pilot, SERP completes payment outside Apps Pass and an Operator records a Publisher Payment afterward.
 _Avoid_: Allocation, payout

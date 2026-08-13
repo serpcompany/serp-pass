@@ -1,14 +1,14 @@
 import Link from "next/link";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 
 import { getHumanIdentity } from "@/auth/identity";
 import { billingModeForEnvironment } from "@/billing/read";
 import { getDb } from "@/db/get-db";
-import { allocationRuns, appSubmissions, publisherConnectedAccounts, publisherEarnings, publishers } from "@/db/schema";
+import { allocationRuns, appSubmissions, publisherEarnings, publisherPayments, publishers } from "@/db/schema";
 import { AllocationForm } from "./allocation-form";
 import { PublisherInvitationForm } from "./publisher-invitation-form";
-import { SettlementReleaseForm } from "./settlement-release-form";
+import { PublisherPaymentForm } from "./publisher-payment-form";
 import { SubmissionReviewForm } from "./submission-review-form";
 
 export const dynamic = "force-dynamic";
@@ -53,16 +53,11 @@ export default async function OperatorPage() {
     amount: publisherEarnings.amount,
     currency: publisherEarnings.currency,
     availableAt: publisherEarnings.availableAt,
-    detailsSubmitted: publisherConnectedAccounts.detailsSubmitted,
-    payoutsEnabled: publisherConnectedAccounts.payoutsEnabled,
-    transfersCapability: publisherConnectedAccounts.transfersCapability,
-    requirementsDue: publisherConnectedAccounts.requirementsCurrentlyDueCount,
-    disabledReason: publisherConnectedAccounts.disabledReason,
   }).from(publisherEarnings)
     .innerJoin(allocationRuns, eq(allocationRuns.id, publisherEarnings.allocationRunId))
     .innerJoin(publishers, eq(publishers.id, publisherEarnings.publisherId))
-    .leftJoin(publisherConnectedAccounts, and(eq(publisherConnectedAccounts.publisherId, publisherEarnings.publisherId), eq(publisherConnectedAccounts.mode, mode)))
-    .where(and(eq(publisherEarnings.status, "accrued"), eq(allocationRuns.mode, mode)));
+    .leftJoin(publisherPayments, eq(publisherPayments.publisherEarningId, publisherEarnings.id))
+    .where(and(eq(publisherEarnings.status, "accrued"), eq(allocationRuns.mode, mode), isNull(publisherPayments.id)));
 
   return (
     <main>
@@ -77,14 +72,13 @@ export default async function OperatorPage() {
           <AllocationForm />
         </div>
         {earningRows.length > 0 && <div className="review-list">
-          <h2>Accrued Publisher Earnings</h2>
+          <h2>Publisher Earnings awaiting payment</h2>
           {earningRows.map((earning) => {
             const holdPassed = earning.availableAt.getTime() <= Date.now();
-            const connectReady = Boolean(earning.detailsSubmitted && earning.payoutsEnabled && earning.transfersCapability === "active" && earning.requirementsDue === 0 && !earning.disabledReason);
             const formatted = new Intl.NumberFormat("en-US", { style: "currency", currency: earning.currency.toUpperCase() }).format(earning.amount / 100);
             return <div key={earning.id} data-testid={`operator-earning-${earning.id}`}>
-              <p><strong>{earning.publisherName} · {formatted} {earning.currency.toUpperCase()}</strong><br /><span className="muted">{earning.id} · hold {holdPassed ? "passed" : `until ${earning.availableAt.toISOString()}`} · Connect {connectReady ? "ready" : "not ready"}</span></p>
-              <SettlementReleaseForm earningId={earning.id} enabled={holdPassed && connectReady} />
+              <p><strong>{earning.publisherName} · {formatted} {earning.currency.toUpperCase()}</strong><br /><span className="muted">{earning.id} · hold {holdPassed ? "passed" : `until ${earning.availableAt.toISOString()}`}</span></p>
+              <PublisherPaymentForm earningId={earning.id} enabled={holdPassed} />
             </div>;
           })}
         </div>}

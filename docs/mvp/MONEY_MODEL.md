@@ -1,26 +1,25 @@
 # Private-pilot money model
 
-Status: **binding test-mode model; live policy approval still required**
+Status: **binding private-pilot model; live policy approval still required**
 
 ## Principle
 
-Stripe is the payment and money-movement provider. Apps Pass remains authoritative for why a Publisher is owed an amount.
+Stripe bills Subscribers for a platform-owned Pass subscription. Apps Pass remains authoritative for why a Publisher is owed an amount. SERP completes Publisher payments outside Apps Pass during the private pilot.
 
-The MVP must never calculate a Publisher balance by summing Stripe Transfers alone. Transfers can fail, be reversed, or be paid out separately; they are settlement evidence, not the earnings ledger.
+A Publisher Payment record is evidence created after SERP completes an external payment. Creating the record never moves money and never proves an unobserved bank deposit. Apps Pass stores no bank account, payment-account credential, tax identifier, or Publisher email address as a payment reference.
 
 ## Money flow
 
 ```mermaid
 flowchart LR
-    Checkout["Platform Checkout subscription"] --> Invoice["Paid Stripe Invoice"]
+    Checkout["Platform Stripe subscription"] --> Invoice["Paid Stripe Invoice"]
     Invoice --> Receipt["Cash Receipt"]
     Receipt --> Allocation["Balanced Allocation Run"]
     Allocation --> Reserve["Reserve"]
     Allocation --> Platform["SERP amount"]
     Allocation --> Earning["Publisher Earning"]
-    Earning -->|"hold + approval"| Transfer["Stripe Transfer"]
-    Transfer --> Connected["Publisher connected balance"]
-    Connected --> Payout["Bank Payout"]
+    Earning -->|"hold passed"| External["SERP pays through an approved external method"]
+    External --> Evidence["Operator records Publisher Payment evidence"]
 ```
 
 ## Ledger invariants
@@ -28,7 +27,7 @@ flowchart LR
 All amounts use integer minor currency units and an explicit ISO currency.
 
 1. A Stripe Invoice can create at most one Cash Receipt per environment/mode.
-2. Refunds, disputes, reversals, and corrections are new signed ledger entries; no posted entry is overwritten or deleted.
+2. Refunds, disputes, payment reversals, and corrections require new evidence or compensating entries; posted financial evidence is never overwritten or deleted.
 3. Every Allocation Run balances exactly:
 
    ```text
@@ -37,71 +36,65 @@ All amounts use integer minor currency units and an explicit ISO currency.
 
 4. The total distributable amount cannot exceed the unallocated eligible Cash Receipts included in the run.
 5. A Publisher Earning references exactly one Publisher, one Allocation Run, one amount, one currency, and one `available_at` time.
-6. A Publisher Earning cannot be released twice.
-7. Every Stripe Transfer uses a deterministic idempotency key derived from the environment and settlement identity.
-8. Test-mode and live-mode money never share a ledger or Stripe object namespace.
-9. A Transfer does not mark a bank Payout complete.
-10. Operator identity, timestamp, reason, and supporting references accompany every posted Allocation, release, reversal, and correction.
+6. One Publisher Earning can have at most one Publisher Payment.
+7. A Publisher Payment must match the Earning's Publisher, amount, currency, environment mode, and hold time exactly.
+8. Payment ID and method/provider reference are unique. Exact replay is a no-op; conflicting reuse rejects.
+9. Payment evidence records Operator identity, completion time, reason, method, and an opaque provider confirmation reference.
+10. No Publisher may mark their own Earning paid, and no payment credentials may enter Apps Pass.
 
 ## Private-pilot allocation policy
 
-The application does not automate a usage or equal-share formula.
-
-For each pilot Allocation Run, the Operator explicitly enters:
+The application does not automate a usage or equal-share formula. For each pilot Allocation Run, the Operator explicitly enters:
 
 - included Cash Receipts;
 - amount held as reserve;
 - amount retained by SERP;
 - amount attributed to each Publisher;
 - reason and agreement reference;
-- hold/release date.
+- hold/payment-eligible date.
 
-The system validates that the run balances and then posts immutable ledger entries. This supports a real invited-Publisher payment without pretending that product economics have already been discovered.
+The system validates that the run balances and then posts immutable ledger entries. This supports a real invited-Publisher payment without pretending product economics have already been discovered.
 
-## Test-mode release policy
+## Private-pilot payment policy
 
-- A zero-day hold is allowed only in Stripe test mode so the complete flow can be exercised.
-- Connect onboarding/readiness must be confirmed from Stripe state, not a return redirect.
-- Transfer creation is Operator-triggered and idempotent.
-- Test failure, retry, and reversal paths must be recorded.
+1. SERP and the Publisher agree on a payment method outside Apps Pass.
+2. SERP completes payment outside Apps Pass.
+3. An Operator records the completed payment against the exact eligible Earning.
+4. The record contains only the approved method and opaque confirmation reference—not an account number, routing number, email address, access token, or tax identifier.
+5. The Publisher page distinguishes **accrued** from **paid externally**.
+6. Minimum threshold, cadence, and supported methods remain explicit commercial policy; the application does not invent them.
 
 ## Live policy gate
 
-Before any live allocation or Transfer, document and approve:
+Before any live Allocation or Publisher Payment, document and approve:
 
-- seller/merchant and tax responsibility;
+- seller/merchant and customer-tax responsibility;
 - definition of distributable receipts;
 - treatment of tax, discounts, Stripe fees, refunds, disputes, reserves, and platform margin;
 - Publisher formula or agreed fixed amount;
-- hold length, payout cadence, minimum, and currency;
+- hold length, payment cadence, minimum, currency, and supported methods;
+- Publisher tax-information collection and reporting process;
 - negative-balance and failed-recovery responsibility;
-- Publisher country eligibility and cross-border constraints;
-- correction, dispute, and agreement-termination process.
+- supported Publisher countries and cross-border payment constraints;
+- correction, dispute, duplicate-payment, and agreement-termination process.
 
-These are commercial decisions. Environment variables or undocumented Operator habits are not acceptable substitutes.
+These are commercial and legal/accounting decisions. Environment variables or undocumented Operator habits are not acceptable substitutes.
 
 ## Minimum records
 
-- `cash_receipts`
-- `ledger_entries`
-- `allocation_runs`
-- `publisher_earnings`
-- `settlements`
-- `stripe_transfers`
-- `stripe_transfer_reversals`
-- `connected_account_payouts`
-- `operator_audit_events`
+- `cash_receipt`
+- `ledger_entry`
+- `allocation_run`
+- `publisher_earning`
+- `publisher_payment`
+- `operator_audit_event`
 
-Exact tables may be deepened during schema design, but the observable concepts and invariants must remain.
+## Implemented boundary
 
-## Implemented account-independent boundary
+Migrations `0017_earnings_allocation_ledger.sql` and `0018_close_posted_allocation_append.sql` implement immutable balanced Allocation and Earning state. Migration `0025_external_publisher_payment.sql` adds provider-neutral, immutable completed-payment evidence.
 
-Migrations `0017_earnings_allocation_ledger.sql` and `0018_close_posted_allocation_append.sql` implement the pre-settlement half of this model. A same-origin, authenticated Operator request posts one explicit Allocation Run through `/api/operator/allocations`. The full posting is hashed for idempotency and atomically creates receipt allocations, signed ledger entries, Publisher Earnings, and an Operator audit event.
+`POST /api/operator/allocations` posts one explicit Allocation Run. `POST /api/operator/publisher-payments` records a payment already completed elsewhere. Both require a same-origin authenticated Operator, canonical request hashing, exact replay behavior, and append-only audit evidence.
 
-D1 triggers enforce receipt capacity and currency, validate the final zero-sum ledger before a Run can become posted, and reject later append, mutation, or deletion of posted Runs, receipt allocations, ledger entries, Publisher Earning financial fields, and Cash Receipts. Corrections therefore require future compensating entries rather than rewriting history.
+D1 triggers enforce receipt capacity and currency, validate the final zero-sum ledger, prevent mutation of posted financial state, and independently validate that a Publisher Payment exactly matches an eligible Earning. The Publisher view exposes method, opaque confirmation reference, and paid time without exposing Operator reasoning or payment credentials.
 
-Migrations `0019`–`0022` add the settlement state machine, Transfer attempt and signed Transfer Event reconciliation, and connected-account Payout observation. The visible Operator surface releases an eligible Earning only after its hold and signed Connect readiness pass. Local development uses an explicitly labeled deterministic simulation; staging remains disabled unless the separate test-only Transfer gate is deliberately configured.
-
-The real Stripe adapter verifies the platform Account ID again immediately before creating one separate Transfer with an Earning-derived idempotency key. It is test-staging-only and unreachable while `STRIPE_TEST_TRANSFERS_ENABLED` is absent. Signed platform Transfer Events can confirm or fully reverse the Transfer, Settlement, and Earning without rewriting history. Partial reversal deliberately rejects until a correction-ledger policy exists. Signed connected-account Payout Events are projected separately and never inferred from Transfer success.
-
-No Stripe Account, Transfer, reversal, or Payout was accessed or created while implementing this boundary.
+The Connect, Transfer, reversal, and connected-account Payout tables/routes from migrations `0016` and `0019`–`0024` are preserved as dormant post-MVP experiment evidence. Staging does not enable Connect onboarding or Stripe Transfer execution, and the active private-pilot workflow does not depend on those records.

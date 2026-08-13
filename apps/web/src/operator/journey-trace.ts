@@ -27,6 +27,12 @@ export async function readOperatorJourneyTrace(db: CloudflareEnv["DB"], mode: Bi
       JOIN billing_invoice invoice ON invoice.id = receipt.billing_invoice_id JOIN normalized_subscription subscription ON subscription.id = invoice.normalized_subscription_id
       JOIN billing_customer customer ON customer.id = subscription.billing_customer_id
       WHERE run.mode = ? AND customer.subscriber_user_id = ? ORDER BY earning.created_at, earning.id`).bind(mode, subscriberUserId),
+    db.prepare(`SELECT DISTINCT payment.id, payment.publisher_earning_id, payment.publisher_id, payment.amount, payment.currency, payment.method, payment.provider_reference, payment.paid_at
+      FROM publisher_payment payment JOIN publisher_earning earning ON earning.id = payment.publisher_earning_id JOIN allocation_run run ON run.id = earning.allocation_run_id
+      JOIN allocation_run_receipt allocated ON allocated.allocation_run_id = run.id JOIN cash_receipt receipt ON receipt.id = allocated.cash_receipt_id
+      JOIN billing_invoice invoice ON invoice.id = receipt.billing_invoice_id JOIN normalized_subscription subscription ON subscription.id = invoice.normalized_subscription_id
+      JOIN billing_customer customer ON customer.id = subscription.billing_customer_id
+      WHERE payment.mode = ? AND customer.subscriber_user_id = ? ORDER BY payment.paid_at, payment.id`).bind(mode, subscriberUserId),
     db.prepare(`SELECT DISTINCT settlement.id, settlement.publisher_earning_id, settlement.publisher_id, settlement.amount, settlement.currency, settlement.status
       FROM settlement JOIN publisher_earning earning ON earning.id = settlement.publisher_earning_id JOIN allocation_run run ON run.id = earning.allocation_run_id
       JOIN allocation_run_receipt allocated ON allocated.allocation_run_id = run.id JOIN cash_receipt receipt ON receipt.id = allocated.cash_receipt_id
@@ -53,7 +59,8 @@ export async function readOperatorJourneyTrace(db: CloudflareEnv["DB"], mode: Bi
     appSessions: rows(result[7]).map((row) => ({ sessionId: row.id, appId: row.app_id, status: row.status })),
     allocationRuns: rows(result[8]).map((row) => ({ allocationRunId: row.id, status: row.status, distributableAmount: row.distributable_amount, reserveAmount: row.reserve_amount, platformAmount: row.platform_amount, currency: row.currency })),
     publisherEarnings: rows(result[9]).map((row) => ({ earningId: row.id, allocationRunId: row.allocation_run_id, publisherId: row.publisher_id, amount: row.amount, currency: row.currency, status: row.status })),
-    settlements: rows(result[10]).map((row) => ({ settlementId: row.id, earningId: row.publisher_earning_id, publisherId: row.publisher_id, amount: row.amount, currency: row.currency, status: row.status })),
-    transfers: rows(result[11]).map((row) => ({ providerTransferId: row.provider_transfer_id, settlementId: row.settlement_id, amount: row.amount, currency: row.currency, status: row.status, executionMode: row.execution_mode })),
+    publisherPayments: rows(result[10]).map((row) => ({ paymentId: row.id, earningId: row.publisher_earning_id, publisherId: row.publisher_id, amount: row.amount, currency: row.currency, method: row.method, providerReference: row.provider_reference, paidAt: row.paid_at })),
+    settlements: rows(result[11]).map((row) => ({ settlementId: row.id, earningId: row.publisher_earning_id, publisherId: row.publisher_id, amount: row.amount, currency: row.currency, status: row.status })),
+    transfers: rows(result[12]).map((row) => ({ providerTransferId: row.provider_transfer_id, settlementId: row.settlement_id, amount: row.amount, currency: row.currency, status: row.status, executionMode: row.execution_mode })),
   };
 }

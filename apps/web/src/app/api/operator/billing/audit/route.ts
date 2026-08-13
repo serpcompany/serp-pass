@@ -43,7 +43,7 @@ export async function GET(request: Request) {
     billingEventCount: trace.billingEvents.length,
     linkRequestCount: trace.linkRequests.length,
     allocationRunCount: trace.allocationRuns.length,
-    settlementCount: trace.settlements.length,
+    publisherPaymentCount: trace.publisherPayments.length,
   });
   return Response.json({
     counts: {

@@ -1,23 +1,27 @@
 # SERP Apps Pass
 
-One subscription that unlocks approved browser extensions from SERP and invited publishers.
+This repository currently asks one narrow question: can a compatible Chromium extension be submitted, validated, registered, linked, and entitled without changing authority code, migrations, or seed data?
 
-This repository is intentionally starting from the minimum launchable product. The binding product and implementation contract is [PRD.md](./PRD.md). Features excluded there—such as a marketplace, publisher portal, automated payouts, and advanced observability—must not be added without first changing the PRD.
+The binding contract is the corrective [extension-inclusion proof PRD](./PRD.md). Its exact acceptance sequence and authority-freeze rule are in [docs/prototype/PLAN.md](./docs/prototype/PLAN.md). Earlier launchable-product ideas are preserved under [docs/product/](./docs/product/) as non-binding historical intent.
 
 ## Current status
 
-Product contract approved in principle; implementation has not started.
+Corrective documentation setup is in progress on `prototype/apps-pass-integration-proof`, based directly on `fe65faa`. Implementation has not started on this branch.
 
-## Initial success target
+## Proof interface
 
-One test subscriber can purchase one subscription and use it to unlock:
+Every participating extension must enter through:
 
-1. One SERP-owned Chromium extension.
-2. One invited publisher's Chromium extension.
+```sh
+pnpm operator:import-app <path-to-apppass.json>
+```
 
-Both extensions must use the same SDK and central entitlement authority.
+Migrations contain schema only. The trusted Operator import validates the versioned manifest, registers the assigned public Publisher and App identities atomically, and constitutes approval for this prototype. The decisive test is a third extension created only after the authority and migrations are frozen.
 
 ## Documents
 
-- [PRD.md](./PRD.md) — binding MVP scope, flows, contracts, and acceptance criteria.
+- [PRD.md](./PRD.md) — binding extension-inclusion proof contract.
+- [docs/prototype/PLAN.md](./docs/prototype/PLAN.md) — binding execution order, acceptance sequence, and freeze rule.
+- [CONTEXT.md](./CONTEXT.md) — current actors, terminology, and domain boundary.
+- [docs/product/HISTORICAL_LAUNCHABLE_MVP_PRD.md](./docs/product/HISTORICAL_LAUNCHABLE_MVP_PRD.md) — preserved, non-binding launchable-product intent.
 - [AGENTS.md](./AGENTS.md) — short instructions for contributors and coding agents.

@@ -4,6 +4,7 @@ export type StripeEnvironment = CloudflareEnv & {
   STRIPE_WEBHOOK_SECRET?: string;
   STRIPE_CONNECT_WEBHOOK_SECRET?: string;
   STRIPE_PASS_PRICE_ID?: string;
+  STRIPE_CONNECT_ONBOARDING_ENABLED?: string;
   STRIPE_TEST_TRANSFERS_ENABLED?: string;
 };
 
@@ -40,6 +41,16 @@ export function readStripeConnectWebhookConfig(environment: CloudflareEnv) {
   if (!secretKey || !webhookSecret) return null;
   if (!webhookSecret.startsWith("whsec_")) throw new Error("Stripe Connect webhook secret format is invalid");
   return { secretKey, webhookSecret };
+}
+
+export function readStripeConnectOnboardingConfig(environment: CloudflareEnv) {
+  const env = environment as StripeEnvironment;
+  if (env.STRIPE_CONNECT_ONBOARDING_ENABLED !== "1") return null;
+  if (!env.STRIPE_SECRET_KEY || !env.STRIPE_EXPECTED_ACCOUNT_ID) throw new Error("Stripe Connect onboarding is enabled without an API key and expected Account ID");
+  const expectedPrefix = environment.APP_ENV === "production" ? "sk_live_" : "sk_test_";
+  if (!env.STRIPE_SECRET_KEY.startsWith(expectedPrefix)) throw new Error("Stripe Connect API key mode does not match the environment");
+  if (!/^acct_[A-Za-z0-9]+$/u.test(env.STRIPE_EXPECTED_ACCOUNT_ID)) throw new Error("Stripe expected Account ID format is invalid");
+  return { secretKey: env.STRIPE_SECRET_KEY, expectedAccountId: env.STRIPE_EXPECTED_ACCOUNT_ID };
 }
 
 export function readStripeTestSettlementConfig(environment: CloudflareEnv) {

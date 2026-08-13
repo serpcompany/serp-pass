@@ -1,12 +1,12 @@
 # Stripe sandbox approval packet
 
-Status: **proposed test-mode actions; no approval granted and no Stripe account accessed**
+Status: **test-mode actions approved for the exact account; execution blocked by authenticated-account mismatch**
 
 Date: **2026-08-13**
 
 ## Hard boundary
 
-The intended isolated Stripe account is `acct_1MwbFJI9EPtyKcIs`, currently named **SERP Pass**. The account identifier supplied in conversation is not authorization to open, inspect, configure, or mutate the account.
+The intended isolated Stripe account is `acct_1MwbFJI9EPtyKcIs`, currently named **SERP Pass**. On 2026-08-13 the user approved this packet for Stripe test mode on the exact account. The approved initial Price is USD $10.00 monthly. This does not authorize another Stripe account, live mode, production, or real money.
 
 Every action below is test/sandbox mode only. Nothing authorizes live-mode keys, Products, Prices, Customers, subscriptions, payments, Connect accounts, Transfers, production Cloudflare resources, or real money.
 
@@ -77,6 +77,8 @@ Rollback is:
 
 No pre-existing Stripe object may be deleted or modified merely to make the test pass.
 
-## Approval wording
+## Approval record
 
-A sufficient approval can be plain language, but it must explicitly authorize **test mode on `acct_1MwbFJI9EPtyKcIs`** and the proposed Product/Price, webhook, Portal, and Cloudflare staging configuration. Approval for this packet is not approval for Connect, Transfers, production, live mode, or real money.
+The user explicitly approved the proposed Product/Price, hosted Checkout, Portal, webhook, and staging-secret actions in test mode on `acct_1MwbFJI9EPtyKcIs`. The annual Price is deferred.
+
+The first read-only Stripe CLI identity check returned `acct_1T3IiJE8IBJK847r`. The guard stopped before inventory or mutation. Execution may resume only after a new read-only check returns the intended Account ID.

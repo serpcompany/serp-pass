@@ -198,7 +198,7 @@ sequenceDiagram
     W-->>P: Onboarding, charges, transfers, payouts, requirements
 ```
 
-Only the Event projection is implemented before Stripe approval. Account creation and Account Link generation remain behind the exact-account guard and require a separately authorized test-mode integration.
+The Publisher request, idempotent Account record, real Stripe executor, single-use Account Link generation, and Event projection are implemented. The real executor remains inert unless the environment explicitly enables it with a mode-correct API key and exact expected platform Account ID. Returning from an Account Link never mutates readiness; only a signed Event bound to the created Account can do that. Local browser proofs use an unmistakable fake Account ID and never call Stripe.
 
 ## Request surfaces
 

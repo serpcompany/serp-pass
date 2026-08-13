@@ -5,12 +5,12 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { getHumanIdentity } from "@/auth/identity";
 import { billingModeForEnvironment } from "@/billing/read";
 import { getDb } from "@/db/get-db";
-import { allocationRuns, appAssignments, appSubmissions, connectedAccountPayouts, publisherConnectedAccounts, publisherEarnings, publisherMemberships, publishers, settlements, transferAttempts } from "@/db/schema";
+import { allocationRuns, appAssignments, appSubmissions, connectedAccountPayouts, publisherConnectedAccounts, publisherConnectOnboardings, publisherEarnings, publisherMemberships, publishers, settlements, transferAttempts } from "@/db/schema";
 import { SubmissionForm } from "./submission-form";
 
 export const dynamic = "force-dynamic";
 
-export default async function PublisherPage() {
+export default async function PublisherPage({ searchParams }: { searchParams: Promise<{ connect?: string }> }) {
   const identity = await getHumanIdentity();
 
   if (!identity) {
@@ -46,6 +46,11 @@ export default async function PublisherPage() {
     .innerJoin(publishers, eq(publishers.id, publisherMemberships.publisherId))
     .innerJoin(appAssignments, eq(appAssignments.publisherId, publishers.id))
     .where(eq(publisherMemberships.userId, identity.session.user.id));
+  const memberPublishers = await getDb()
+    .select({ id: publishers.id, name: publishers.name })
+    .from(publisherMemberships)
+    .innerJoin(publishers, eq(publishers.id, publisherMemberships.publisherId))
+    .where(eq(publisherMemberships.userId, identity.session.user.id));
   const submissions = await getDb()
     .select({ id: appSubmissions.id, appId: appSubmissions.appId, status: appSubmissions.status })
     .from(appSubmissions)
@@ -66,6 +71,11 @@ export default async function PublisherPage() {
     .from(publisherConnectedAccounts)
     .innerJoin(publisherMemberships, eq(publisherMemberships.publisherId, publisherConnectedAccounts.publisherId))
     .where(and(eq(publisherMemberships.userId, identity.session.user.id), eq(publisherConnectedAccounts.mode, mode)));
+  const onboardingRows = await getDb()
+    .select({ publisherId: publisherConnectOnboardings.publisherId, country: publisherConnectOnboardings.country, status: publisherConnectOnboardings.status })
+    .from(publisherConnectOnboardings)
+    .innerJoin(publisherMemberships, eq(publisherMemberships.publisherId, publisherConnectOnboardings.publisherId))
+    .where(and(eq(publisherMemberships.userId, identity.session.user.id), eq(publisherConnectOnboardings.mode, mode)));
   const earningRows = await getDb()
     .select({
       id: publisherEarnings.id,
@@ -86,6 +96,8 @@ export default async function PublisherPage() {
     .leftJoin(transferAttempts, eq(transferAttempts.settlementId, settlements.id))
     .where(and(eq(publisherMemberships.userId, identity.session.user.id), eq(allocationRuns.mode, mode)));
   const connectByPublisher = new Map(connectAccounts.map((account) => [account.publisherId, account]));
+  const onboardingByPublisher = new Map(onboardingRows.map((row) => [row.publisherId, row]));
+  const connectReturn = (await searchParams).connect;
   const payoutRows = await getDb()
     .select({ id: connectedAccountPayouts.id, amount: connectedAccountPayouts.amount, currency: connectedAccountPayouts.currency, status: connectedAccountPayouts.status, arrivalDate: connectedAccountPayouts.arrivalDate })
     .from(connectedAccountPayouts)
@@ -100,23 +112,32 @@ export default async function PublisherPage() {
         <h1>Publisher pilot area</h1>
         <p className="muted">Your public identifiers were assigned by a SERP Operator. Your manifest may reference them but cannot create or replace them.</p>
         <h2>Stripe Connect</h2>
-        {connectAccounts.length === 0 ? (
-          <div>
-            <strong>Connect not started</strong>
-            <p className="muted">A Stripe return does not prove onboarding readiness.</p>
-          </div>
-        ) : connectAccounts.map((account) => {
-          const settlementReady = account.detailsSubmitted && account.payoutsEnabled && account.transfersCapability === "active" && account.requirementsCurrentlyDueCount === 0 && !account.disabledReason;
+        {connectReturn && <p className="muted">{connectReturn === "returned" ? "You returned from Stripe. Apps Pass is waiting for verified Stripe account state." : "That onboarding link expired or was already used. Continue below to create a fresh Stripe-hosted link."}</p>}
+        {memberPublishers.map((publisher) => {
+          const account = connectByPublisher.get(publisher.id);
+          const onboarding = onboardingByPublisher.get(publisher.id);
+          const settlementReady = Boolean(account?.detailsSubmitted && account.payoutsEnabled && account.transfersCapability === "active" && account.requirementsCurrentlyDueCount === 0 && !account.disabledReason);
           return (
-            <div key={account.publisherId}>
-              <strong>{settlementReady ? `Ready for ${mode} settlement` : "Connect onboarding incomplete"}</strong>
-              <ul>
+            <div key={publisher.id}>
+              <h3>{publisher.name}</h3>
+              <strong>{settlementReady ? `Ready for ${mode} settlement` : account ? "Connect onboarding incomplete" : onboarding ? "Onboarding started — awaiting verified Stripe state" : "Connect not started"}</strong>
+              <p className="muted">Returning from Stripe does not mark this Publisher ready. Apps Pass waits for signed Stripe account updates.</p>
+              {account && <ul>
                 <li>{account.chargesEnabled ? "Charges enabled" : "Charges disabled"}</li>
                 <li>Transfers {account.transfersCapability}</li>
                 <li>{account.payoutsEnabled ? "Bank payouts enabled" : "Bank payouts disabled"}</li>
                 <li>{account.requirementsCurrentlyDueCount} {account.requirementsCurrentlyDueCount === 1 ? "requirement" : "requirements"} currently due</li>
-              </ul>
-              {account.disabledReason && <p className="muted">Stripe reports the account disabled: {account.disabledReason}</p>}
+              </ul>}
+              {account?.disabledReason && <p className="muted">Stripe reports the account disabled: {account.disabledReason}</p>}
+              {!settlementReady && <form action="/api/publisher/connect/onboarding" method="post">
+                <input name="schemaVersion" type="hidden" value="1" />
+                <input name="publisherId" type="hidden" value={publisher.id} />
+                <label>
+                  Publisher country (two-letter code)
+                  <input autoCapitalize="characters" defaultValue={onboarding?.country ?? ""} maxLength={2} minLength={2} name="country" pattern="[A-Za-z]{2}" placeholder="US" required />
+                </label>
+                <button type="submit">{onboarding ? "Continue Stripe-hosted onboarding" : "Start Stripe-hosted onboarding"}</button>
+              </form>}
             </div>
           );
         })}

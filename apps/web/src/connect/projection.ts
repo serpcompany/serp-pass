@@ -48,6 +48,10 @@ export async function projectConnectAccountEvent(input: {
     .bind(mode, publisherId)
     .first<{ provider_account_id: string }>();
   if (conflictingPublisher && conflictingPublisher.provider_account_id !== account.id) throw new StripeEventRejected("Publisher already has another Connect Account");
+  const onboarding = await db.prepare("SELECT provider_account_id FROM publisher_connect_onboarding WHERE provider = 'stripe' AND mode = ? AND publisher_id = ?")
+    .bind(mode, publisherId)
+    .first<{ provider_account_id: string | null }>();
+  if (onboarding?.provider_account_id && onboarding.provider_account_id !== account.id) throw new StripeEventRejected("Connect Event Account does not match the Publisher onboarding record");
 
   const connectedAccountId = billingRecordId("connect-account", mode, account.id);
   const connectEventId = billingRecordId("connect-event", mode, event.id);

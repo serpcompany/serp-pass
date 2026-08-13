@@ -120,13 +120,74 @@ try {
     return ((await response.json()) as { user: { id: string } }).user.id;
   });
   const publisherId = `pub_connect_${suffix}`;
+  const preMembership = await context.request.post(`${appOrigin}/api/publisher/connect/onboarding`, {
+    form: { schemaVersion: "1", publisherId, country: "US" },
+    headers: { origin: appOrigin },
+    maxRedirects: 0,
+  });
+  assert.equal(preMembership.status(), 403, "A Subscriber cannot start Publisher onboarding");
   localSql(`INSERT INTO publisher (id, name, status, created_at, created_by_user_id) VALUES ('${publisherId}', 'Connect Projection Publisher', 'active', ${Math.floor(Date.now() / 1000)}, '${userId}'); INSERT INTO publisher_membership (publisher_id, user_id, created_at) VALUES ('${publisherId}', '${userId}', ${Math.floor(Date.now() / 1000)}); INSERT INTO human_role_assignment (user_id, role, source, granted_at, granted_by_user_id) VALUES ('${userId}', 'publisher', 'invitation', ${Math.floor(Date.now() / 1000)}, '${userId}');`);
 
   await page.goto(`${appOrigin}/publisher?connect=returned`);
   await page.getByText("Connect not started").waitFor();
-  assert.equal(await page.getByText("A Stripe return does not prove onboarding readiness.").isVisible(), true);
+  assert.equal(await page.getByText("Returning from Stripe does not mark this Publisher ready.").isVisible(), true);
 
-  const accountId = `acct_connect_${suffix}`;
+  const unsupportedRequest = await context.request.post(`${appOrigin}/api/publisher/connect/onboarding`, {
+    form: { schemaVersion: "2", publisherId, country: "US" },
+    headers: { origin: appOrigin },
+    maxRedirects: 0,
+  });
+  assert.equal(unsupportedRequest.status(), 400, "An unsupported onboarding request version must reject");
+
+  const crossOrigin = await context.request.post(`${appOrigin}/api/publisher/connect/onboarding`, {
+    form: { schemaVersion: "1", publisherId, country: "US" },
+    headers: { origin: "https://attacker.example" },
+    maxRedirects: 0,
+  });
+  assert.equal(crossOrigin.status(), 403, "Cross-origin onboarding must reject");
+  const onboarding = await context.request.post(`${appOrigin}/api/publisher/connect/onboarding`, {
+    form: { schemaVersion: "1", publisherId, country: "US" },
+    headers: { origin: appOrigin },
+    maxRedirects: 0,
+  });
+  assert.equal(onboarding.status(), 303, await onboarding.text());
+  const onboardingLocation = onboarding.headers().location;
+  assert.ok(onboardingLocation);
+  assert.equal(new URL(onboardingLocation).hostname, "connect.stripe.com", "Onboarding must use a Stripe-hosted URL");
+  const accountOutput = localSql(`SELECT provider_account_id, country, status FROM publisher_connect_onboarding WHERE publisher_id = '${publisherId}'`);
+  const accountId = accountOutput.match(/acct_local_[A-Za-z0-9_]+/u)?.[0];
+  assert.ok(accountId, accountOutput);
+  assert.match(accountOutput, /"country": "US"/u);
+  assert.match(accountOutput, /"status": "account_created"/u);
+  assert.match(localSql(`SELECT COUNT(*) AS count FROM publisher_connect_onboarding WHERE publisher_id = '${publisherId}'`), /"count": 1/u);
+  assert.doesNotMatch(localSql("PRAGMA table_info(publisher_connect_onboarding)"), /account_link|onboarding_url/u, "One-time Stripe URLs must not be stored");
+  const resumed = await context.request.post(`${appOrigin}/api/publisher/connect/onboarding`, {
+    form: { schemaVersion: "1", publisherId, country: "US" },
+    headers: { origin: appOrigin },
+    maxRedirects: 0,
+  });
+  assert.equal(resumed.status(), 303, "A retry should create a fresh one-time Account Link without another Account");
+  assert.match(localSql(`SELECT COUNT(*) AS count FROM publisher_connect_onboarding WHERE publisher_id = '${publisherId}'`), /"count": 1/u);
+  const countryConflict = await context.request.post(`${appOrigin}/api/publisher/connect/onboarding`, {
+    form: { schemaVersion: "1", publisherId, country: "JP" },
+    headers: { origin: appOrigin },
+    maxRedirects: 0,
+  });
+  assert.equal(countryConflict.status(), 409, "A retry cannot silently change the connected Account country");
+  await page.goto(`${appOrigin}/publisher?connect=returned`);
+  await page.getByText("Onboarding started — awaiting verified Stripe state").waitFor();
+  assert.equal(await page.getByText("Returning from Stripe does not mark this Publisher ready.").isVisible(), true);
+
+  assert.equal((await sendAccountEvent({
+    eventId: `evt_connect_wrong_account_${suffix}`,
+    accountId: `acct_wrong_${suffix}`,
+    publisherId,
+    created: 1_900_199_900,
+    detailsSubmitted: false,
+    chargesEnabled: false,
+    payoutsEnabled: false,
+    transfers: "pending",
+  })).status, 400, "A signed Event cannot replace the Account created for this Publisher");
   const pending = await sendAccountEvent({
     eventId: `evt_connect_pending_${suffix}`,
     accountId,

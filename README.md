@@ -2,7 +2,7 @@
 
 This branch converts the completed extension-inclusion proof into a minimal, trustworthy private-pilot product: invited Publisher submission, real Subscriber purchase, authenticated App activation, entitlement, auditable Publisher Earning, and Operator-controlled Stripe Connect settlement.
 
-The target and acceptance boundary are in [PRD.md](./PRD.md). The architecture is in [ARCHITECTURE.md](./ARCHITECTURE.md), delivery order in [docs/mvp/DELIVERY_PLAN.md](./docs/mvp/DELIVERY_PLAN.md), money invariants in [docs/mvp/MONEY_MODEL.md](./docs/mvp/MONEY_MODEL.md), and threats in [docs/mvp/SECURITY.md](./docs/mvp/SECURITY.md).
+The target and acceptance boundary are in [PRD.md](./PRD.md). The architecture is in [ARCHITECTURE.md](./ARCHITECTURE.md), delivery order in [docs/mvp/DELIVERY_PLAN.md](./docs/mvp/DELIVERY_PLAN.md), current criterion-by-criterion evidence in [docs/mvp/ACCEPTANCE_MATRIX.md](./docs/mvp/ACCEPTANCE_MATRIX.md), money invariants in [docs/mvp/MONEY_MODEL.md](./docs/mvp/MONEY_MODEL.md), and threats in [docs/mvp/SECURITY.md](./docs/mvp/SECURITY.md).
 
 The completed proof remains executable local software, not a visual mockup, but it is not the launchable subscription product. Its PRD, architecture, freeze, evaluation, and plan are preserved under [docs/prototype/](./docs/prototype/).
 
@@ -111,12 +111,13 @@ The disposable pre-MVP authority, example submissions, and contract tests remain
 - [PRD.md](./PRD.md) — binding private-pilot outcome and acceptance criteria.
 - [ARCHITECTURE.md](./ARCHITECTURE.md) — target system, modules, trust domains, and environment path.
 - [docs/mvp/DELIVERY_PLAN.md](./docs/mvp/DELIVERY_PLAN.md) — binding vertical-slice order and promotion gates.
+- [docs/mvp/ACCEPTANCE_MATRIX.md](./docs/mvp/ACCEPTANCE_MATRIX.md) — PRD criteria mapped to passed, partial, and externally blocked evidence.
 - [docs/mvp/MONEY_MODEL.md](./docs/mvp/MONEY_MODEL.md) — earnings-ledger and settlement invariants.
 - [docs/mvp/SECURITY.md](./docs/mvp/SECURITY.md) — threat model and required evidence.
 - [docs/mvp/PUBLISHER_INTEGRATION.md](./docs/mvp/PUBLISHER_INTEGRATION.md) — the concrete extension integration and Submission handoff.
 - [docs/mvp/BILLING_PROJECTION.md](./docs/mvp/BILLING_PROJECTION.md) — replay-safe paid-through projection and the explicit Stripe-adapter boundary.
-- [docs/mvp/STRIPE_SANDBOX_APPROVAL.md](./docs/mvp/STRIPE_SANDBOX_APPROVAL.md) — exact test-mode account mutations, proposed Price, validation, and rollback awaiting approval.
-- [docs/mvp/STRIPE_CONNECT_APPROVAL.md](./docs/mvp/STRIPE_CONNECT_APPROVAL.md) — separate approval boundary for Express onboarding, connected webhooks, one test Transfer, and reversal.
+- [docs/mvp/STRIPE_SANDBOX_APPROVAL.md](./docs/mvp/STRIPE_SANDBOX_APPROVAL.md) — approved test-mode billing actions, exact-account guard, validation, and rollback.
+- [docs/mvp/STRIPE_CONNECT_APPROVAL.md](./docs/mvp/STRIPE_CONNECT_APPROVAL.md) — bounded approval and remaining inputs for Express onboarding, connected webhooks, one test Transfer, and reversal.
 - [docs/mvp/D1_MIGRATIONS.md](./docs/mvp/D1_MIGRATIONS.md) — reviewed staging migration procedure and the bounded trigger-rich migration fallback.
 - [docs/mvp/D1_RECOVERY.md](./docs/mvp/D1_RECOVERY.md) — destructive Time Travel guardrails and the disposable remote recovery rehearsal.
 - [docs/research/SETAPP_PRODUCT_REFERENCE.md](./docs/research/SETAPP_PRODUCT_REFERENCE.md) — non-binding reference for bundle positioning, website structure, branding patterns, and later pricing experiments.

@@ -1,12 +1,12 @@
 # Stripe Connect sandbox approval packet
 
-Status: **proposed test-mode actions; no approval granted and no Stripe account accessed**
+Status: **bounded test-mode actions approved; country and exact Earning amount remain unresolved; authenticated account currently mismatches**
 
 Date: **2026-08-13**
 
 ## Hard boundary
 
-The intended platform account is `acct_1MwbFJI9EPtyKcIs`, currently named **SERP Pass**. Recording that ID is not authorization to inspect or mutate it.
+The intended platform account is `acct_1MwbFJI9EPtyKcIs`, currently named **SERP Pass**. On 2026-08-13 the user approved test-mode Connect onboarding, staging webhooks, one small test Transfer, and its full reversal on that exact account. This does not authorize another account, live mode, production, a real bank account, or real money.
 
 This packet is separate from the Subscriber billing approval. It authorizes nothing unless the user explicitly approves **Stripe test mode on that exact account** and supplies the intended test Publisher country/email plus the exact manually agreed Earning amount. It never authorizes live mode, production, a real bank account, or real money.
 
@@ -50,8 +50,11 @@ Only after those checks:
 
 Stop on any Account ID, mode, country, capability, destination, currency, amount, endpoint-secret, or existing-configuration mismatch. Disable `STRIPE_TEST_TRANSFERS_ENABLED` first. Then disable only the newly created event destinations/objects as appropriate, remove staging Stripe secrets/configuration, redeploy the inert routes, and preserve D1 audit/financial evidence rather than deleting history.
 
-## Approval wording
+## Remaining execution inputs
 
-A sufficient future approval must explicitly authorize Connect test-mode actions on `acct_1MwbFJI9EPtyKcIs`, name the test Publisher country/email, approve the exact Earning amount, and authorize one idempotent test Transfer plus its full test reversal. Subscriber billing approval alone is not Connect or Transfer approval.
+- The Publisher identity, App identity, Publisher Membership, and pilot email already exist in Apps Pass.
+- Stripe still requires the Publisher's two-letter country code before the Express Account can be created. It must not be inferred from the platform account.
+- The user authorized a small test Transfer and full reversal, but the exact Earning amount is not yet fixed. The local `$7 / $2 / $1` example is test data, not an approved revenue-share policy.
+- The first read-only Stripe CLI identity check returned `acct_1T3IiJE8IBJK847r`, so the guard stopped before inventory or mutation. Execution may resume only when authenticated to `acct_1MwbFJI9EPtyKcIs`.
 
 Official architecture references: [separate charges and transfers](https://docs.stripe.com/connect/separate-charges-and-transfers), [Connect webhooks](https://docs.stripe.com/connect/webhooks), and [account capabilities](https://docs.stripe.com/connect/account-capabilities).

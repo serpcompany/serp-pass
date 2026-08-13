@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 
 import { assertStripePlatformAccount } from "../src/billing/stripe/client";
-import { readStripeHostedBillingConfig, readStripeWebhookConfig } from "../src/billing/stripe/config";
+import { readStripeConnectOnboardingConfig, readStripeHostedBillingConfig, readStripeWebhookConfig } from "../src/billing/stripe/config";
 
 const base = {
   APP_ENV: "staging",
@@ -12,12 +12,32 @@ const base = {
 
 assert.equal(readStripeHostedBillingConfig(base), null, "hosted billing must remain disabled without an expected Account ID");
 assert.ok(readStripeWebhookConfig(base), "account-free webhook signature tests must remain configurable");
+assert.equal(readStripeConnectOnboardingConfig(base), null, "Connect onboarding must remain explicitly disabled");
+assert.throws(
+  () => readStripeConnectOnboardingConfig({ ...base, STRIPE_CONNECT_ONBOARDING_ENABLED: "1" } as unknown as CloudflareEnv),
+  /enabled without an API key and expected Account ID/,
+);
 
 const guarded = readStripeHostedBillingConfig({
   ...base,
   STRIPE_EXPECTED_ACCOUNT_ID: "acct_expected",
 } as unknown as CloudflareEnv);
 assert.equal(guarded?.expectedAccountId, "acct_expected");
+const connectGuarded = readStripeConnectOnboardingConfig({
+  ...base,
+  STRIPE_CONNECT_ONBOARDING_ENABLED: "1",
+  STRIPE_EXPECTED_ACCOUNT_ID: "acct_expected",
+} as unknown as CloudflareEnv);
+assert.equal(connectGuarded?.expectedAccountId, "acct_expected");
+assert.throws(
+  () => readStripeConnectOnboardingConfig({
+    ...base,
+    APP_ENV: "production",
+    STRIPE_CONNECT_ONBOARDING_ENABLED: "1",
+    STRIPE_EXPECTED_ACCOUNT_ID: "acct_expected",
+  } as unknown as CloudflareEnv),
+  /key mode does not match/,
+);
 
 let retrieves = 0;
 const matchingStripe = {

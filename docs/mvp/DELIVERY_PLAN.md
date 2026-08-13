@@ -91,7 +91,7 @@ Local evidence uses the signed billing-fixture boundary only to establish paid-t
 
 ## 6. Publisher Connect slice
 
-Status: **account-independent readiness projection is implemented and browser-verified locally; account creation, hosted onboarding, and deployed test-mode events await explicit Stripe approval**
+Status: **account-independent Account creation/onboarding seam and readiness projection are browser-verified locally; real execution awaits correct Stripe authentication and Publisher country**
 
 - create/reuse one connected account per Publisher;
 - Stripe-hosted Express onboarding;
@@ -101,7 +101,7 @@ Status: **account-independent readiness projection is implemented and browser-ve
 
 Browser evidence: test Publisher completes onboarding and Apps Pass derives readiness from Stripe.
 
-Current evidence uses an official Stripe `account.updated` snapshot shape and generated signature against the real webhook route without an API request. The projection is mode-scoped, replay-safe, order-safe, binds an Express Account to exactly one known Publisher, stores no KYC fields or raw payload, and exposes details-submitted, charges, transfers, payouts, due-requirement count, and disabled state separately. A `return_url` query never changes readiness. This does not prove Account creation, an Account Link, Stripe-hosted onboarding, or a real connected-account Event.
+Current evidence includes an authenticated, same-origin Publisher POST that creates/reuses one idempotent Express Account record, asks an executor for a fresh single-use Account Link, stores the Account ID but never the hosted URL, fixes the Account country on first creation, and renders the return/refresh states without asserting readiness. The real executor is disabled unless explicitly enabled with a mode-correct key and exact expected platform Account ID; the local executor exists only for the account-independent browser proof. Official signed `account.updated` projections remain mode-scoped, replay-safe, order-safe, and bound to the created Account. This does not yet prove a real Account, Stripe-hosted onboarding, or provider-delivered Event.
 
 ## 7. Earnings and settlement slice
 

@@ -415,6 +415,28 @@ export const publisherConnectedAccounts = sqliteTable(
   ],
 );
 
+export const publisherConnectOnboardings = sqliteTable(
+  "publisher_connect_onboarding",
+  {
+    id: text("id").primaryKey(),
+    publisherId: text("publisher_id").notNull().references(() => publishers.id, { onDelete: "restrict" }),
+    provider: text("provider", { enum: ["stripe"] }).notNull(),
+    mode: text("mode", { enum: ["test", "live"] }).notNull(),
+    country: text("country").notNull(),
+    providerAccountId: text("provider_account_id"),
+    idempotencyKey: text("idempotency_key").notNull(),
+    status: text("status", { enum: ["creating", "account_created"] }).notNull(),
+    createdByUserId: text("created_by_user_id").notNull().references(() => user.id, { onDelete: "restrict" }),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+  },
+  (table) => [
+    uniqueIndex("publisher_connect_onboarding_publisher_mode_unique").on(table.provider, table.mode, table.publisherId),
+    uniqueIndex("publisher_connect_onboarding_account_unique").on(table.provider, table.mode, table.providerAccountId).where(sql`${table.providerAccountId} IS NOT NULL`),
+    uniqueIndex("publisher_connect_onboarding_idempotency_unique").on(table.idempotencyKey),
+  ],
+);
+
 export const stripeConnectEvents = sqliteTable(
   "stripe_connect_event",
   {

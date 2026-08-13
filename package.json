@@ -15,7 +15,7 @@
     "mvp:contracts:test": "pnpm --filter @serp-apps-pass/contracts test",
     "mvp:publisher:test": "pnpm --filter @serp-apps-pass/web test:operator-bootstrap",
     "mvp:billing:test": "pnpm --filter @serp-apps-pass/web test:billing-projection",
-    "mvp:stripe-adapter:test": "pnpm --filter @serp-apps-pass/web test:stripe-webhook",
+    "mvp:stripe-adapter:test": "pnpm --filter @serp-apps-pass/web test:stripe-account-guard && pnpm --filter @serp-apps-pass/web test:stripe-webhook",
     "mvp:extension:build": "pnpm --filter @serp-apps-pass/invited-publisher-extension build",
     "mvp:extension:test": "pnpm --filter @serp-apps-pass/invited-publisher-extension test:browser",
     "mvp:extension:test-staging": "pnpm --filter @serp-apps-pass/invited-publisher-extension test:staging-inclusion",

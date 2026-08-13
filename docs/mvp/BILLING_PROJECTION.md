@@ -27,6 +27,8 @@ The implemented local adapter is intentionally named `/api/billing/test-events`.
 
 The real `/api/stripe/webhook` adapter independently verifies Stripe's `Stripe-Signature` against the raw body, translates supported Stripe objects into the normalized event contract, derives test/live mode from Stripe rather than request input, and calls the same projection use case. It uses the pinned official `stripe@22.5.0` SDK and API `2026-07-29.dahlia`, accepts only the configured Pass Price and environment mode, and supports Checkout completion/expiry, paid/failed Invoices, and Subscription creation/update/deletion. Checkout completion closes the durable attempt but never grants access; only a paid Invoice can extend `entitled_until`.
 
+Hosted Checkout and Portal have an additional account-identity gate: they remain unavailable unless an expected platform Account ID is configured, then retrieve the current Stripe Account and stop before mutation when the API credential does not belong to that exact Account. The webhook adapter deliberately does not need this setting, so local signature/Event tests remain account-free.
+
 ## Transition rules
 
 | Accepted event | Provider state | Paid-through effect | Invoice/receipt effect |

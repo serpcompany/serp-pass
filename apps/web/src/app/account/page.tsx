@@ -3,7 +3,7 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 import { getHumanIdentity } from "@/auth/identity";
 import { readSubscriberSubscription } from "@/billing/read";
-import { readStripeApiConfig } from "@/billing/stripe/config";
+import { readStripeHostedBillingConfig } from "@/billing/stripe/config";
 import { AuthPanel } from "./auth-panel";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +16,7 @@ export default async function AccountPage() {
   const identity = await getHumanIdentity();
   const { env } = getCloudflareContext();
   const subscription = identity ? await readSubscriberSubscription(identity.session.user.id, env.APP_ENV) : null;
-  const stripeConfigured = readStripeApiConfig(env) !== null;
+  const stripeConfigured = readStripeHostedBillingConfig(env) !== null;
   const canStartCheckout = !subscription || (subscription.access === "inactive" && ["canceled", "incomplete_expired"].includes(subscription.status));
   return (
     <main>

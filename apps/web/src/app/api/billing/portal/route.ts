@@ -3,9 +3,9 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { getHumanIdentityFromHeaders } from "@/auth/identity";
 import { hasSameOrigin } from "@/auth/request";
 import { billingModeForEnvironment } from "@/billing/read";
-import { createStripeClient } from "@/billing/stripe/client";
+import { assertStripePlatformAccount, createStripeClient } from "@/billing/stripe/client";
 import { createPortal } from "@/billing/stripe/checkout";
-import { readStripeApiConfig } from "@/billing/stripe/config";
+import { readStripeHostedBillingConfig } from "@/billing/stripe/config";
 import { logEvent } from "@/observability/log";
 
 export const dynamic = "force-dynamic";
@@ -17,13 +17,15 @@ export async function POST(request: Request) {
   if (!identity) return Response.json({ message: "Sign-in required." }, { status: 401 });
   if (!identity.roles.includes("subscriber")) return Response.json({ message: "Subscriber role required." }, { status: 403 });
   const { env } = getCloudflareContext();
-  const config = readStripeApiConfig(env);
+  const config = readStripeHostedBillingConfig(env);
   if (!config) return Response.json({ message: "Stripe billing management is not configured." }, { status: 503 });
 
   try {
+    const stripe = createStripeClient(config.secretKey, env.APP_ENV);
+    await assertStripePlatformAccount(stripe, config.expectedAccountId);
     const url = await createPortal({
       db: env.DB,
-      stripe: createStripeClient(config.secretKey, env.APP_ENV),
+      stripe,
       subscriberId: identity.session.user.id,
       mode: billingModeForEnvironment(env.APP_ENV),
       applicationOrigin: new URL(request.url).origin,

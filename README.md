@@ -6,7 +6,7 @@ The target and acceptance boundary are in [PRD.md](./PRD.md). The architecture i
 
 The completed proof remains executable local software, not a visual mockup, but it is not the launchable subscription product. Its PRD, architecture, freeze, evaluation, and plan are preserved under [docs/prototype/](./docs/prototype/).
 
-Implementation is in progress on `mvp/private-pilot`. Slices 1–3 are deployed at [serp-apps-pass-staging.serpcompany.workers.dev](https://serp-apps-pass-staging.serpcompany.workers.dev): one Next.js/OpenNext Worker, an isolated staging D1 database, reviewed migrations, Better Auth roles, authenticated Publisher submission and review, a public manifest contract, and a real independently built extension recognized by its approved runtime identity. Production has not been deployed. Stripe is deliberately unconfigured: no account, credentials, Product, Price, webhook, Checkout, Connect account, or payment has been created or selected.
+Implementation is in progress on `mvp/private-pilot`. Slices 1–3 are deployed at [serp-apps-pass-staging.serpcompany.workers.dev](https://serp-apps-pass-staging.serpcompany.workers.dev): one Next.js/OpenNext Worker, an isolated staging D1 database, reviewed migrations, Better Auth roles, authenticated Publisher submission and review, a public manifest contract, and a real independently built extension recognized by its approved runtime identity. Production has not been deployed. Stripe account `acct_1MwbFJI9EPtyKcIs`, currently named **SERP Pass**, is the intended isolated sandbox, but it has not been accessed or configured. No credentials, Product, Price, webhook, Checkout, Connect account, or payment exists; account selection is not mutation approval.
 
 ## MVP stack walkthrough
 

@@ -22,6 +22,7 @@ Slices 1–3 are complete. Slice 4, Subscriber billing, is in progress. Its norm
 - A local-only HMAC adapter verifies the exact raw body and cannot run on staging or production; it is deliberately not named or presented as the Stripe webhook.
 - The real `/api/stripe/webhook` route uses pinned official `stripe@22.5.0` / API `2026-07-29.dahlia`, verifies Stripe-format signatures against the raw body, binds Events to test/live mode and the configured Pass Price, and projects current Checkout, Invoice, and Subscription shapes.
 - A durable Checkout Attempt allows only one creating/open attempt per Subscriber and stores Stripe identifiers and an idempotency key, never the hosted URL. Checkout completion/expiry is ordered and replay-safe but cannot grant access.
+- Checkout and Portal additionally require an exact expected platform Account ID and verify the API credential's current Stripe Account before mutation; a secret or Price from another account is insufficient to enable hosted billing.
 - Exact duplicate Event IDs are replay-safe, while reuse of an Event ID with a changed raw payload is rejected as an integrity conflict. Provider Invoice IDs already bound to another Subscription are also rejected atomically.
 - Failed renewal and cancellation never extend paid-through access. Cancellation does not erase access already paid through a future date.
 - `/account` shows the normalized state; Checkout redirects do not participate in the decision.

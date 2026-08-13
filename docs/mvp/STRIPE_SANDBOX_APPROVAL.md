@@ -45,7 +45,7 @@ Only after those checks:
    - `customer.subscription.created`;
    - `customer.subscription.updated`;
    - `customer.subscription.deleted`.
-5. Add only the test secret key and endpoint signing secret to the existing Cloudflare staging Worker as secrets; add the chosen Price ID as staging configuration. Do not add them to local files, Git, production, logs, screenshots, or extension bundles.
+5. Add only the test secret key and endpoint signing secret to the existing Cloudflare staging Worker as secrets; add the chosen Price ID and exact expected platform Account ID `acct_1MwbFJI9EPtyKcIs` as staging configuration. Do not add secrets to local files, Git, production, logs, screenshots, or extension bundles. Checkout and Portal must retrieve the current Stripe platform Account and stop before mutation if its ID differs from the expected Account ID.
 6. Confirm the already-applied Checkout-attempt migration and inert routes, add the approved staging Price configuration, and redeploy without changing production.
 
 ## Test journey proposed

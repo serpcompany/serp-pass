@@ -21,4 +21,11 @@ export function createStripeCryptoProvider() {
   return Stripe.createSubtleCryptoProvider();
 }
 
+export async function assertStripePlatformAccount(stripe: Stripe, expectedAccountId: string) {
+  const account = await stripe.accounts.retrieveCurrent();
+  if (account.id !== expectedAccountId) {
+    throw new Error("Stripe API credential belongs to an unexpected platform Account");
+  }
+}
+
 export { STRIPE_API_VERSION };

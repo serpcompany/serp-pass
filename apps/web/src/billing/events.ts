@@ -87,3 +87,7 @@ export function parseNormalizedBillingEvent(input: unknown): NormalizedBillingEv
   }
   throw new Error("Billing event type is unsupported");
 }
+
+export function billingEventOrderKey(createdAt: number, eventId: string) {
+  return `${String(createdAt).padStart(12, "0")}:${eventId}`;
+}

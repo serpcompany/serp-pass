@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import { index, integer, primaryKey, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const stackSpikeChecks = sqliteTable("stack_spike_checks", {
@@ -362,4 +363,29 @@ export const cashReceipts = sqliteTable(
     receivedAt: integer("received_at", { mode: "timestamp" }).notNull(),
   },
   (table) => [uniqueIndex("cash_receipt_invoice_unique").on(table.billingInvoiceId), uniqueIndex("cash_receipt_source_event_unique").on(table.sourceBillingEventId)],
+);
+
+export const billingCheckoutAttempts = sqliteTable(
+  "billing_checkout_attempt",
+  {
+    id: text("id").primaryKey(),
+    subscriberUserId: text("subscriber_user_id").notNull().references(() => user.id, { onDelete: "restrict" }),
+    provider: text("provider", { enum: ["stripe"] }).notNull(),
+    mode: text("mode", { enum: ["test", "live"] }).notNull(),
+    priceId: text("price_id").notNull(),
+    idempotencyKey: text("idempotency_key").notNull(),
+    providerCustomerId: text("provider_customer_id"),
+    providerSessionId: text("provider_session_id"),
+    status: text("status", { enum: ["creating", "open", "complete", "expired", "failed"] }).notNull(),
+    latestEventKey: text("latest_event_key"),
+    expiresAt: integer("expires_at", { mode: "timestamp" }),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+  },
+  (table) => [
+    uniqueIndex("billing_checkout_idempotency_unique").on(table.idempotencyKey),
+    uniqueIndex("billing_checkout_session_unique").on(table.provider, table.mode, table.providerSessionId),
+    uniqueIndex("billing_checkout_active_subscriber_unique").on(table.provider, table.mode, table.subscriberUserId).where(sql`${table.status} IN ('creating', 'open')`),
+    index("billing_checkout_subscriber_idx").on(table.subscriberUserId, table.mode),
+  ],
 );

@@ -61,9 +61,10 @@ The account-independent Subscriber billing projection can be exercised locally w
 
 ```sh
 pnpm mvp:billing:test
+pnpm mvp:stripe-adapter:test
 ```
 
-This uses a local-only signed fixture boundary, not Stripe. Its exact authority rules and remaining sandbox work are documented in [docs/mvp/BILLING_PROJECTION.md](./docs/mvp/BILLING_PROJECTION.md).
+The first command uses the local normalized fixture boundary. The second uses Stripe's official SDK to generate and verify real Stripe-format signatures and current Event shapes without accessing an account. Neither performs a Stripe API request. The exact authority rules and remaining sandbox work are documented in [docs/mvp/BILLING_PROJECTION.md](./docs/mvp/BILLING_PROJECTION.md).
 
 Run the automated rendered-browser journey against a running local preview or the deployed staging Worker:
 
@@ -173,6 +174,7 @@ The browser profile is preserved when stopped. D1 records, browser state, genera
 - [docs/mvp/SECURITY.md](./docs/mvp/SECURITY.md) — threat model and required evidence.
 - [docs/mvp/PUBLISHER_INTEGRATION.md](./docs/mvp/PUBLISHER_INTEGRATION.md) — the concrete extension integration and Submission handoff.
 - [docs/mvp/BILLING_PROJECTION.md](./docs/mvp/BILLING_PROJECTION.md) — replay-safe paid-through projection and the explicit Stripe-adapter boundary.
+- [docs/mvp/STRIPE_SANDBOX_APPROVAL.md](./docs/mvp/STRIPE_SANDBOX_APPROVAL.md) — exact test-mode account mutations, proposed Price, validation, and rollback awaiting approval.
 - [docs/research/SETAPP_PRODUCT_REFERENCE.md](./docs/research/SETAPP_PRODUCT_REFERENCE.md) — non-binding reference for bundle positioning, website structure, branding patterns, and later pricing experiments.
 - [CONTEXT.md](./CONTEXT.md) — canonical domain language.
 - [docs/prototype/](./docs/prototype/) — preserved local proof contract, architecture, freeze, plan, and evaluation.

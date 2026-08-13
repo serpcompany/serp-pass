@@ -1,6 +1,6 @@
 # Subscriber billing projection
 
-Status: **account-independent Slice 4 foundation implemented locally and safely deployed; Stripe adapter and Checkout pending explicit sandbox approval**
+Status: **normalized foundation safely deployed; real Stripe adapter and hosted billing routes pass account-independent checks locally; account configuration remains approval-gated**
 
 ## Authority boundary
 
@@ -25,7 +25,7 @@ The implemented local adapter is intentionally named `/api/billing/test-events`.
 - accepts only normalized `test`-mode fixtures;
 - never calls Stripe and must not be relabeled as the Stripe webhook.
 
-The future `/api/stripe/webhook` must independently verify Stripe's `Stripe-Signature` using the sandbox endpoint secret, translate supported Stripe objects into the normalized event contract, derive test/live mode from Stripe rather than request input, and then call the same projection use case.
+The real `/api/stripe/webhook` adapter independently verifies Stripe's `Stripe-Signature` against the raw body, translates supported Stripe objects into the normalized event contract, derives test/live mode from Stripe rather than request input, and calls the same projection use case. It uses the pinned official `stripe@22.5.0` SDK and API `2026-07-29.dahlia`, accepts only the configured Pass Price and environment mode, and supports Checkout completion/expiry, paid/failed Invoices, and Subscription creation/update/deletion. Checkout completion closes the durable attempt but never grants access; only a paid Invoice can extend `entitled_until`.
 
 ## Transition rules
 
@@ -43,6 +43,7 @@ Every provider Event ID is unique per provider/mode. Duplicate delivery returns 
 - `normalized_subscription`: one current Pass Subscription per Billing Customer during the private pilot.
 - `billing_invoice`: provider Invoice state and covered period.
 - `billing_event`: payload hash, provider chronology, result, and affected Customer/Subscription/Invoice identities.
+- `billing_checkout_attempt`: one durable, idempotent hosted-Checkout attempt with no stored hosted URL.
 - `cash_receipt`: immutable evidence that one paid Invoice supplied one amount/currency for later allocation.
 
 All monetary amounts are integer minor units. Test and live modes are constrained independently and production reads only `live` records.
@@ -61,17 +62,29 @@ All monetary amounts are integer minor units. Test and live modes are constraine
 - a Subscriber cannot inspect the Operator audit;
 - an Operator sees scoped Event, Invoice, and Cash Receipt counts plus consistency issues.
 
+`pnpm mvp:stripe-adapter:test` additionally uses Stripe's official signature generator and current Dahlia Event shapes. Without making a Stripe API request, it proves:
+
+- exact raw-body `Stripe-Signature` verification;
+- test/live mode separation;
+- configured-Price enforcement;
+- Checkout attempt completion without entitlement;
+- delayed Checkout expiry cannot overwrite newer completion;
+- exact replay is idempotent while changed-payload Event-ID reuse is rejected;
+- real Invoice and Subscription shapes enter the same normalized paid-through projection.
+
 ## Still gated on explicit permission to access the selected Stripe sandbox
 
 The intended isolated Stripe account is `acct_1MwbFJI9EPtyKcIs`, currently named **SERP Pass**. Recording that public account identifier is not permission to access or configure the account. No Stripe credentials or objects are present in the application.
 
-- Stripe SDK and API-version pin;
-- Product and recurring Price;
-- hosted Checkout and Customer Portal;
-- idempotent Checkout creation and Customer reuse;
-- real `Stripe-Signature` verification and object translation;
-- event-destination/webhook endpoint configuration;
+- Product and recurring Price creation;
+- actual hosted Checkout and Customer Portal API responses;
+- real-account validation of idempotent Checkout creation and Customer reuse;
+- event-destination/webhook endpoint configuration and endpoint secret;
 - Stripe-backed reconciliation of missing or delayed Events;
 - deployed staging purchase and cancellation/failure scenarios.
+
+The exact proposed mutations and rollback are in [STRIPE_SANDBOX_APPROVAL.md](./STRIPE_SANDBOX_APPROVAL.md).
+
+Official references: [Checkout subscriptions](https://docs.stripe.com/payments/checkout/build-subscriptions), [raw-body webhook signatures](https://docs.stripe.com/webhooks/signature), [idempotent requests](https://docs.stripe.com/api/idempotent_requests), and [Customer Portal](https://docs.stripe.com/customer-management/integrate-customer-portal).
 
 No sandbox name, product brand, domain, or Price is encoded in the normalized projection.

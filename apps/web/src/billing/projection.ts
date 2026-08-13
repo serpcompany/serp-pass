@@ -1,14 +1,7 @@
-import type { NormalizedBillingEvent } from "./events";
+import { billingEventOrderKey, type NormalizedBillingEvent } from "./events";
+import { billingRecordId } from "./identity";
 
 export type BillingEventOutcome = { outcome: "applied" | "duplicate"; eventId: string };
-
-function identity(kind: string, mode: string, externalId: string) {
-  return `${kind}:${mode}:${externalId}`;
-}
-
-function eventKey(event: NormalizedBillingEvent) {
-  return `${String(event.createdAt).padStart(12, "0")}:${event.id}`;
-}
 
 export async function projectBillingEvent(
   db: CloudflareEnv["DB"],
@@ -18,13 +11,13 @@ export async function projectBillingEvent(
 ): Promise<BillingEventOutcome> {
   const provider = "stripe";
   const receivedAt = Math.floor(Date.now() / 1000);
-  const customerId = identity("customer", event.mode, event.data.customerId);
-  const subscriptionId = identity("subscription", event.mode, event.data.subscriptionId);
-  const billingEventId = identity("event", event.mode, event.id);
+  const customerId = billingRecordId("customer", event.mode, event.data.customerId);
+  const subscriptionId = billingRecordId("subscription", event.mode, event.data.subscriptionId);
+  const billingEventId = billingRecordId("event", event.mode, event.id);
   const invoiceId = event.type === "invoice.paid" || event.type === "invoice.payment_failed"
-    ? identity("invoice", event.mode, event.data.invoiceId)
+    ? billingRecordId("invoice", event.mode, event.data.invoiceId)
     : null;
-  const orderKey = eventKey(event);
+  const orderKey = billingEventOrderKey(event.createdAt, event.id);
   const existingEvent = await db.prepare("SELECT payload_sha256 FROM billing_event WHERE provider = ? AND mode = ? AND provider_event_id = ?")
     .bind(provider, event.mode, event.id)
     .first<{ payload_sha256: string }>();
@@ -110,7 +103,7 @@ export async function projectBillingEvent(
   if (event.type === "invoice.paid") {
     statements.push(
       db.prepare("INSERT INTO cash_receipt (id, billing_invoice_id, source_billing_event_id, amount, currency, received_at) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(billing_invoice_id) DO NOTHING")
-        .bind(identity("receipt", event.mode, event.data.invoiceId), invoiceId, billingEventId, event.data.amountPaid, event.data.currency, receivedAt),
+        .bind(billingRecordId("receipt", event.mode, event.data.invoiceId), invoiceId, billingEventId, event.data.amountPaid, event.data.currency, receivedAt),
     );
   }
 

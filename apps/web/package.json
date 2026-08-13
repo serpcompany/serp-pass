@@ -11,6 +11,7 @@
     "test:publisher-boundary": "tsx tests/publisher-boundary-browser.ts",
     "test:operator-bootstrap": "tsx tests/operator-bootstrap-browser.ts",
     "test:billing-projection": "tsx tests/billing-projection-browser.ts",
+    "test:stripe-webhook": "tsx tests/stripe-webhook-browser.ts",
     "test:auth-rate-limit": "tsx tests/auth-rate-limit.ts",
     "typecheck": "tsc --noEmit",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
@@ -29,7 +30,8 @@
     "drizzle-orm": "0.45.2",
     "next": "16.2.11",
     "react": "19.1.7",
-    "react-dom": "19.1.7"
+    "react-dom": "19.1.7",
+    "stripe": "22.5.0"
   },
   "devDependencies": {
     "@types/node": "26.2.0",

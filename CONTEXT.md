@@ -56,6 +56,10 @@ _Avoid_: Subscriber, Stripe user
 A signature-verified, replay-safe provider notification recorded before its normalized transition is trusted.
 _Avoid_: Webhook, Subscription
 
+**Checkout Attempt**:
+A durable idempotency record for creating or resuming one hosted Subscriber Checkout Session; it never grants access.
+_Avoid_: purchase, Subscription, payment
+
 **Invoice**:
 The provider invoice projection associated with a normalized Subscription; a paid Invoice may create one Cash Receipt.
 _Avoid_: Cash Receipt, payment

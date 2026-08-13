@@ -26,6 +26,8 @@ for (const directory of directories) {
   const exampleRoot = path.join(examplesRoot, directory);
   let appManifest: {
     app_id: string;
+    name: string;
+    publisher_name: string;
     distributions: Array<{ browser_family: string; channel: string; runtime_id: string }>;
   };
   let chromiumManifest: Record<string, unknown> & { key?: string };
@@ -54,7 +56,12 @@ for (const directory of directories) {
     platform: "browser",
     target: "chrome120",
     define: {
-      APP_PASS_CONFIG: JSON.stringify({ appId: appManifest.app_id, authorityBaseUrl }),
+      APP_PASS_CONFIG: JSON.stringify({
+        appId: appManifest.app_id,
+        appName: appManifest.name,
+        publisherName: appManifest.publisher_name,
+        authorityBaseUrl,
+      }),
     },
   });
   await Promise.all([

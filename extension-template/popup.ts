@@ -2,6 +2,8 @@ import { createAppPass } from "@serp-apps-pass/sdk";
 
 declare const APP_PASS_CONFIG: {
   appId: string;
+  appName: string;
+  publisherName: string;
   authorityBaseUrl: string;
 };
 
@@ -12,9 +14,14 @@ const client = createAppPass({
 });
 
 const appId = document.querySelector<HTMLElement>("#app-id")!;
+const appName = document.querySelector<HTMLElement>("#app-name")!;
+const publisherName = document.querySelector<HTMLElement>("#publisher-name")!;
 const requestId = document.querySelector<HTMLElement>("#request-id")!;
 const result = document.querySelector<HTMLElement>("#result")!;
 appId.textContent = APP_PASS_CONFIG.appId;
+appName.textContent = APP_PASS_CONFIG.appName;
+publisherName.textContent = APP_PASS_CONFIG.publisherName;
+document.title = `${APP_PASS_CONFIG.appName} · Apps Pass proof`;
 
 async function action(operation: () => Promise<unknown>) {
   try {
@@ -33,7 +40,7 @@ async function action(operation: () => Promise<unknown>) {
 document.querySelector("#begin-link")!.addEventListener("click", () => void action(async () => {
   const link = await client.beginLink();
   requestId.dataset.requestId = link.requestId;
-  requestId.textContent = link.requestId;
+  requestId.textContent = `Link request: ${link.requestId}`;
   return link;
 }));
 

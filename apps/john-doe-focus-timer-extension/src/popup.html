@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>John Doe Focus Timer</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <span class="eyebrow">Example third-party extension</span>
+        <h1>Focus Timer</h1>
+        <p>Built by John Doe Studio. The timer belongs to John; Apps Pass only decides whether its premium mode is available.</p>
+      </header>
+
+      <section class="timer-card" aria-labelledby="timer-heading">
+        <span id="timer-heading" class="section-label">Timer</span>
+        <output id="timer" aria-live="polite">05:00</output>
+        <div class="timer-actions">
+          <button id="start-free" type="button">Start free 5 min</button>
+          <button id="start-premium" type="button" disabled>Start premium 25 min</button>
+        </div>
+        <button class="text-button" id="reset-timer" type="button">Reset timer</button>
+      </section>
+
+      <section class="pass-card" aria-labelledby="pass-heading">
+        <div class="pass-title">
+          <div>
+            <span class="section-label">SERP Apps Pass</span>
+            <h2 id="pass-heading">Premium access</h2>
+          </div>
+          <span id="entitlement-status" class="badge">Not checked</span>
+        </div>
+        <dl>
+          <dt>Extension ID</dt><dd id="runtime-id">Loading…</dd>
+          <dt>Submission</dt><dd id="identity-status">Checking…</dd>
+        </dl>
+        <button id="link-access" type="button">Link with Apps Pass</button>
+        <button class="secondary" id="check-access" type="button">Check Apps Pass access</button>
+        <button class="text-button" id="restart-link" type="button" hidden>Start activation again</button>
+        <p id="action-message" role="status"></p>
+      </section>
+    </main>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "John Doe Focus Timer",
+  "description": "An example third-party extension submitted to the SERP Apps Pass private pilot.",
+  "version": "0.0.1",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxq01lhaoG1+z8sH0k9NGpknMtOmoNemEXjshs/EyGZr9f4N5DfIB9TQ1y1ApfWqrGwMDUkODT5JyHC/WA6Hxpvwi6iOnEaEoyhmSeLqrED4Ht8kNhNP2cRVc9WQR+P9PIb2eRqhdZOTECTsCi/cEmxozDh38p2HGsGKUbxHQ7Pg0l0DkVJ6+QhyYsth5V/cqvxXSFZESJV9N58nTEV3n7kjM/kbgtZDdHqbsiJ46F2f8Z9BZMlYIeHUPaM7webov2umCJIfEN9Hfl847QcsFZbpKlU62P3CoaYSC5YX6oxsZ5bEATWkhHjbsTEeqyGcoBW9x0viyjL0HkX7MGpTI5wIDAQAB",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "http://localhost:8788/*",
+    "https://serp-apps-pass-staging.serpcompany.workers.dev/*"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  }
+}

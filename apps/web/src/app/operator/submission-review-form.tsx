@@ -3,7 +3,14 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
-export function SubmissionReviewForm({ submissionId, appId }: { submissionId: string; appId: string }) {
+type SubmissionReviewFormProps = {
+  submissionId: string;
+  appId: string;
+  manifestJson: string;
+  ownershipEvidence: string;
+};
+
+export function SubmissionReviewForm({ submissionId, appId, manifestJson, ownershipEvidence }: SubmissionReviewFormProps) {
   const router = useRouter();
   const [message, setMessage] = useState("");
 
@@ -25,6 +32,13 @@ export function SubmissionReviewForm({ submissionId, appId }: { submissionId: st
   return (
     <form data-testid={`submission-${submissionId}`} onSubmit={review}>
       <strong>{appId} · pending</strong>
+      <details>
+        <summary>Inspect the developer submission</summary>
+        <h3>App manifest</h3>
+        <pre className="submission-evidence">{JSON.stringify(JSON.parse(manifestJson), null, 2)}</pre>
+        <h3>Ownership evidence</h3>
+        <p className="submission-evidence">{ownershipEvidence}</p>
+      </details>
       <label>Review reason<input name="reason" minLength={10} maxLength={1000} required /></label>
       <div className="actions">
         <button type="submit" name="decision" value="approve">Approve Submission</button>

@@ -1,0 +1,22 @@
+{
+  "name": "@serp-apps-pass/john-doe-focus-timer-extension",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prebuild": "pnpm --filter @serp-apps-pass/sdk build",
+    "build": "tsx scripts/build.ts",
+    "preflight": "tsx tests/preflight.ts",
+    "test:browser": "tsx tests/browser.ts"
+  },
+  "dependencies": {
+    "@serp-apps-pass/contracts": "workspace:*",
+    "@serp-apps-pass/sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/chrome": "0.1.37",
+    "esbuild": "0.28.2",
+    "playwright": "1.62.1",
+    "tsx": "4.23.12"
+  }
+}

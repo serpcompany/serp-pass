@@ -68,6 +68,8 @@ The staging inclusion command performs the one-time real Publisher journey when 
 
 The exact Publisher handoff, including what the IDs and JSON file mean, is in [docs/mvp/PUBLISHER_INTEGRATION.md](./docs/mvp/PUBLISHER_INTEGRATION.md).
 
+For a human-in-the-loop rehearsal, use the standalone [John Doe Focus Timer](./apps/john-doe-focus-timer-extension/) and paste the [fresh-agent walkthrough prompt](./docs/walkthroughs/JOHN_DOE_FRESH_AGENT_PROMPT.md) into a new task. The agent acts as the invited developer while you retain the Operator review decision and any optional Stripe test Checkout. This is a staged example of an external Publisher handoff, not evidence of an independent Publisher relationship.
+
 The real activation/entitlement journey runs through the repo-owned extension browser and local workerd:
 
 ```sh

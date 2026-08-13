@@ -42,7 +42,12 @@ export default async function OperatorPage() {
     );
   }
   const pendingSubmissions = await getDb()
-    .select({ id: appSubmissions.id, appId: appSubmissions.appId })
+    .select({
+      id: appSubmissions.id,
+      appId: appSubmissions.appId,
+      manifestJson: appSubmissions.manifestJson,
+      ownershipEvidence: appSubmissions.ownershipEvidence,
+    })
     .from(appSubmissions)
     .where(eq(appSubmissions.status, "pending"));
   const { env } = getCloudflareContext();

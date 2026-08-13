@@ -100,6 +100,9 @@ try {
 
   await page.reload();
   let reviewForm = page.locator("form").filter({ hasText: `${appId} · pending` });
+  await reviewForm.getByText("Inspect the developer submission").click();
+  assert.equal(await reviewForm.getByText("Invited Video Downloader").isVisible(), true);
+  assert.equal(await reviewForm.getByText("Private pilot source repository and unpacked extension reviewed with the Operator.").isVisible(), true);
   await reviewForm.getByLabel("Review reason").fill("First review deliberately verifies the rejection and resubmission path.");
   await reviewForm.getByRole("button", { name: "Reject Submission" }).click();
   await page.getByText(`${appId} · pending`).waitFor({ state: "detached" });

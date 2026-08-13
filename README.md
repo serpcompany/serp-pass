@@ -6,7 +6,7 @@ The target and acceptance boundary are in [PRD.md](./PRD.md). The architecture i
 
 The completed proof remains executable local software, not a visual mockup, but it is not the launchable subscription product. Its PRD, architecture, freeze, evaluation, and plan are preserved under [docs/prototype/](./docs/prototype/).
 
-Implementation is in progress on `mvp/private-pilot`. Slices 1–3 are deployed at [serp-apps-pass-staging.serpcompany.workers.dev](https://serp-apps-pass-staging.serpcompany.workers.dev): one Next.js/OpenNext Worker, an isolated staging D1 database, reviewed migrations, Better Auth roles, authenticated Publisher submission and review, a public manifest contract, and a real independently built extension recognized by its approved runtime identity. Production has not been deployed. Stripe account `acct_1MwbFJI9EPtyKcIs`, currently named **SERP Pass**, is the intended isolated sandbox, but it has not been accessed or configured. No credentials, Product, Price, webhook, Checkout, Connect account, or payment exists; account selection is not mutation approval.
+Implementation is in progress on `mvp/private-pilot`. Slices 1–3 and the bounded, inert staging foundations for Subscriber billing, extension activation, Connect readiness, and earnings allocation are deployed at [serp-apps-pass-staging.serpcompany.workers.dev](https://serp-apps-pass-staging.serpcompany.workers.dev). The system uses one Next.js/OpenNext Worker, an isolated staging D1 database, reviewed migrations, Better Auth roles, authenticated Publisher submission and review, a public manifest contract, and a real independently built extension recognized by its approved runtime identity. Production has not been deployed. Stripe account `acct_1MwbFJI9EPtyKcIs`, currently named **SERP Pass**, is the intended isolated sandbox, but it has not been accessed or configured. No credentials, Product, Price, webhook, Checkout, Connect account, or payment exists; account selection is not mutation approval.
 
 ## MVP stack walkthrough
 
@@ -64,7 +64,7 @@ pnpm dev:browser:status
 pnpm mvp:activation:test
 ```
 
-The check leaves the shared browser running. It proves a real extension-origin request, authenticated Subscriber approve/deny UX, one-time proof exchange, hash-only App-session storage, normalized paid-through decisions, cross-App rejection, expiry, scoped revocation, App suspension, relinking, and a truthful `temporarily_unavailable` state. Its paid-through setup is the local signed fixture boundary; it does not access Stripe or represent a real purchase.
+The check leaves the shared browser running. The standalone extension test builds into a disposable directory, so it cannot overwrite the live dev-browser bundle or change its authority configuration. Together they prove a real extension-origin request, authenticated Subscriber approve/deny UX, one-time proof exchange, hash-only App-session storage, normalized paid-through decisions, cross-App rejection, expiry, scoped revocation, App suspension, relinking, and a truthful `temporarily_unavailable` state. Its paid-through setup is the local signed fixture boundary; it does not access Stripe or represent a real purchase.
 
 The account-independent Subscriber billing projection can be exercised locally without any Stripe account:
 
@@ -72,6 +72,7 @@ The account-independent Subscriber billing projection can be exercised locally w
 pnpm mvp:billing:test
 pnpm mvp:stripe-adapter:test
 pnpm mvp:connect:test
+pnpm mvp:earnings:test
 ```
 
 The first command uses the local normalized fixture boundary. The second uses Stripe's official SDK to generate and verify real Stripe-format signatures and current Event shapes without accessing an account. Neither performs a Stripe API request. The exact authority rules and remaining sandbox work are documented in [docs/mvp/BILLING_PROJECTION.md](./docs/mvp/BILLING_PROJECTION.md).
@@ -114,6 +115,7 @@ The disposable pre-MVP authority, example submissions, and contract tests remain
 - [docs/mvp/PUBLISHER_INTEGRATION.md](./docs/mvp/PUBLISHER_INTEGRATION.md) — the concrete extension integration and Submission handoff.
 - [docs/mvp/BILLING_PROJECTION.md](./docs/mvp/BILLING_PROJECTION.md) — replay-safe paid-through projection and the explicit Stripe-adapter boundary.
 - [docs/mvp/STRIPE_SANDBOX_APPROVAL.md](./docs/mvp/STRIPE_SANDBOX_APPROVAL.md) — exact test-mode account mutations, proposed Price, validation, and rollback awaiting approval.
+- [docs/mvp/D1_MIGRATIONS.md](./docs/mvp/D1_MIGRATIONS.md) — reviewed staging migration procedure and the bounded trigger-rich migration fallback.
 - [docs/research/SETAPP_PRODUCT_REFERENCE.md](./docs/research/SETAPP_PRODUCT_REFERENCE.md) — non-binding reference for bundle positioning, website structure, branding patterns, and later pricing experiments.
 - [CONTEXT.md](./CONTEXT.md) — canonical domain language.
 - [docs/prototype/](./docs/prototype/) — preserved local proof contract, architecture, freeze, plan, and evaluation.

@@ -5,7 +5,7 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { getHumanIdentity } from "@/auth/identity";
 import { billingModeForEnvironment } from "@/billing/read";
 import { getDb } from "@/db/get-db";
-import { appAssignments, appSubmissions, publisherConnectedAccounts, publisherMemberships, publishers } from "@/db/schema";
+import { allocationRuns, appAssignments, appSubmissions, publisherConnectedAccounts, publisherEarnings, publisherMemberships, publishers } from "@/db/schema";
 import { SubmissionForm } from "./submission-form";
 
 export const dynamic = "force-dynamic";
@@ -66,6 +66,21 @@ export default async function PublisherPage() {
     .from(publisherConnectedAccounts)
     .innerJoin(publisherMemberships, eq(publisherMemberships.publisherId, publisherConnectedAccounts.publisherId))
     .where(and(eq(publisherMemberships.userId, identity.session.user.id), eq(publisherConnectedAccounts.mode, mode)));
+  const earningRows = await getDb()
+    .select({
+      id: publisherEarnings.id,
+      publisherId: publisherEarnings.publisherId,
+      allocationRunId: publisherEarnings.allocationRunId,
+      amount: publisherEarnings.amount,
+      currency: publisherEarnings.currency,
+      availableAt: publisherEarnings.availableAt,
+      status: publisherEarnings.status,
+    })
+    .from(publisherEarnings)
+    .innerJoin(allocationRuns, eq(allocationRuns.id, publisherEarnings.allocationRunId))
+    .innerJoin(publisherMemberships, eq(publisherMemberships.publisherId, publisherEarnings.publisherId))
+    .where(and(eq(publisherMemberships.userId, identity.session.user.id), eq(allocationRuns.mode, mode)));
+  const connectByPublisher = new Map(connectAccounts.map((account) => [account.publisherId, account]));
 
   return (
     <main>
@@ -95,6 +110,30 @@ export default async function PublisherPage() {
             </div>
           );
         })}
+        <h2>Publisher Earnings</h2>
+        {earningRows.length === 0 ? <p className="muted">No Publisher Earnings yet.</p> : (
+          <ul>
+            {earningRows.map((earning) => {
+              const account = connectByPublisher.get(earning.publisherId);
+              const connectReady = Boolean(account?.detailsSubmitted && account.chargesEnabled && account.payoutsEnabled && account.transfersCapability === "active" && account.requirementsCurrentlyDueCount === 0 && !account.disabledReason);
+              const holdPassed = earning.availableAt.getTime() <= Date.now();
+              const status = earning.status === "released"
+                ? "Released to a Transfer"
+                : !holdPassed
+                  ? `Held until ${earning.availableAt.toISOString()}`
+                  : connectReady
+                    ? "Eligible — awaiting Operator release"
+                    : "Accrued — Connect not ready";
+              const formatted = new Intl.NumberFormat("en-US", { style: "currency", currency: earning.currency.toUpperCase() }).format(earning.amount / 100);
+              return (
+                <li key={earning.id}>
+                  <strong>{formatted} {earning.currency.toUpperCase()}</strong> · {status}<br />
+                  <span className="muted">Allocation {earning.allocationRunId} · No Transfer created · No bank Payout observed</span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
         <ul>
           {assignments.map((assignment) => (
             <li key={assignment.appId}><strong>{assignment.publisherName}</strong> · {assignment.publisherId} · <code>{assignment.appId}</code> · {assignment.appStatus}</li>

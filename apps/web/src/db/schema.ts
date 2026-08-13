@@ -436,6 +436,74 @@ export const stripeConnectEvents = sqliteTable(
   ],
 );
 
+export const allocationRuns = sqliteTable(
+  "allocation_run",
+  {
+    id: text("id").primaryKey(),
+    provider: text("provider", { enum: ["stripe"] }).notNull(),
+    mode: text("mode", { enum: ["test", "live"] }).notNull(),
+    currency: text("currency").notNull(),
+    distributableAmount: integer("distributable_amount").notNull(),
+    reserveAmount: integer("reserve_amount").notNull(),
+    platformAmount: integer("platform_amount").notNull(),
+    status: text("status", { enum: ["draft", "posted"] }).notNull(),
+    requestSha256: text("request_sha256").notNull(),
+    reason: text("reason").notNull(),
+    agreementReference: text("agreement_reference").notNull(),
+    postedByUserId: text("posted_by_user_id").notNull().references(() => user.id, { onDelete: "restrict" }),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+    postedAt: integer("posted_at", { mode: "timestamp" }),
+  },
+  (table) => [index("allocation_run_mode_posted_idx").on(table.mode, table.postedAt)],
+);
+
+export const allocationRunReceipts = sqliteTable(
+  "allocation_run_receipt",
+  {
+    allocationRunId: text("allocation_run_id").notNull().references(() => allocationRuns.id, { onDelete: "restrict" }),
+    cashReceiptId: text("cash_receipt_id").notNull().references(() => cashReceipts.id, { onDelete: "restrict" }),
+    amount: integer("amount").notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.allocationRunId, table.cashReceiptId] }), index("allocation_run_receipt_receipt_idx").on(table.cashReceiptId)],
+);
+
+export const publisherEarnings = sqliteTable(
+  "publisher_earning",
+  {
+    id: text("id").primaryKey(),
+    allocationRunId: text("allocation_run_id").notNull().references(() => allocationRuns.id, { onDelete: "restrict" }),
+    publisherId: text("publisher_id").notNull().references(() => publishers.id, { onDelete: "restrict" }),
+    amount: integer("amount").notNull(),
+    currency: text("currency").notNull(),
+    availableAt: integer("available_at", { mode: "timestamp" }).notNull(),
+    status: text("status", { enum: ["accrued", "released", "reversed"] }).notNull(),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+    releasedAt: integer("released_at", { mode: "timestamp" }),
+  },
+  (table) => [index("publisher_earning_publisher_status_idx").on(table.publisherId, table.status, table.availableAt), index("publisher_earning_allocation_idx").on(table.allocationRunId)],
+);
+
+export const ledgerEntries = sqliteTable(
+  "ledger_entry",
+  {
+    id: text("id").primaryKey(),
+    allocationRunId: text("allocation_run_id").notNull().references(() => allocationRuns.id, { onDelete: "restrict" }),
+    entryType: text("entry_type", { enum: ["cash_receipt", "reserve", "platform", "publisher_earning"] }).notNull(),
+    amount: integer("amount").notNull(),
+    currency: text("currency").notNull(),
+    cashReceiptId: text("cash_receipt_id").references(() => cashReceipts.id, { onDelete: "restrict" }),
+    publisherId: text("publisher_id").references(() => publishers.id, { onDelete: "restrict" }),
+    publisherEarningId: text("publisher_earning_id").references(() => publisherEarnings.id, { onDelete: "restrict" }),
+    postedAt: integer("posted_at", { mode: "timestamp" }).notNull(),
+  },
+  (table) => [
+    uniqueIndex("ledger_entry_receipt_unique").on(table.allocationRunId, table.cashReceiptId).where(sql`${table.entryType} = 'cash_receipt'`),
+    uniqueIndex("ledger_entry_earning_unique").on(table.allocationRunId, table.publisherEarningId).where(sql`${table.entryType} = 'publisher_earning'`),
+    uniqueIndex("ledger_entry_reserve_unique").on(table.allocationRunId).where(sql`${table.entryType} = 'reserve'`),
+    uniqueIndex("ledger_entry_platform_unique").on(table.allocationRunId).where(sql`${table.entryType} = 'platform'`),
+  ],
+);
+
 export const appLinkRequests = sqliteTable(
   "app_link_request",
   {

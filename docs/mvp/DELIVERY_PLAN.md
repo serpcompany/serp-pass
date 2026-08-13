@@ -105,6 +105,8 @@ Current evidence uses an official Stripe `account.updated` snapshot shape and ge
 
 ## 7. Earnings and settlement slice
 
+Status: **Cash Receipt allocation, immutable ledger posting, and Publisher Earning visibility are implemented and browser-verified locally; release, Transfer, reversal, and Payout projection remain pending**
+
 - immutable Cash Receipt and ledger model;
 - Operator-created balanced Allocation Run;
 - Publisher Earning and hold state;
@@ -114,6 +116,8 @@ Current evidence uses an official Stripe `account.updated` snapshot shape and ge
 - Publisher-readable history.
 
 Browser/Operator evidence: one paid test Invoice becomes one allocated Earning, one approved Transfer, and a separately reported Payout state without duplication.
+
+Current evidence starts with one signed local paid Invoice and exercises the real protected Operator route and Publisher page. The Operator supplies every receipt amount, reserve, platform amount, Publisher amount, agreement reference, reason, and hold time. The application rejects unbalanced totals, changed-payload idempotency reuse, wrong-mode or wrong-currency receipts, inactive Publishers, and receipt over-allocation. D1 posts the receipt allocation, balanced ledger, Publisher Earning, and Operator audit atomically; triggers prevent mutation or deletion of posted financial rows. The Publisher sees an accrued Earning while Transfer and bank Payout remain explicitly absent. No formula, release, Stripe Transfer, or fake Payout is implemented.
 
 ## 8. Staging release gate
 

@@ -4,15 +4,15 @@ Updated: **2026-08-13**
 
 ## Current slice
 
-Slices 1–3 are complete. Slice 4, Subscriber billing, remains approval-gated after its account-independent implementation. Slice 5, real activation and entitlement, is implemented and deployed. Slice 6 now has a deployed, inert Connect-readiness schema and an account-independent signed-Event/browser proof; real Express Account creation and hosted onboarding remain approval-gated. Stripe account `acct_1MwbFJI9EPtyKcIs` (currently **SERP Pass**) is the intended isolated sandbox, but it has not been accessed or configured. Account selection is not authorization to mutate it.
+Slices 1–3 are complete. Slice 4, Subscriber billing, remains approval-gated after its account-independent implementation. Slice 5, real activation and entitlement, is implemented and deployed. Slice 6 has a deployed, inert Connect-readiness schema and an account-independent signed-Event/browser proof. Slice 7 now has a deployed, empty allocation-ledger schema plus local end-to-end allocation evidence. Real Stripe purchase, Express Account creation, hosted onboarding, Earning release, Transfer, and Payout projection remain approval-gated. Stripe account `acct_1MwbFJI9EPtyKcIs` (currently **SERP Pass**) is the intended isolated sandbox, but it has not been accessed or configured. Account selection is not authorization to mutate it.
 
 ## Environment evidence
 
 | Environment | State | Evidence |
 | --- | --- | --- |
 | Local Next | built | Next.js `16.2.11` typecheck and optimized build pass. Runtime use requires an ignored local `BETTER_AUTH_SECRET`. |
-| Local workerd | passed | OpenNext `1.19.9` Worker reads migrated local D1; rendered Chromium passes human auth, role denials, Operator bootstrap, one-time Publisher invitation, normalized billing, official Stripe-format billing and Connect projections, real extension activation/entitlement, replay/integrity rejection, and D1 rate limiting at `localhost:8788`. All 16 migrations apply locally. |
-| Cloudflare staging | deployed and passed | [`serp-apps-pass-staging.serpcompany.workers.dev`](https://serp-apps-pass-staging.serpcompany.workers.dev), Worker version `d6b1fe7e-69af-4d02-9240-efb30c0a8134`, isolated `apps-pass-staging` D1 in APAC, health `200 ready`, all Slice 1–3 journeys and the unpaid Slice 5 activation/session path pass. Partial Slice 4 and Slice 6 schema/routes remain inert with no Stripe Account ID, secret, Price, connected Account, or processed Connect Event. |
+| Local workerd | passed | OpenNext `1.19.9` Worker reads migrated local D1; rendered Chromium passes human auth, role denials, Operator bootstrap, one-time Publisher invitation, normalized billing, official Stripe-format billing and Connect projections, real extension activation/entitlement, immutable allocation posting, replay/integrity rejection, and D1 rate limiting at `localhost:8788`. All 18 migrations apply locally. |
+| Cloudflare staging | deployed and passed | [`serp-apps-pass-staging.serpcompany.workers.dev`](https://serp-apps-pass-staging.serpcompany.workers.dev), Worker version `864b7236-67e0-427b-842a-617f4119ebfb`, isolated `apps-pass-staging` D1 in APAC, health `200 ready`, all 18 migrations recorded with none pending, all Slice 1–3 journeys, and the unpaid Slice 5 activation/session path pass. Partial Slices 4, 6, and 7 remain inert with no Stripe Account ID, secret, Price, connected Account, processed Connect Event, Allocation Run, Publisher Earning, or ledger entry. |
 | Production | not created or deployed | Production D1 still has a non-routable placeholder UUID; no production secret or Worker deployment exists. |
 | Stripe | selected but untouched | Intended isolated account: `acct_1MwbFJI9EPtyKcIs`, currently **SERP Pass**. It has not been accessed. No credentials, Product, Price, webhook, Checkout, Connect account, or payment exists. Every Stripe action remains approval-gated. |
 
@@ -91,12 +91,21 @@ Slices 1–3 are complete. Slice 4, Subscriber billing, remains approval-gated a
 - `/publisher?connect=returned` remains `Connect not started` until signed Stripe state exists; a redirect cannot assert readiness.
 - `pnpm mvp:connect:test` passes against local workerd without any Stripe API request. Migration `0016` and the inert projection code are deployed to staging, where zero connected Accounts and zero Connect Events exist because Stripe remains unconfigured.
 
+## Partial Slice 7 evidence
+
+- Migrations `0017_earnings_allocation_ledger.sql` and `0018_close_posted_allocation_append.sql` define Allocation Runs, receipt allocations, Publisher Earnings, and signed ledger entries. D1 triggers enforce receipt capacity, balanced posting, and immutability against update, deletion, or later append of posted financial rows.
+- The authenticated Operator allocation route accepts only explicit, versioned allocations. It does not invent a revenue-share formula. A canonical request hash makes exact replay a no-op and changed-payload reuse an integrity conflict.
+- One local browser/workerd journey starts from a signed paid-Invoice fixture, posts a balanced Allocation atomically, and shows the Publisher a `$7.00 USD` accrued Earning. It separately states that no Stripe Transfer and no bank Payout exist.
+- Unbalanced allocation, receipt over-allocation, cross-mode/currency use, inactive Publishers, non-Operator callers, and direct mutation of posted rows are rejected.
+- `pnpm mvp:earnings:test` passes locally without a Stripe API request. Staging has the reviewed schema and protected route, with zero Allocation Runs, receipt allocations, Publisher Earnings, and ledger entries.
+- Wrangler `4.122.0` could not apply trigger-rich migration `0017` through its normal remote query path (`incomplete input`). The exact reviewed file was instead imported transactionally with `wrangler d1 execute --remote --file`, its migration name was recorded only after schema verification, and `d1 migrations list` then reported no pending work. Follow-up migration `0018` applied successfully through the normal remote migrations command. The bounded fallback is documented in [D1_MIGRATIONS.md](./D1_MIGRATIONS.md).
+
 ## What it does not prove
 
 - Email ownership or password recovery. Email/password currently avoids choosing an email provider during the composition spike.
 - A separately owned external repository consuming a published SDK package. The real reference extension has its own source/build boundary but currently consumes the private workspace SDK; package distribution and an invited developer handoff remain before the external pilot.
 - A real Stripe-hosted purchase or Portal session. No Stripe account has been accessed, so real API idempotency, Product/Price binding, and webhook delivery remain unproved.
-- A real Stripe-paid entitlement, earnings, Transfer, or Payout. App linking and paid-through entitlement behavior are real locally, but their paid-through source is the deliberately local signed billing fixture until a Stripe test purchase is authorized.
+- A real Stripe-paid entitlement, Earning, Transfer, or Payout. App linking, paid-through entitlement behavior, and allocation posting are real locally, but their Cash Receipt source is the deliberately local signed billing fixture until a Stripe test purchase is authorized.
 - Production readiness or permission to use Stripe.
 
 ## External staging resources created

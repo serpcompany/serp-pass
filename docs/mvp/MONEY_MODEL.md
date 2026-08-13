@@ -93,3 +93,11 @@ These are commercial decisions. Environment variables or undocumented Operator h
 - `operator_audit_events`
 
 Exact tables may be deepened during schema design, but the observable concepts and invariants must remain.
+
+## Implemented posting boundary
+
+Migrations `0017_earnings_allocation_ledger.sql` and `0018_close_posted_allocation_append.sql` implement the pre-settlement half of this model. A same-origin, authenticated Operator request posts one explicit Allocation Run through `/api/operator/allocations`. The full posting is hashed for idempotency and atomically creates receipt allocations, signed ledger entries, Publisher Earnings, and an Operator audit event.
+
+D1 triggers enforce receipt capacity and currency, validate the final zero-sum ledger before a Run can become posted, and reject later append, mutation, or deletion of posted Runs, receipt allocations, ledger entries, Publisher Earning financial fields, and Cash Receipts. Corrections therefore require future compensating entries rather than rewriting history.
+
+This boundary deliberately stops before settlement. Publisher Earnings remain `accrued`; no code marks them released or creates a Transfer until Connect readiness and the explicitly approved Stripe test integration exist.

@@ -1,17 +1,23 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, realpath, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
 import { chromium } from "playwright";
 
 const appRoot = path.resolve(import.meta.dirname, "..");
-const extensionRoot = path.join(appRoot, "dist");
 const expectedRuntimeId = "deigfiokgenocbkifhkognjkhfljcfgi";
 
-execFileSync("pnpm", ["build"], { cwd: appRoot, stdio: "pipe" });
-const profileRoot = await mkdtemp(path.join(os.tmpdir(), "apps-pass-real-extension-"));
+const testRoot = await mkdtemp(path.join(os.tmpdir(), "apps-pass-real-extension-"));
+const buildOutputRoot = path.join(testRoot, "extension");
+const profileRoot = path.join(testRoot, "profile");
+execFileSync("pnpm", ["build"], {
+  cwd: appRoot,
+  env: { ...process.env, EXTENSION_OUTPUT_DIR: buildOutputRoot },
+  stdio: "pipe",
+});
+const extensionRoot = await realpath(buildOutputRoot);
 const context = await chromium.launchPersistentContext(profileRoot, {
   executablePath: chromium.executablePath(),
   headless: true,
@@ -44,5 +50,5 @@ try {
   process.stdout.write("PASS real extension source loads with its stable runtime ID and shared SDK\n");
 } finally {
   await context.close();
-  await rm(profileRoot, { recursive: true, force: true });
+  await rm(testRoot, { recursive: true, force: true });
 }

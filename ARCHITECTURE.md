@@ -269,6 +269,7 @@ Must be replaced rather than relabeled:
 
 - Structured events for auth failures, App review, Stripe ingestion, normalized Subscription transitions, link exchange, entitlement errors, Allocation posting, Transfer creation, reversals, and reconciliation.
 - Stable correlation identifiers without logging tokens, secrets, proof keys, account-link URLs, or payment/identity payloads.
+- A protected Operator journey trace follows one Subscriber through Checkout Attempts, provider billing identities, Cash Receipts, App Link Requests, App Sessions, Allocation Runs, Publisher Earnings, Settlements, and Transfers. The response exposes only operational IDs, state, and money amounts; it returns a correlation ID and logs only that ID plus relationship counts.
 - D1 migration, Time Travel/recovery, Stripe reconciliation, Transfer retry, App suspension, and credential-rotation runbooks.
 - Native Cloudflare Workers Logs and modest tracing are sufficient initially. Sentry is not a prerequisite.
 

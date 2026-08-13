@@ -78,6 +78,8 @@ pnpm mvp:earnings:test
 
 The first command uses the local normalized fixture boundary. The second uses Stripe's official SDK to generate and verify real Stripe-format signatures and current Event shapes without accessing an account. Neither performs a Stripe API request. The exact authority rules and remaining sandbox work are documented in [docs/mvp/BILLING_PROJECTION.md](./docs/mvp/BILLING_PROJECTION.md).
 
+An authenticated Operator can inspect `/api/operator/billing/audit?subscriberUserId=<id>` to reconcile counts and obtain the allowlisted journey trace linking Checkout, billing, App-session, Allocation, Earning, Settlement, and Transfer records. The response includes `x-apps-pass-correlation-id`; search Workers Logs for the matching `operator_journey_trace` event. The trace never returns extension credentials, proof material, raw/payload hashes, idempotency keys, personal email, hosted URLs, installation identifiers, or payment/KYC data.
+
 Run the automated rendered-browser journey against a running local preview or the deployed staging Worker:
 
 ```sh

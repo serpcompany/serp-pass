@@ -207,13 +207,43 @@ try {
   });
   const audit = await page.evaluate(async (subscriberUserId) => {
     const response = await fetch(`/api/operator/billing/audit?subscriberUserId=${encodeURIComponent(subscriberUserId)}`);
-    return { status: response.status, body: await response.json() as unknown };
+    return { status: response.status, correlationId: response.headers.get("x-apps-pass-correlation-id"), body: await response.json() as unknown };
   }, subscriberUserId);
   assert.equal(audit.status, 200);
+  assert.match(audit.correlationId ?? "", /^[A-Za-z0-9_-]{8,128}$/u);
   assert.deepEqual(audit.body, {
     counts: { customers: 1, subscriptions: 1, events: 5, invoices: 3, cashReceipts: 2 },
     issues: [],
+    trace: {
+      subscriberUserId,
+      checkoutAttempts: [],
+      billingCustomers: [baseData.customerId],
+      subscriptions: [baseData.subscriptionId],
+      billingEvents: [
+        `evt_fixture_delayed_${suffix}`,
+        paid.id,
+        `evt_fixture_failed_${suffix}`,
+        `evt_fixture_canceled_${suffix}`,
+        `evt_fixture_concurrent_${suffix}`,
+      ],
+      invoices: [
+        `in_fixture_failed_${suffix}`,
+        `in_fixture_older_${suffix}`,
+        `in_fixture_paid_${suffix}`,
+      ],
+      cashReceipts: [
+        { providerInvoiceId: `in_fixture_older_${suffix}`, amount: 1_000, currency: "usd" },
+        { providerInvoiceId: `in_fixture_paid_${suffix}`, amount: 1_000, currency: "usd" },
+      ],
+      linkRequests: [],
+      appSessions: [],
+      allocationRuns: [],
+      publisherEarnings: [],
+      settlements: [],
+      transfers: [],
+    },
   });
+  assert.doesNotMatch(JSON.stringify(audit.body), /token|proof|payload|idempotency|email|hosted|url/iu, "Operator journey trace must exclude secret and personal-data field classes");
 
   process.stdout.write("PASS signed billing projection is replay-safe, order-safe, and paid-through authoritative\n");
 } finally {

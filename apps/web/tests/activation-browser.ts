@@ -243,6 +243,26 @@ await popup.getByText("revoked", { exact: true }).waitFor();
 runPnpm(["mvp:operator:set-app-status", "--", "--local", subscriberEmail, appManifest.app_id, "approved", "Restore App after private-pilot suspension check"]);
 await popup.getByRole("button", { name: "Check Apps Pass access" }).click();
 await popup.getByText("active", { exact: true }).waitFor();
+const operatorJourney = await subscriberPage.evaluate(async (subscriberUserId) => {
+  const response = await fetch(`/api/operator/billing/audit?subscriberUserId=${encodeURIComponent(subscriberUserId)}`);
+  return { status: response.status, body: await response.json() as { trace?: { linkRequests?: Array<Record<string, unknown>>; appSessions?: Array<Record<string, unknown>> } } };
+}, subscriberUserId);
+assert.equal(operatorJourney.status, 200);
+assert.equal(operatorJourney.body.trace?.linkRequests?.length, 2);
+assert.deepEqual(operatorJourney.body.trace?.linkRequests?.map((request) => ({ appId: request.appId, status: request.status })), [
+  { appId: appManifest.app_id, status: "exchanged" },
+  { appId: appManifest.app_id, status: "exchanged" },
+]);
+assert.equal(operatorJourney.body.trace?.linkRequests?.[0]?.requestId, pending.requestId);
+assert.notEqual(operatorJourney.body.trace?.linkRequests?.[1]?.requestId, pending.requestId);
+assert.match(String(operatorJourney.body.trace?.linkRequests?.[1]?.requestId), /^linkreq_[A-Za-z0-9_-]+$/u);
+assert.equal(operatorJourney.body.trace?.appSessions?.length, 2);
+assert.deepEqual(operatorJourney.body.trace?.appSessions?.map((session) => ({ appId: session.appId, status: session.status })), [
+  { appId: appManifest.app_id, status: "revoked" },
+  { appId: appManifest.app_id, status: "active" },
+]);
+assert.equal(operatorJourney.body.trace?.appSessions?.some((session) => session.sessionId === sessionId), true);
+assert.doesNotMatch(JSON.stringify(operatorJourney.body), /token|proof|payload|idempotency|email|hosted|url|installation|revokeReason/iu, "Operator journey trace must exclude App-session credentials, proofs, and installation details");
 const operatorAudit = localSql(`SELECT action, actor_user_id FROM operator_audit_event WHERE target_id IN ('${sessionId}', '${appManifest.app_id}') ORDER BY occurred_at`);
 assert.equal(operatorAudit.includes(subscriberUserId), true, "Authority mutations must audit the authenticated Operator user ID");
 assert.match(localSql(`SELECT COUNT(*) AS count FROM operator_audit_event WHERE target_id = '${sessionId}' AND action = 'app_session_revoked' AND actor_user_id = '${subscriberUserId}'`), /"count": 1/);

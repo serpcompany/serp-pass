@@ -23,6 +23,7 @@
     "mvp:stripe-adapter:test": "pnpm --filter @serp-apps-pass/web test:stripe-account-guard && pnpm --filter @serp-apps-pass/web test:stripe-webhook",
     "mvp:connect:test": "pnpm --filter @serp-apps-pass/web test:connect-projection",
     "mvp:earnings:test": "pnpm --filter @serp-apps-pass/web test:earnings-allocation",
+    "mvp:operator-trace:test-staging": "pnpm --filter @serp-apps-pass/web test:operator-trace-staging",
     "mvp:sdk:test": "pnpm exec tsx --test tests/sdk-distribution.test.ts",
     "mvp:extension:build": "pnpm --filter @serp-apps-pass/invited-publisher-extension build",
     "mvp:extension:test": "pnpm --filter @serp-apps-pass/invited-publisher-extension test:browser",

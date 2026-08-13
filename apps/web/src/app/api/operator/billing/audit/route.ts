@@ -2,6 +2,8 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 import { getHumanIdentityFromHeaders } from "@/auth/identity";
 import { billingModeForEnvironment } from "@/billing/read";
+import { logEvent } from "@/observability/log";
+import { readOperatorJourneyTrace } from "@/operator/journey-trace";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +12,7 @@ function count(result: { results?: unknown[] }) {
 }
 
 export async function GET(request: Request) {
+  const correlationId = request.headers.get("cf-ray") ?? crypto.randomUUID();
   const identity = await getHumanIdentityFromHeaders(request.headers);
   if (!identity) return Response.json({ message: "Sign-in required." }, { status: 401 });
   if (!identity.roles.includes("operator")) return Response.json({ message: "Operator role required." }, { status: 403 });
@@ -30,6 +33,18 @@ export async function GET(request: Request) {
   const issues = [];
   if (count(results[5]) > 0) issues.push("paid_invoice_missing_cash_receipt");
   if (count(results[6]) > 0) issues.push("cash_receipt_invoice_mismatch");
+  const trace = await readOperatorJourneyTrace(env.DB, mode, subscriberUserId);
+  logEvent("info", {
+    event: "operator_journey_trace",
+    correlationId,
+    environment: env.APP_ENV,
+    outcome: issues.length === 0 ? "consistent" : "issues_found",
+    subscriberUserId,
+    billingEventCount: trace.billingEvents.length,
+    linkRequestCount: trace.linkRequests.length,
+    allocationRunCount: trace.allocationRuns.length,
+    settlementCount: trace.settlements.length,
+  });
   return Response.json({
     counts: {
       customers: count(results[0]),
@@ -39,5 +54,6 @@ export async function GET(request: Request) {
       cashReceipts: count(results[4]),
     },
     issues,
-  }, { headers: { "cache-control": "no-store" } });
+    trace,
+  }, { headers: { "cache-control": "no-store", "x-apps-pass-correlation-id": correlationId } });
 }

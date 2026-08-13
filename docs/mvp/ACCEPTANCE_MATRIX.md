@@ -18,7 +18,7 @@ This matrix maps the binding PRD criteria to current evidence. `Passed` means th
 | 10 | Paid Invoice creates one Cash Receipt and balanced Allocation | Partial | Ledger path passes from signed local Invoice fixture. Needs real test Invoice and explicitly reviewed amounts. |
 | 11 | One idempotent test-mode Publisher Transfer | Blocked | Bounded test Transfer/reversal approved, but correct Stripe authentication, Publisher country/readiness, and exact Earning amount are missing. |
 | 12 | Publisher distinguishes Earning, Transfer, and bank Payout | Partial | Rendered local state distinctions pass; provider-driven Transfer/Payout evidence remains unproved. |
-| 13 | Secret-safe structured staging trace across journey | Partial | Structured events exist per module; complete real Checkout-to-Transfer staging trace remains. |
+| 13 | Secret-safe structured staging trace across journey | Partial | A protected Operator trace joins Checkout, billing, App sessions, Allocation, Earning, Settlement, and Transfer IDs; local browser/redaction checks pass, and deployed smoke correlation `a2a844a02b27d4dc` matched a count-only staging Workers Log event. The real Stripe staging journey and corresponding provider identifiers remain. |
 | 14 | Persistence and backup/recovery rehearsal | Passed | Deploy persistence and disposable remote D1 Time Travel rehearsal are documented separately. |
 | 15 | Automated and real-browser checks reported separately | Partial | Current local/staging reports distinguish them; final complete rerun awaits Stripe journey. |
 

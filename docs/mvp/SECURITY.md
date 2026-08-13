@@ -46,6 +46,7 @@ An extension is not a trusted server, even when its runtime ID is approved. A ru
 - Account Link URLs are short-lived secrets and are neither persisted unnecessarily nor logged.
 - App-session tokens are stored only in the linked extension installation and as hashes in D1.
 - Logs may contain opaque record IDs and correlation IDs, but not tokens, proof keys, cookies, raw webhook bodies, payment methods, or identity-verification payloads.
+- The Operator journey trace is role-protected and allowlists its response fields. It excludes token/proof/payload/idempotency hashes and keys, email, hosted URLs, installation IDs, revoke reasons, payment methods, and KYC data. Its structured log contains only the Subscriber ID, correlation ID, outcome, and relationship counts.
 
 ## Authorization matrix
 

@@ -269,6 +269,28 @@ try {
   await publisherPage.getByText("Reversed after Transfer reversal").waitFor();
   assert.equal(await publisherPage.getByText("No bank Payout observed.", { exact: true }).isVisible(), true);
 
+  const journeyTrace = await operatorPage.evaluate(async (subscriberUserId) => {
+    const response = await fetch(`/api/operator/billing/audit?subscriberUserId=${encodeURIComponent(subscriberUserId)}`);
+    return { status: response.status, body: await response.json() as Record<string, unknown> };
+  }, operatorUserId);
+  assert.equal(journeyTrace.status, 200);
+  assert.deepEqual((journeyTrace.body as { trace: unknown }).trace, {
+    subscriberUserId: operatorUserId,
+    checkoutAttempts: [],
+    billingCustomers: [`cus_allocation_${suffix}`],
+    subscriptions: [`sub_allocation_${suffix}`],
+    billingEvents: [`evt_allocation_paid_${invoiceId}`, `evt_allocation_paid_${secondInvoiceId}`],
+    invoices: [invoiceId, secondInvoiceId].sort(),
+    cashReceipts: [invoiceId, secondInvoiceId].sort().map((providerInvoiceId) => ({ providerInvoiceId, amount: 1_000, currency: "usd" })),
+    linkRequests: [],
+    appSessions: [],
+    allocationRuns: [{ allocationRunId, status: "posted", distributableAmount: 1_000, reserveAmount: 100, platformAmount: 200, currency: "usd" }],
+    publisherEarnings: [{ earningId, allocationRunId, publisherId, amount: 700, currency: "usd", status: "reversed" }],
+    settlements: [{ settlementId: repeated.body.settlementId, earningId, publisherId, amount: 700, currency: "usd", status: "reversed" }],
+    transfers: [{ providerTransferId: repeated.body.providerTransferId, settlementId: repeated.body.settlementId, amount: 700, currency: "usd", status: "reversed", executionMode: "local_simulation" }],
+  });
+  assert.doesNotMatch(JSON.stringify(journeyTrace.body), /token|proof|payload|idempotency|email|hosted|url/iu, "Operator journey trace must exclude secret and personal-data field classes");
+
   const unreleasedEarningId = `earning_unreleased_${suffix}`;
   const unreleasedRunId = `alloc_unreleased_${suffix}`;
   const secondReceipt = `receipt:test:${secondInvoiceId}`;

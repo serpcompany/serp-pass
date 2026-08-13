@@ -16,10 +16,19 @@ export async function POST(request: Request) {
   if (!identity) return Response.json({ message: "Sign-in required." }, { status: 401 });
   if (!identity.roles.includes("operator")) return Response.json({ message: "Operator role required." }, { status: 403 });
 
-  const body = (await request.json().catch(() => null)) as { email?: unknown } | null;
+  const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
   const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
+  const publisherId = typeof body?.publisherId === "string" ? body.publisherId.trim() : "";
+  const publisherName = typeof body?.publisherName === "string" ? body.publisherName.trim() : "";
+  const appId = typeof body?.appId === "string" ? body.appId.trim() : "";
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return Response.json({ message: "A valid Publisher email is required." }, { status: 400 });
+  }
+  if (!/^pub_[a-z0-9][a-z0-9_]{2,59}$/.test(publisherId) || !/^app_[a-z0-9][a-z0-9_]{2,59}$/.test(appId)) {
+    return Response.json({ message: "Operator-issued Publisher and App IDs are invalid." }, { status: 400 });
+  }
+  if (publisherName.length < 1 || publisherName.length > 100) {
+    return Response.json({ message: "Publisher name must be between 1 and 100 characters." }, { status: 400 });
   }
 
   const invitationId = crypto.randomUUID();
@@ -29,12 +38,22 @@ export async function POST(request: Request) {
   const now = Math.floor(Date.now() / 1000);
   const expiresAt = now + 60 * 60 * 24 * 7;
 
-  await env.DB.batch([
-    env.DB.prepare("INSERT INTO publisher_invitation (id, email, token_hash, status, expires_at, created_at, created_by_user_id) VALUES (?, ?, ?, 'pending', ?, ?, ?)")
-      .bind(invitationId, email, tokenHash, expiresAt, now, identity.session.user.id),
-    env.DB.prepare("INSERT INTO operator_audit_event (id, actor_user_id, action, target_type, target_id, occurred_at, reason) VALUES (?, ?, 'publisher_invitation_created', 'publisher_invitation', ?, ?, 'private_pilot_invitation')")
-      .bind(auditId, identity.session.user.id, invitationId, now),
-  ]);
+  try {
+    await env.DB.batch([
+      env.DB.prepare("INSERT INTO publisher (id, name, status, created_at, created_by_user_id) VALUES (?, ?, 'invited', ?, ?)")
+        .bind(publisherId, publisherName, now, identity.session.user.id),
+      env.DB.prepare("INSERT INTO app_assignment (app_id, publisher_id, status, assigned_at, assigned_by_user_id) VALUES (?, ?, 'assigned', ?, ?)")
+        .bind(appId, publisherId, now, identity.session.user.id),
+      env.DB.prepare("INSERT INTO publisher_invitation (id, email, token_hash, status, expires_at, created_at, created_by_user_id) VALUES (?, ?, ?, 'pending', ?, ?, ?)")
+        .bind(invitationId, email, tokenHash, expiresAt, now, identity.session.user.id),
+      env.DB.prepare("INSERT INTO publisher_invitation_assignment (invitation_id, publisher_id, app_id) VALUES (?, ?, ?)")
+        .bind(invitationId, publisherId, appId),
+      env.DB.prepare("INSERT INTO operator_audit_event (id, actor_user_id, action, target_type, target_id, occurred_at, reason) VALUES (?, ?, 'publisher_invitation_created', 'publisher_invitation', ?, ?, 'private_pilot_invitation')")
+        .bind(auditId, identity.session.user.id, invitationId, now),
+    ]);
+  } catch {
+    return Response.json({ message: "Publisher ID, App ID, or invitation conflicts with an existing assignment." }, { status: 409 });
+  }
 
   logEvent("info", {
     event: "publisher_invitation_created",

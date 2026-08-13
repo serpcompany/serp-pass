@@ -1,7 +1,11 @@
 import Link from "next/link";
+import { eq } from "drizzle-orm";
 
 import { getHumanIdentity } from "@/auth/identity";
+import { getDb } from "@/db/get-db";
+import { appSubmissions } from "@/db/schema";
 import { PublisherInvitationForm } from "./publisher-invitation-form";
+import { SubmissionReviewForm } from "./submission-review-form";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +37,10 @@ export default async function OperatorPage() {
       </main>
     );
   }
+  const pendingSubmissions = await getDb()
+    .select({ id: appSubmissions.id, appId: appSubmissions.appId })
+    .from(appSubmissions)
+    .where(eq(appSubmissions.status, "pending"));
 
   return (
     <main>
@@ -42,6 +50,12 @@ export default async function OperatorPage() {
         <h1>Operator controls</h1>
         <p className="muted">Create a one-time, email-bound invitation. The raw code is shown once and must be shared with the intended Publisher through a private channel.</p>
         <PublisherInvitationForm />
+        {pendingSubmissions.length > 0 && (
+          <div className="review-list">
+            <h2>Pending App Submissions</h2>
+            {pendingSubmissions.map((submission) => <SubmissionReviewForm key={submission.id} {...submission} submissionId={submission.id} />)}
+          </div>
+        )}
       </section>
     </main>
   );

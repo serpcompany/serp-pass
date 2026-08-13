@@ -108,6 +108,116 @@ export const operatorAuditEvents = sqliteTable(
   (table) => [index("operator_audit_event_target_idx").on(table.targetType, table.targetId)],
 );
 
+export const publishers = sqliteTable("publisher", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  status: text("status", { enum: ["invited", "active", "suspended"] }).notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  createdByUserId: text("created_by_user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "restrict" }),
+});
+
+export const publisherMemberships = sqliteTable(
+  "publisher_membership",
+  {
+    publisherId: text("publisher_id")
+      .notNull()
+      .references(() => publishers.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.publisherId, table.userId] }), index("publisher_membership_user_idx").on(table.userId)],
+);
+
+export const appAssignments = sqliteTable(
+  "app_assignment",
+  {
+    appId: text("app_id").primaryKey(),
+    publisherId: text("publisher_id")
+      .notNull()
+      .references(() => publishers.id, { onDelete: "cascade" }),
+    status: text("status", { enum: ["assigned", "submitted", "approved", "revoked"] }).notNull(),
+    assignedAt: integer("assigned_at", { mode: "timestamp" }).notNull(),
+    assignedByUserId: text("assigned_by_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+  },
+  (table) => [index("app_assignment_publisher_idx").on(table.publisherId)],
+);
+
+export const appSubmissions = sqliteTable(
+  "app_submission",
+  {
+    id: text("id").primaryKey(),
+    appId: text("app_id")
+      .notNull()
+      .references(() => appAssignments.appId, { onDelete: "restrict" }),
+    publisherId: text("publisher_id")
+      .notNull()
+      .references(() => publishers.id, { onDelete: "restrict" }),
+    schemaVersion: integer("schema_version").notNull(),
+    manifestJson: text("manifest_json").notNull(),
+    ownershipEvidence: text("ownership_evidence").notNull(),
+    status: text("status", { enum: ["pending", "approved", "rejected"] }).notNull(),
+    submittedByUserId: text("submitted_by_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    submittedAt: integer("submitted_at", { mode: "timestamp" }).notNull(),
+    reviewedByUserId: text("reviewed_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    reviewedAt: integer("reviewed_at", { mode: "timestamp" }),
+    reviewReason: text("review_reason"),
+  },
+  (table) => [index("app_submission_publisher_status_idx").on(table.publisherId, table.status), index("app_submission_app_idx").on(table.appId)],
+);
+
+export const submissionDistributionClaims = sqliteTable(
+  "submission_distribution_claim",
+  {
+    submissionId: text("submission_id")
+      .notNull()
+      .references(() => appSubmissions.id, { onDelete: "cascade" }),
+    browserFamily: text("browser_family", { enum: ["chromium"] }).notNull(),
+    channel: text("channel", { enum: ["unpacked", "chrome_web_store"] }).notNull(),
+    runtimeId: text("runtime_id").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.submissionId, table.channel, table.runtimeId] }),
+    uniqueIndex("submission_distribution_identity_unique").on(table.browserFamily, table.runtimeId),
+  ],
+);
+
+export const apps = sqliteTable("app", {
+  id: text("id").primaryKey(),
+  publisherId: text("publisher_id")
+    .notNull()
+    .references(() => publishers.id, { onDelete: "restrict" }),
+  approvedSubmissionId: text("approved_submission_id")
+    .notNull()
+    .references(() => appSubmissions.id, { onDelete: "restrict" }),
+  name: text("name").notNull(),
+  featuresJson: text("features_json").notNull(),
+  status: text("status", { enum: ["approved", "suspended"] }).notNull(),
+  approvedAt: integer("approved_at", { mode: "timestamp" }).notNull(),
+}, (table) => [uniqueIndex("app_approved_submission_unique").on(table.approvedSubmissionId), index("app_publisher_idx").on(table.publisherId)]);
+
+export const appDistributions = sqliteTable(
+  "app_distribution",
+  {
+    appId: text("app_id")
+      .notNull()
+      .references(() => apps.id, { onDelete: "cascade" }),
+    browserFamily: text("browser_family", { enum: ["chromium"] }).notNull(),
+    channel: text("channel", { enum: ["unpacked", "chrome_web_store"] }).notNull(),
+    runtimeId: text("runtime_id").notNull(),
+    status: text("status", { enum: ["approved", "suspended"] }).notNull(),
+    approvedAt: integer("approved_at", { mode: "timestamp" }).notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.appId, table.channel, table.runtimeId] }), uniqueIndex("app_distribution_identity_unique").on(table.browserFamily, table.runtimeId)],
+);
+
 export const publisherInvitations = sqliteTable(
   "publisher_invitation",
   {
@@ -130,6 +240,18 @@ export const publisherInvitations = sqliteTable(
     index("publisher_invitation_email_status_idx").on(table.email, table.status),
   ],
 );
+
+export const publisherInvitationAssignments = sqliteTable("publisher_invitation_assignment", {
+  invitationId: text("invitation_id")
+    .primaryKey()
+    .references(() => publisherInvitations.id, { onDelete: "cascade" }),
+  publisherId: text("publisher_id")
+    .notNull()
+    .references(() => publishers.id, { onDelete: "cascade" }),
+  appId: text("app_id")
+    .notNull()
+    .references(() => appAssignments.appId, { onDelete: "cascade" }),
+});
 
 export const rateLimit = sqliteTable(
   "rate_limit",

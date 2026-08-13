@@ -1,0 +1,16 @@
+{
+  "$schema": "https://pass.serp.co/schema/app-manifest-v1.json",
+  "schema_version": 1,
+  "publisher_id": "pub_invited_pilot_real",
+  "publisher_name": "Invited Publisher Pilot",
+  "app_id": "app_invited_pilot_real",
+  "name": "Invited Publisher Video Notes",
+  "features": ["premium"],
+  "distributions": [
+    {
+      "browser_family": "chromium",
+      "channel": "unpacked",
+      "runtime_id": "deigfiokgenocbkifhkognjkhfljcfgi"
+    }
+  ]
+}

@@ -6,7 +6,7 @@ The target and acceptance boundary are in [PRD.md](./PRD.md). The architecture i
 
 The completed proof remains executable local software, not a visual mockup, but it is not the launchable subscription product. Its PRD, architecture, freeze, evaluation, and plan are preserved under [docs/prototype/](./docs/prototype/).
 
-Implementation is in progress on `mvp/private-pilot`. Stack-composition Slice 1 is deployed at [serp-apps-pass-staging.serpcompany.workers.dev](https://serp-apps-pass-staging.serpcompany.workers.dev): one Next.js/OpenNext Worker, an isolated staging D1 database, reviewed migrations, Better Auth email/password human sessions, and structured Workers Logs. Production has not been deployed. Stripe is deliberately unconfigured: no account, credentials, Product, Price, webhook, Checkout, Connect account, or payment has been created or selected.
+Implementation is in progress on `mvp/private-pilot`. Slices 1–3 are deployed at [serp-apps-pass-staging.serpcompany.workers.dev](https://serp-apps-pass-staging.serpcompany.workers.dev): one Next.js/OpenNext Worker, an isolated staging D1 database, reviewed migrations, Better Auth roles, authenticated Publisher submission and review, a public manifest contract, and a real independently built extension recognized by its approved runtime identity. Production has not been deployed. Stripe is deliberately unconfigured: no account, credentials, Product, Price, webhook, Checkout, Connect account, or payment has been created or selected.
 
 ## MVP stack walkthrough
 
@@ -40,7 +40,22 @@ pnpm mvp:operator:bootstrap -- --local operator@example.com
 pnpm mvp:operator:bootstrap -- --staging operator@example.com
 ```
 
-The command requires the trusted local shell or authenticated SERP Cloudflare CLI; there is no public bootstrap endpoint. Visit `/operator`, enter the intended Publisher email, and copy the returned invitation code once. The signed-in Publisher enters it at `/publisher/invitation`. Codes expire after seven days, are bound to that email, are consumed once, and are stored only as hashes.
+The command requires the trusted local shell or authenticated SERP Cloudflare CLI; there is no public bootstrap endpoint. Visit `/operator`, enter the intended Publisher email, Operator-issued Publisher ID and first App ID, and copy the returned invitation code once. The signed-in Publisher enters it at `/publisher/invitation`. Codes expire after seven days, are bound to that email, are consumed once, and are stored only as hashes.
+
+The Publisher then submits the complete `apppass.json` plus ownership evidence from `/publisher`. The Operator records a review reason and approves or rejects it from `/operator`. Approval—not submission—creates the canonical App and Distribution used by the authority.
+
+The real invited-Publisher source project is [`apps/invited-publisher-extension`](./apps/invited-publisher-extension/). Build and verify its actual unpacked Chromium package with:
+
+```sh
+pnpm mvp:contracts:test
+pnpm mvp:extension:build
+pnpm mvp:extension:test
+pnpm mvp:extension:test-staging
+```
+
+The staging inclusion command performs the one-time real Publisher journey when needed and is read-only/repeatable after approval. It never contacts Stripe.
+
+The exact Publisher handoff, including what the IDs and JSON file mean, is in [docs/mvp/PUBLISHER_INTEGRATION.md](./docs/mvp/PUBLISHER_INTEGRATION.md).
 
 Run the automated rendered-browser journey against a running local preview or the deployed staging Worker:
 
@@ -148,6 +163,7 @@ The browser profile is preserved when stopped. D1 records, browser state, genera
 - [docs/mvp/DELIVERY_PLAN.md](./docs/mvp/DELIVERY_PLAN.md) — binding vertical-slice order and promotion gates.
 - [docs/mvp/MONEY_MODEL.md](./docs/mvp/MONEY_MODEL.md) — earnings-ledger and settlement invariants.
 - [docs/mvp/SECURITY.md](./docs/mvp/SECURITY.md) — threat model and required evidence.
+- [docs/mvp/PUBLISHER_INTEGRATION.md](./docs/mvp/PUBLISHER_INTEGRATION.md) — the concrete extension integration and Submission handoff.
 - [CONTEXT.md](./CONTEXT.md) — canonical domain language.
 - [docs/prototype/](./docs/prototype/) — preserved local proof contract, architecture, freeze, plan, and evaluation.
 - [docs/product/HISTORICAL_LAUNCHABLE_MVP_PRD.md](./docs/product/HISTORICAL_LAUNCHABLE_MVP_PRD.md) — preserved, non-binding launchable-product intent.

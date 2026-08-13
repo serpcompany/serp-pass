@@ -1,0 +1,20 @@
+{
+  "name": "@serp-apps-pass/invited-publisher-extension",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsx scripts/build.ts",
+    "test:browser": "tsx tests/browser.ts",
+    "test:staging-inclusion": "tsx tests/staging-inclusion.ts"
+  },
+  "dependencies": {
+    "@serp-apps-pass/sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/chrome": "0.1.37",
+    "esbuild": "0.28.2",
+    "playwright": "1.62.1",
+    "tsx": "4.23.12"
+  }
+}

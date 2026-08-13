@@ -93,6 +93,29 @@ Interface:
 
 The module hides whole-document validation, ID assignment rules, ownership evidence, conflict detection, atomic writes, and audit events.
 
+Implemented Slice 3 flow:
+
+```mermaid
+sequenceDiagram
+    participant O as SERP Operator
+    participant W as Apps Pass Worker
+    participant P as Invited Publisher
+    participant D as Staging D1
+    participant E as Publisher extension
+
+    O->>W: Create email-bound invitation and assign public IDs
+    W->>D: Publisher, App Assignment, hashed invitation
+    P->>W: Accept invitation and submit apppass.json plus evidence
+    W->>D: Validate canonical contract and store pending Submission
+    O->>W: Approve or reject with review reason
+    W->>D: Create approved App and Distribution only on approval
+    E->>W: Present App ID and chrome.runtime.id
+    W->>D: Read approved canonical identity
+    W-->>E: Approved identity or not found
+```
+
+The public contract lives in `packages/app-pass-contracts`. It contains the JSON Schema, generated Worker-safe validator, canonicalization, and public types. The real pilot integration lives in `apps/invited-publisher-extension`; its public Chrome manifest key stabilizes `chrome.runtime.id`, while its `apppass.json` binds that runtime identity to the Operator-issued App and Publisher IDs. Neither file contains a secret.
+
 ### Billing projection
 
 Interface:

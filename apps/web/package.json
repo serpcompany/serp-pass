@@ -23,6 +23,7 @@
   "dependencies": {
     "@better-auth/drizzle-adapter": "1.6.27",
     "@opennextjs/cloudflare": "1.19.9",
+    "@serp-apps-pass/contracts": "workspace:*",
     "better-auth": "1.6.27",
     "drizzle-orm": "0.45.2",
     "next": "16.2.11",

@@ -12,6 +12,10 @@ _Avoid_: Admin, owner
 A person or organization authorized to submit and earn from one or more Apps.
 _Avoid_: Partner, developer, vendor
 
+**Publisher Membership**:
+The authorization connecting one signed-in human to one Publisher.
+_Avoid_: Publisher role, developer account
+
 **Subscriber**:
 A human customer whose paid-through Subscription may grant access to approved Apps.
 _Avoid_: Customer, user, member
@@ -24,6 +28,10 @@ _Avoid_: Marketplace, plan, package
 One approved product participating in the Pass; initially a Chromium extension.
 _Avoid_: Plugin, integration
 
+**App Assignment**:
+An Operator-issued reservation authorizing one Publisher to submit a specific public App identifier.
+_Avoid_: Slot, claimed App ID
+
 **Distribution**:
 An approved public browser/channel/runtime identity through which an App is installed.
 _Avoid_: Extension ID, store listing
@@ -31,6 +39,10 @@ _Avoid_: Extension ID, store listing
 **Submission**:
 A versioned Publisher proposal to register one App and its Distributions, pending Operator review.
 _Avoid_: App, manifest
+
+**Ownership Evidence**:
+The Publisher-supplied material an Operator reviews to establish control of a proposed Distribution.
+_Avoid_: Automatic verification, proof of copyright
 
 **Subscription**:
 The normalized Apps Pass record describing a Subscriber's paid-through access state.

@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Video Notes</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main>
+      <span class="eyebrow">Third-party Publisher App</span>
+      <h1>Video Notes</h1>
+      <p>This extension owns its UI and feature code. It imports the shared Apps Pass SDK only for linking and entitlement.</p>
+      <dl>
+        <dt>Runtime ID</dt><dd id="runtime-id">Loading…</dd>
+        <dt>Apps Pass identity</dt><dd id="identity-status">Checking…</dd>
+        <dt>Entitlement</dt><dd id="entitlement-status">Not checked</dd>
+      </dl>
+      <button id="check-access" type="button">Check Apps Pass access</button>
+    </main>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

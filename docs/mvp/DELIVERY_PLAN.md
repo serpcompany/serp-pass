@@ -48,6 +48,8 @@ Evidence: [STATUS.md](./STATUS.md). The initial Operator is explicitly bootstrap
 
 ## 3. Publisher inclusion slice
 
+Status: **completed on Cloudflare staging 2026-08-13**
+
 - Operator invitation and assigned public IDs.
 - authenticated Publisher manifest submission.
 - versioned validation and pending Submission record.
@@ -56,6 +58,8 @@ Evidence: [STATUS.md](./STATUS.md). The initial Operator is explicitly bootstrap
 - one real extension repository integrates the SDK in its own source.
 
 Browser evidence: Publisher submits; Operator approves; the real unpacked extension identifies itself through the approved Distribution without any fixture enumeration.
+
+Evidence: [STATUS.md](./STATUS.md). The public manifest contract is isolated in `packages/app-pass-contracts`; the independently built extension source is `apps/invited-publisher-extension`. The deployed journey also proves wrong-role and mismatched-identity rejection, Operator rejection, corrected resubmission, and approval.
 
 ## 4. Subscriber billing slice
 

@@ -5,6 +5,7 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 import { chromium, type Page } from "playwright";
+import Stripe from "stripe";
 
 const appOrigin = process.env.APP_ORIGIN ?? "http://localhost:8788";
 if (!appOrigin.includes("localhost")) throw new Error("The account-independent Allocation test is local-only.");
@@ -17,6 +18,8 @@ const fixtureSecret = process.env.TEST_BILLING_WEBHOOK_SECRET ?? (existsSync(dev
   : undefined);
 if (!fixtureSecret) throw new Error("Local signed billing fixture secret is required");
 const billingFixtureSecret = fixtureSecret;
+const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET ?? "whsec_local_apps_pass_adapter_test";
+const stripe = new Stripe("sk_test_local_apps_pass_adapter_test", { telemetry: false });
 
 function localSql(sql: string) {
   return execFileSync("pnpm", ["exec", "wrangler", "d1", "execute", "apps-pass-local", "--local", "--config", "wrangler.jsonc", "--persist-to", "../../.wrangler/mvp-state", "--command", sql, "--json"], {
@@ -62,6 +65,67 @@ async function createPaidReceipt(subscriberUserId: string, invoiceId: string) {
     body,
   });
   assert.equal(response.status, 202, await response.text());
+}
+
+async function projectReadyConnectAccount(publisherId: string, accountId: string) {
+  const payload = JSON.stringify({
+    id: `evt_settlement_connect_${suffix}`,
+    object: "event",
+    api_version: "2026-07-29.dahlia",
+    created: 1_900_400_000,
+    data: { object: {
+      id: accountId,
+      object: "account",
+      type: "express",
+      metadata: { apps_pass_publisher_id: publisherId },
+      details_submitted: true,
+      charges_enabled: false,
+      payouts_enabled: true,
+      capabilities: { transfers: "active" },
+      requirements: { currently_due: [], disabled_reason: null },
+    } },
+    livemode: false,
+    pending_webhooks: 1,
+    request: null,
+    type: "account.updated",
+  });
+  const signature = stripe.webhooks.generateTestHeaderString({ payload, secret: stripeWebhookSecret });
+  const response = await fetch(`${appOrigin}/api/stripe/connect-webhook`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "stripe-signature": signature },
+    body: payload,
+  });
+  assert.equal(response.status, 202, await response.text());
+}
+
+async function sendTransferEvent(input: { eventId: string; transferId: string; settlementId: string; accountId: string; created: number; amountReversed: number }) {
+  const reversed = input.amountReversed === 700;
+  const payload = JSON.stringify({
+    id: input.eventId,
+    object: "event",
+    api_version: "2026-07-29.dahlia",
+    created: input.created,
+    data: { object: {
+      id: input.transferId,
+      object: "transfer",
+      amount: 700,
+      amount_reversed: input.amountReversed,
+      currency: "usd",
+      destination: input.accountId,
+      transfer_group: input.settlementId,
+      reversed,
+    } },
+    livemode: false,
+    pending_webhooks: 1,
+    request: null,
+    type: reversed ? "transfer.reversed" : "transfer.created",
+  });
+  const signature = stripe.webhooks.generateTestHeaderString({ payload, secret: stripeWebhookSecret });
+  return fetch(`${appOrigin}/api/stripe/webhook`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "stripe-signature": signature },
+    body: payload,
+  });
 }
 
 const browser = await chromium.launch({ headless: true });
@@ -134,7 +198,7 @@ try {
   assert.equal(await publisherPage.getByText("$7.00 USD").isVisible(), true);
   assert.equal(await publisherPage.getByText("Accrued — Connect not ready").isVisible(), true);
   assert.equal(await publisherPage.getByText("No Transfer created").isVisible(), true);
-  assert.equal(await publisherPage.getByText("No bank Payout observed").isVisible(), true);
+  assert.equal(await publisherPage.getByText("No bank Payout observed.", { exact: true }).isVisible(), true);
 
   const immutable = spawnSync("pnpm", ["exec", "wrangler", "d1", "execute", "apps-pass-local", "--local", "--config", "wrangler.jsonc", "--persist-to", "../../.wrangler/mvp-state", "--command", `UPDATE ledger_entry SET amount = 999 WHERE allocation_run_id = '${allocationRunId}'`], { cwd: webRoot, encoding: "utf8" });
   assert.notEqual(immutable.status, 0, "Posted ledger entries must reject mutation at the database boundary");
@@ -158,7 +222,62 @@ try {
     assert.notEqual(appended.status, 0, "A posted Allocation must reject appended financial rows at the database boundary");
   }
 
-  process.stdout.write("PASS an Operator posts one balanced immutable Allocation and the Publisher sees an accrued Earning distinct from settlement\n");
+  const release = async (reason: string) => operatorPage.evaluate(async ({ earningId, reason }) => {
+    const response = await fetch("/api/operator/settlements", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ schemaVersion: 1, earningId, reason }),
+    });
+    return { status: response.status, body: await response.json() as Record<string, unknown> };
+  }, { earningId, reason });
+  assert.equal((await release("Release must wait for verified Connect readiness.")).status, 409);
+  const publisherReleaseStatus = await publisherPage.evaluate(async ({ earningId }) => (await fetch("/api/operator/settlements", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ schemaVersion: 1, earningId, reason: "A Publisher cannot release their own Earning." }),
+  })).status, { earningId });
+  assert.equal(publisherReleaseStatus, 403);
+
+  const connectedAccountId = `acct_settlement_${suffix}`;
+  await projectReadyConnectAccount(publisherId, connectedAccountId);
+  await operatorPage.reload();
+  const earningControl = operatorPage.getByTestId(`operator-earning-${earningId}`);
+  await earningControl.getByLabel("Release reason").fill("Private-pilot local settlement state-machine proof.");
+  await earningControl.getByRole("button", { name: "Release Publisher Earning" }).click();
+  await earningControl.waitFor({ state: "detached" });
+  const repeated = await release("Private-pilot local settlement state-machine proof.");
+  assert.equal(repeated.status, 200);
+  assert.equal(repeated.body.outcome, "duplicate");
+  assert.equal(repeated.body.simulated, true);
+  assert.match(String(repeated.body.settlementId), /^settlement_test_/u);
+  assert.match(String(repeated.body.providerTransferId), /^tr_local_/u);
+  assert.equal((await release("A changed release reason must not reuse the settlement identity.")).status, 409);
+
+  const transferEvent = { eventId: `evt_transfer_created_${suffix}`, transferId: String(repeated.body.providerTransferId), settlementId: String(repeated.body.settlementId), accountId: connectedAccountId, created: 1_900_500_000, amountReversed: 0 };
+  assert.equal((await sendTransferEvent(transferEvent)).status, 202);
+  assert.equal((await sendTransferEvent(transferEvent)).status, 200, "Exact Transfer Event replay must be idempotent");
+  assert.equal((await sendTransferEvent({ ...transferEvent, amountReversed: 700 })).status, 400, "Changed Transfer Event replay must reject");
+
+  await publisherPage.reload();
+  await publisherPage.getByText("Released to connected Stripe balance").waitFor();
+  assert.equal(await publisherPage.getByText("Local transfer simulation recorded").isVisible(), true);
+  assert.equal(await publisherPage.getByText("No bank Payout observed.", { exact: true }).isVisible(), true);
+
+  const reversed = await sendTransferEvent({ ...transferEvent, eventId: `evt_transfer_reversed_${suffix}`, created: 1_900_500_100, amountReversed: 700 });
+  assert.equal(reversed.status, 202, await reversed.text());
+  await publisherPage.reload();
+  await publisherPage.getByText("Reversed after Transfer reversal").waitFor();
+  assert.equal(await publisherPage.getByText("No bank Payout observed.", { exact: true }).isVisible(), true);
+
+  const unreleasedEarningId = `earning_unreleased_${suffix}`;
+  const unreleasedRunId = `alloc_unreleased_${suffix}`;
+  const secondReceipt = `receipt:test:${secondInvoiceId}`;
+  const secondAllocation = { ...allocation, allocationRunId: unreleasedRunId, receiptAllocations: [{ cashReceiptId: secondReceipt, amount: 1_000 }], publisherEarnings: [{ ...allocation.publisherEarnings[0], earningId: unreleasedEarningId }] };
+  assert.equal((await post(secondAllocation)).status, 201);
+  const fabricatedRelease = spawnSync("pnpm", ["exec", "wrangler", "d1", "execute", "apps-pass-local", "--local", "--config", "wrangler.jsonc", "--persist-to", "../../.wrangler/mvp-state", "--command", `UPDATE publisher_earning SET status = 'released', released_at = ${now} WHERE id = '${unreleasedEarningId}'`], { cwd: webRoot, encoding: "utf8" });
+  assert.notEqual(fabricatedRelease.status, 0, "An Earning cannot become released without a transferred Settlement");
+
+  process.stdout.write("PASS an Operator posts one balanced immutable Allocation and releases one Earning through an idempotent local-only Transfer simulation distinct from bank Payout\n");
   await publisherContext.close();
   await operatorContext.close();
 } finally {

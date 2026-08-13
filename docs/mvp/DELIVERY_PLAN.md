@@ -105,7 +105,7 @@ Current evidence uses an official Stripe `account.updated` snapshot shape and ge
 
 ## 7. Earnings and settlement slice
 
-Status: **Cash Receipt allocation, immutable ledger posting, and Publisher Earning visibility are implemented and browser-verified locally; release, Transfer, reversal, and Payout projection remain pending**
+Status: **allocation, Earning, local-only release simulation, Transfer/reversal reconciliation, and connected-account Payout projection are browser-verified; real test Transfer and Payout evidence remain approval-gated**
 
 - immutable Cash Receipt and ledger model;
 - Operator-created balanced Allocation Run;
@@ -117,7 +117,7 @@ Status: **Cash Receipt allocation, immutable ledger posting, and Publisher Earni
 
 Browser/Operator evidence: one paid test Invoice becomes one allocated Earning, one approved Transfer, and a separately reported Payout state without duplication.
 
-Current evidence starts with one signed local paid Invoice and exercises the real protected Operator route and Publisher page. The Operator supplies every receipt amount, reserve, platform amount, Publisher amount, agreement reference, reason, and hold time. The application rejects unbalanced totals, changed-payload idempotency reuse, wrong-mode or wrong-currency receipts, inactive Publishers, and receipt over-allocation. D1 posts the receipt allocation, balanced ledger, Publisher Earning, and Operator audit atomically; triggers prevent mutation or deletion of posted financial rows. The Publisher sees an accrued Earning while Transfer and bank Payout remain explicitly absent. No formula, release, Stripe Transfer, or fake Payout is implemented.
+Current evidence starts with one signed local paid Invoice and exercises the visible protected Operator controls and Publisher page. The Operator supplies every receipt amount, reserve, platform amount, Publisher amount, agreement reference, reason, and hold time. D1 atomically posts the immutable balanced ledger and Earning. Release fails before the hold and signed Connect readiness pass, is Operator-only, and uses one deterministic local simulation whose UI never presents it as a real Stripe object. Exact retry is a no-op; changed reuse conflicts. Signed Stripe-shaped Transfer Events confirm and fully reverse the Transfer/Settlement/Earning state, while signed connected-account Payout Events remain a separate order-safe observation. The Stripe test adapter and routes are deployed disabled until explicit account authorization and configuration.
 
 ## 8. Staging release gate
 

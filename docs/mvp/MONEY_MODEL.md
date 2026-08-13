@@ -94,10 +94,14 @@ These are commercial decisions. Environment variables or undocumented Operator h
 
 Exact tables may be deepened during schema design, but the observable concepts and invariants must remain.
 
-## Implemented posting boundary
+## Implemented account-independent boundary
 
 Migrations `0017_earnings_allocation_ledger.sql` and `0018_close_posted_allocation_append.sql` implement the pre-settlement half of this model. A same-origin, authenticated Operator request posts one explicit Allocation Run through `/api/operator/allocations`. The full posting is hashed for idempotency and atomically creates receipt allocations, signed ledger entries, Publisher Earnings, and an Operator audit event.
 
 D1 triggers enforce receipt capacity and currency, validate the final zero-sum ledger before a Run can become posted, and reject later append, mutation, or deletion of posted Runs, receipt allocations, ledger entries, Publisher Earning financial fields, and Cash Receipts. Corrections therefore require future compensating entries rather than rewriting history.
 
-This boundary deliberately stops before settlement. Publisher Earnings remain `accrued`; no code marks them released or creates a Transfer until Connect readiness and the explicitly approved Stripe test integration exist.
+Migrations `0019`–`0022` add the settlement state machine, Transfer attempt and signed Transfer Event reconciliation, and connected-account Payout observation. The visible Operator surface releases an eligible Earning only after its hold and signed Connect readiness pass. Local development uses an explicitly labeled deterministic simulation; staging remains disabled unless the separate test-only Transfer gate is deliberately configured.
+
+The real Stripe adapter verifies the platform Account ID again immediately before creating one separate Transfer with an Earning-derived idempotency key. It is test-staging-only and unreachable while `STRIPE_TEST_TRANSFERS_ENABLED` is absent. Signed platform Transfer Events can confirm or fully reverse the Transfer, Settlement, and Earning without rewriting history. Partial reversal deliberately rejects until a correction-ledger policy exists. Signed connected-account Payout Events are projected separately and never inferred from Transfer success.
+
+No Stripe Account, Transfer, reversal, or Payout was accessed or created while implementing this boundary.

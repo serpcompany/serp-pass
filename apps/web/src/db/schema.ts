@@ -504,6 +504,114 @@ export const ledgerEntries = sqliteTable(
   ],
 );
 
+export const settlements = sqliteTable(
+  "settlement",
+  {
+    id: text("id").primaryKey(),
+    publisherEarningId: text("publisher_earning_id").notNull().references(() => publisherEarnings.id, { onDelete: "restrict" }),
+    publisherId: text("publisher_id").notNull().references(() => publishers.id, { onDelete: "restrict" }),
+    publisherConnectedAccountId: text("publisher_connected_account_id").notNull().references(() => publisherConnectedAccounts.id, { onDelete: "restrict" }),
+    provider: text("provider", { enum: ["stripe"] }).notNull(),
+    mode: text("mode", { enum: ["test", "live"] }).notNull(),
+    amount: integer("amount").notNull(),
+    currency: text("currency").notNull(),
+    status: text("status", { enum: ["pending", "transferred", "reversed"] }).notNull(),
+    requestSha256: text("request_sha256").notNull(),
+    reason: text("reason").notNull(),
+    requestedByUserId: text("requested_by_user_id").notNull().references(() => user.id, { onDelete: "restrict" }),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+    transferredAt: integer("transferred_at", { mode: "timestamp" }),
+    reversedAt: integer("reversed_at", { mode: "timestamp" }),
+  },
+  (table) => [uniqueIndex("settlement_earning_unique").on(table.publisherEarningId), index("settlement_publisher_status_idx").on(table.publisherId, table.status, table.createdAt)],
+);
+
+export const transferAttempts = sqliteTable(
+  "transfer_attempt",
+  {
+    id: text("id").primaryKey(),
+    settlementId: text("settlement_id").notNull().references(() => settlements.id, { onDelete: "restrict" }),
+    provider: text("provider", { enum: ["stripe"] }).notNull(),
+    executionMode: text("execution_mode", { enum: ["local_simulation", "stripe_api"] }).notNull(),
+    idempotencyKey: text("idempotency_key").notNull(),
+    destinationAccountId: text("destination_account_id").notNull(),
+    amount: integer("amount").notNull(),
+    currency: text("currency").notNull(),
+    status: text("status", { enum: ["creating", "succeeded", "failed", "reversed"] }).notNull(),
+    providerTransferId: text("provider_transfer_id"),
+    failureCode: text("failure_code"),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+    succeededAt: integer("succeeded_at", { mode: "timestamp" }),
+    reversedAt: integer("reversed_at", { mode: "timestamp" }),
+    amountReversed: integer("amount_reversed").notNull().default(0),
+    latestEventKey: text("latest_event_key"),
+  },
+  (table) => [
+    uniqueIndex("transfer_attempt_settlement_unique").on(table.settlementId),
+    uniqueIndex("transfer_attempt_idempotency_unique").on(table.idempotencyKey),
+    uniqueIndex("transfer_attempt_provider_identity_unique").on(table.provider, table.providerTransferId).where(sql`${table.providerTransferId} IS NOT NULL`),
+  ],
+);
+
+export const stripeTransferEvents = sqliteTable(
+  "stripe_transfer_event",
+  {
+    id: text("id").primaryKey(),
+    transferAttemptId: text("transfer_attempt_id").notNull().references(() => transferAttempts.id, { onDelete: "restrict" }),
+    settlementId: text("settlement_id").notNull().references(() => settlements.id, { onDelete: "restrict" }),
+    provider: text("provider", { enum: ["stripe"] }).notNull(),
+    mode: text("mode", { enum: ["test", "live"] }).notNull(),
+    providerEventId: text("provider_event_id").notNull(),
+    eventType: text("event_type", { enum: ["transfer.created", "transfer.updated", "transfer.reversed"] }).notNull(),
+    providerCreatedAt: integer("provider_created_at", { mode: "timestamp" }).notNull(),
+    receivedAt: integer("received_at", { mode: "timestamp" }).notNull(),
+    payloadSha256: text("payload_sha256").notNull(),
+    outcome: text("outcome", { enum: ["applied", "noop"] }).notNull(),
+  },
+  (table) => [uniqueIndex("stripe_transfer_event_provider_identity_unique").on(table.provider, table.mode, table.providerEventId), index("stripe_transfer_event_attempt_idx").on(table.transferAttemptId, table.providerCreatedAt)],
+);
+
+export const connectedAccountPayouts = sqliteTable(
+  "connected_account_payout",
+  {
+    id: text("id").primaryKey(),
+    publisherConnectedAccountId: text("publisher_connected_account_id").notNull().references(() => publisherConnectedAccounts.id, { onDelete: "restrict" }),
+    publisherId: text("publisher_id").notNull().references(() => publishers.id, { onDelete: "restrict" }),
+    provider: text("provider", { enum: ["stripe"] }).notNull(),
+    mode: text("mode", { enum: ["test", "live"] }).notNull(),
+    providerPayoutId: text("provider_payout_id").notNull(),
+    amount: integer("amount").notNull(),
+    currency: text("currency").notNull(),
+    status: text("status", { enum: ["pending", "in_transit", "paid", "failed", "canceled"] }).notNull(),
+    arrivalDate: integer("arrival_date", { mode: "timestamp" }),
+    failureCode: text("failure_code"),
+    latestEventKey: text("latest_event_key").notNull(),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+  },
+  (table) => [uniqueIndex("connected_account_payout_identity_unique").on(table.provider, table.mode, table.providerPayoutId), index("connected_account_payout_publisher_idx").on(table.publisherId, table.createdAt)],
+);
+
+export const stripePayoutEvents = sqliteTable(
+  "stripe_payout_event",
+  {
+    id: text("id").primaryKey(),
+    connectedAccountPayoutId: text("connected_account_payout_id").notNull().references(() => connectedAccountPayouts.id, { onDelete: "restrict" }),
+    publisherConnectedAccountId: text("publisher_connected_account_id").notNull().references(() => publisherConnectedAccounts.id, { onDelete: "restrict" }),
+    publisherId: text("publisher_id").notNull().references(() => publishers.id, { onDelete: "restrict" }),
+    provider: text("provider", { enum: ["stripe"] }).notNull(),
+    mode: text("mode", { enum: ["test", "live"] }).notNull(),
+    providerEventId: text("provider_event_id").notNull(),
+    eventType: text("event_type", { enum: ["payout.created", "payout.updated", "payout.paid", "payout.failed", "payout.canceled"] }).notNull(),
+    providerCreatedAt: integer("provider_created_at", { mode: "timestamp" }).notNull(),
+    receivedAt: integer("received_at", { mode: "timestamp" }).notNull(),
+    payloadSha256: text("payload_sha256").notNull(),
+    outcome: text("outcome", { enum: ["applied", "noop"] }).notNull(),
+  },
+  (table) => [uniqueIndex("stripe_payout_event_provider_identity_unique").on(table.provider, table.mode, table.providerEventId), index("stripe_payout_event_payout_idx").on(table.connectedAccountPayoutId, table.providerCreatedAt)],
+);
+
 export const appLinkRequests = sqliteTable(
   "app_link_request",
   {

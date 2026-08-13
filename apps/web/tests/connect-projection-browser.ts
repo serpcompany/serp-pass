@@ -62,7 +62,42 @@ async function sendAccountEvent(input: {
     request: null,
     type: "account.updated",
   });
-  return fetch(`${appOrigin}/api/stripe/webhook`, {
+  return fetch(`${appOrigin}/api/stripe/connect-webhook`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "stripe-signature": sign(payload) },
+    body: payload,
+  });
+}
+
+async function sendPayoutEvent(input: {
+  eventId: string;
+  accountId: string;
+  payoutId: string;
+  created: number;
+  status: "pending" | "in_transit" | "paid" | "failed" | "canceled";
+  failureCode?: string | null;
+}) {
+  const payload = JSON.stringify({
+    id: input.eventId,
+    object: "event",
+    api_version: "2026-07-29.dahlia",
+    account: input.accountId,
+    created: input.created,
+    data: { object: {
+      id: input.payoutId,
+      object: "payout",
+      amount: 700,
+      currency: "usd",
+      status: input.status,
+      arrival_date: 1_900_300_000,
+      failure_code: input.failureCode ?? null,
+    } },
+    livemode: false,
+    pending_webhooks: 1,
+    request: null,
+    type: `payout.${input.status === "pending" ? "created" : input.status}`,
+  });
+  return fetch(`${appOrigin}/api/stripe/connect-webhook`, {
     method: "POST",
     headers: { "content-type": "application/json", "stripe-signature": sign(payload) },
     body: payload,
@@ -151,7 +186,27 @@ try {
   assert.equal((await sendAccountEvent({ ...readyEvent, eventId: `evt_connect_live_${suffix}`, livemode: true })).status, 400, "Live Connect state must not enter local test D1");
   assert.equal((await sendAccountEvent({ ...readyEvent, eventId: `evt_connect_unknown_${suffix}`, accountId: `acct_unknown_${suffix}`, publisherId: `pub_unknown_${suffix}` })).status, 400, "Unknown Publisher metadata must reject");
 
-  process.stdout.write("PASS signed Connect account state is replay-safe, order-safe, mode-scoped, and Publisher-visible\n");
+  const payoutId = `po_connect_${suffix}`;
+  const payoutCreated = {
+    eventId: `evt_payout_created_${suffix}`,
+    accountId,
+    payoutId,
+    created: 1_900_200_200,
+    status: "pending" as const,
+  };
+  assert.equal((await sendPayoutEvent(payoutCreated)).status, 202);
+  assert.equal((await sendPayoutEvent(payoutCreated)).status, 200, "Exact Payout Event replay must be idempotent");
+  assert.equal((await sendPayoutEvent({ ...payoutCreated, status: "failed", failureCode: "account_closed" })).status, 400, "Changed Payout Event replay must reject");
+  const payoutPaid = await sendPayoutEvent({ ...payoutCreated, eventId: `evt_payout_paid_${suffix}`, created: 1_900_200_300, status: "paid" });
+  assert.equal(payoutPaid.status, 202, await payoutPaid.text());
+  const stalePayout = await sendPayoutEvent({ ...payoutCreated, eventId: `evt_payout_stale_${suffix}`, created: 1_900_200_100, status: "failed", failureCode: "stale_failure" });
+  assert.equal(stalePayout.status, 200, await stalePayout.text());
+  await page.reload();
+  await page.getByText("Bank Payouts observed").waitFor();
+  assert.equal(await page.getByText("$7.00 USD · paid").isVisible(), true);
+  assert.equal(await page.getByText("Transfer and Earning records are separate from this bank Payout observation.").isVisible(), true);
+
+  process.stdout.write("PASS signed Connect account and bank Payout state are replay-safe, order-safe, mode-scoped, and Publisher-visible\n");
   await context.close();
 } finally {
   await browser.close();

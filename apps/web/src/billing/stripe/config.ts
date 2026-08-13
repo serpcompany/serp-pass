@@ -2,7 +2,9 @@ export type StripeEnvironment = CloudflareEnv & {
   STRIPE_EXPECTED_ACCOUNT_ID?: string;
   STRIPE_SECRET_KEY?: string;
   STRIPE_WEBHOOK_SECRET?: string;
+  STRIPE_CONNECT_WEBHOOK_SECRET?: string;
   STRIPE_PASS_PRICE_ID?: string;
+  STRIPE_TEST_TRANSFERS_ENABLED?: string;
 };
 
 function readStripeApiConfig(environment: CloudflareEnv) {
@@ -29,4 +31,22 @@ export function readStripeWebhookConfig(environment: CloudflareEnv) {
   if (!api || !webhookSecret) return null;
   if (!webhookSecret.startsWith("whsec_")) throw new Error("Stripe webhook secret format is invalid");
   return { ...api, webhookSecret };
+}
+
+export function readStripeConnectWebhookConfig(environment: CloudflareEnv) {
+  const env = environment as StripeEnvironment;
+  const secretKey = env.STRIPE_SECRET_KEY;
+  const webhookSecret = env.STRIPE_CONNECT_WEBHOOK_SECRET ?? (environment.APP_ENV === "local" ? env.STRIPE_WEBHOOK_SECRET : undefined);
+  if (!secretKey || !webhookSecret) return null;
+  if (!webhookSecret.startsWith("whsec_")) throw new Error("Stripe Connect webhook secret format is invalid");
+  return { secretKey, webhookSecret };
+}
+
+export function readStripeTestSettlementConfig(environment: CloudflareEnv) {
+  const env = environment as StripeEnvironment;
+  if (environment.APP_ENV !== "staging" || env.STRIPE_TEST_TRANSFERS_ENABLED !== "1") return null;
+  if (!env.STRIPE_SECRET_KEY || !env.STRIPE_EXPECTED_ACCOUNT_ID) throw new Error("Stripe test settlement is enabled without an API key and expected Account ID");
+  if (!env.STRIPE_SECRET_KEY.startsWith("sk_test_")) throw new Error("Stripe test settlement requires a test-mode API key");
+  if (!/^acct_[A-Za-z0-9]+$/.test(env.STRIPE_EXPECTED_ACCOUNT_ID)) throw new Error("Stripe expected Account ID format is invalid");
+  return { secretKey: env.STRIPE_SECRET_KEY, expectedAccountId: env.STRIPE_EXPECTED_ACCOUNT_ID };
 }

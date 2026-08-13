@@ -5,7 +5,7 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { getHumanIdentity } from "@/auth/identity";
 import { billingModeForEnvironment } from "@/billing/read";
 import { getDb } from "@/db/get-db";
-import { allocationRuns, appAssignments, appSubmissions, publisherConnectedAccounts, publisherEarnings, publisherMemberships, publishers } from "@/db/schema";
+import { allocationRuns, appAssignments, appSubmissions, connectedAccountPayouts, publisherConnectedAccounts, publisherEarnings, publisherMemberships, publishers, settlements, transferAttempts } from "@/db/schema";
 import { SubmissionForm } from "./submission-form";
 
 export const dynamic = "force-dynamic";
@@ -75,12 +75,22 @@ export default async function PublisherPage() {
       currency: publisherEarnings.currency,
       availableAt: publisherEarnings.availableAt,
       status: publisherEarnings.status,
+      settlementStatus: settlements.status,
+      transferExecutionMode: transferAttempts.executionMode,
+      transferStatus: transferAttempts.status,
     })
     .from(publisherEarnings)
     .innerJoin(allocationRuns, eq(allocationRuns.id, publisherEarnings.allocationRunId))
     .innerJoin(publisherMemberships, eq(publisherMemberships.publisherId, publisherEarnings.publisherId))
+    .leftJoin(settlements, eq(settlements.publisherEarningId, publisherEarnings.id))
+    .leftJoin(transferAttempts, eq(transferAttempts.settlementId, settlements.id))
     .where(and(eq(publisherMemberships.userId, identity.session.user.id), eq(allocationRuns.mode, mode)));
   const connectByPublisher = new Map(connectAccounts.map((account) => [account.publisherId, account]));
+  const payoutRows = await getDb()
+    .select({ id: connectedAccountPayouts.id, amount: connectedAccountPayouts.amount, currency: connectedAccountPayouts.currency, status: connectedAccountPayouts.status, arrivalDate: connectedAccountPayouts.arrivalDate })
+    .from(connectedAccountPayouts)
+    .innerJoin(publisherMemberships, eq(publisherMemberships.publisherId, connectedAccountPayouts.publisherId))
+    .where(and(eq(publisherMemberships.userId, identity.session.user.id), eq(connectedAccountPayouts.mode, mode)));
 
   return (
     <main>
@@ -96,7 +106,7 @@ export default async function PublisherPage() {
             <p className="muted">A Stripe return does not prove onboarding readiness.</p>
           </div>
         ) : connectAccounts.map((account) => {
-          const settlementReady = account.detailsSubmitted && account.chargesEnabled && account.payoutsEnabled && account.transfersCapability === "active" && account.requirementsCurrentlyDueCount === 0 && !account.disabledReason;
+          const settlementReady = account.detailsSubmitted && account.payoutsEnabled && account.transfersCapability === "active" && account.requirementsCurrentlyDueCount === 0 && !account.disabledReason;
           return (
             <div key={account.publisherId}>
               <strong>{settlementReady ? `Ready for ${mode} settlement` : "Connect onboarding incomplete"}</strong>
@@ -115,10 +125,12 @@ export default async function PublisherPage() {
           <ul>
             {earningRows.map((earning) => {
               const account = connectByPublisher.get(earning.publisherId);
-              const connectReady = Boolean(account?.detailsSubmitted && account.chargesEnabled && account.payoutsEnabled && account.transfersCapability === "active" && account.requirementsCurrentlyDueCount === 0 && !account.disabledReason);
+              const connectReady = Boolean(account?.detailsSubmitted && account.payoutsEnabled && account.transfersCapability === "active" && account.requirementsCurrentlyDueCount === 0 && !account.disabledReason);
               const holdPassed = earning.availableAt.getTime() <= Date.now();
-              const status = earning.status === "released"
-                ? "Released to a Transfer"
+              const status = earning.status === "reversed"
+                ? "Reversed after Transfer reversal"
+                : earning.status === "released"
+                ? "Released to connected Stripe balance"
                 : !holdPassed
                   ? `Held until ${earning.availableAt.toISOString()}`
                   : connectReady
@@ -128,11 +140,20 @@ export default async function PublisherPage() {
               return (
                 <li key={earning.id}>
                   <strong>{formatted} {earning.currency.toUpperCase()}</strong> · {status}<br />
-                  <span className="muted">Allocation {earning.allocationRunId} · No Transfer created · No bank Payout observed</span>
+                  <span className="muted">Allocation {earning.allocationRunId} · {earning.transferStatus === "reversed" ? "Transfer reversed" : earning.transferStatus === "succeeded" ? (earning.transferExecutionMode === "local_simulation" ? "Local transfer simulation recorded" : "Stripe Transfer recorded") : "No Transfer created"} · No bank Payout observed</span>
                 </li>
               );
             })}
           </ul>
+        )}
+        <h2>Bank Payouts observed</h2>
+        {payoutRows.length === 0 ? <p className="muted">No bank Payout observed.</p> : (
+          <>
+            <p className="muted">Transfer and Earning records are separate from this bank Payout observation.</p>
+            <ul>{payoutRows.map((payout) => (
+              <li key={payout.id}><strong>{new Intl.NumberFormat("en-US", { style: "currency", currency: payout.currency.toUpperCase() }).format(payout.amount / 100)} {payout.currency.toUpperCase()} · {payout.status}</strong>{payout.arrivalDate ? ` · arrival ${payout.arrivalDate.toISOString()}` : ""}</li>
+            ))}</ul>
+          </>
         )}
         <ul>
           {assignments.map((assignment) => (

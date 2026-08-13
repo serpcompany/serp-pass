@@ -6,7 +6,7 @@ The target and acceptance boundary are in [PRD.md](./PRD.md). The architecture i
 
 The completed proof remains executable local software, not a visual mockup, but it is not the launchable subscription product. Its PRD, architecture, freeze, evaluation, and plan are preserved under [docs/prototype/](./docs/prototype/).
 
-Implementation is in progress on `mvp/private-pilot`. Slices 1–3 and the bounded, inert staging foundations for Subscriber billing, extension activation, Connect readiness, and earnings allocation are deployed at [serp-apps-pass-staging.serpcompany.workers.dev](https://serp-apps-pass-staging.serpcompany.workers.dev). The system uses one Next.js/OpenNext Worker, an isolated staging D1 database, reviewed migrations, Better Auth roles, authenticated Publisher submission and review, a public manifest contract, and a real independently built extension recognized by its approved runtime identity. Production has not been deployed. Stripe account `acct_1MwbFJI9EPtyKcIs`, currently named **SERP Pass**, is the intended isolated sandbox, but it has not been accessed or configured. No credentials, Product, Price, webhook, Checkout, Connect account, or payment exists; account selection is not mutation approval.
+Implementation is in progress on `mvp/private-pilot`. Invited Publisher submission, approved App identity, deployed Subscriber billing, real extension activation, and paid-through entitlement are working on [serp-apps-pass-staging.serpcompany.workers.dev](https://serp-apps-pass-staging.serpcompany.workers.dev). Stripe test account `acct_1MwbFJI9EPtyKcIs` (**SERP Pass**) now has the one approved `$10/month` Product/Price, Portal, and split platform/Connect webhooks. Real hosted test Checkout, signed Event projection, Portal cancellation, and the paid extension journey pass. Connect onboarding, real-receipt allocation, test Transfer/reversal, and external-Publisher review remain. Production has not been created or deployed.
 
 ## MVP stack walkthrough
 
@@ -78,6 +78,15 @@ pnpm mvp:earnings:test
 
 The first command uses the local normalized fixture boundary. The second uses Stripe's official SDK to generate and verify real Stripe-format signatures and current Event shapes without accessing an account. Neither performs a Stripe API request. The exact authority rules and remaining sandbox work are documented in [docs/mvp/BILLING_PROJECTION.md](./docs/mvp/BILLING_PROJECTION.md).
 
+The approved real-provider staging journey is deliberately separate:
+
+```sh
+pnpm mvp:stripe-checkout:test-staging
+pnpm mvp:stripe-checkout:test-redirect-boundary
+```
+
+These commands create test-mode Customers and Subscriptions, use Stripe-hosted test Checkout and Portal, reconcile signed Events, and exercise the real extension. They require the isolated `serp-appspass` Stripe CLI profile and mutate only the documented sandbox. Exact resource IDs, evidence, credential expiry, and remaining gates are in [docs/mvp/STRIPE_SANDBOX_STATE.md](./docs/mvp/STRIPE_SANDBOX_STATE.md).
+
 An authenticated Operator can inspect `/api/operator/billing/audit?subscriberUserId=<id>` to reconcile counts and obtain the allowlisted journey trace linking Checkout, billing, App-session, Allocation, Earning, Settlement, and Transfer records. The response includes `x-apps-pass-correlation-id`; search Workers Logs for the matching `operator_journey_trace` event. The trace never returns extension credentials, proof material, raw/payload hashes, idempotency keys, personal email, hosted URLs, installation identifiers, or payment/KYC data.
 
 Run the automated rendered-browser journey against a running local preview or the deployed staging Worker:
@@ -119,6 +128,7 @@ The disposable pre-MVP authority, example submissions, and contract tests remain
 - [docs/mvp/PUBLISHER_INTEGRATION.md](./docs/mvp/PUBLISHER_INTEGRATION.md) — the concrete extension integration and Submission handoff.
 - [docs/mvp/BILLING_PROJECTION.md](./docs/mvp/BILLING_PROJECTION.md) — replay-safe paid-through projection and the explicit Stripe-adapter boundary.
 - [docs/mvp/STRIPE_SANDBOX_APPROVAL.md](./docs/mvp/STRIPE_SANDBOX_APPROVAL.md) — approved test-mode billing actions, exact-account guard, validation, and rollback.
+- [docs/mvp/STRIPE_SANDBOX_STATE.md](./docs/mvp/STRIPE_SANDBOX_STATE.md) — current test objects, real-provider evidence, credential boundary, and known failed acceptance artifact.
 - [docs/mvp/STRIPE_CONNECT_APPROVAL.md](./docs/mvp/STRIPE_CONNECT_APPROVAL.md) — bounded approval and remaining inputs for Express onboarding, connected webhooks, one test Transfer, and reversal.
 - [docs/mvp/D1_MIGRATIONS.md](./docs/mvp/D1_MIGRATIONS.md) — reviewed staging migration procedure and the bounded trigger-rich migration fallback.
 - [docs/mvp/D1_RECOVERY.md](./docs/mvp/D1_RECOVERY.md) — destructive Time Travel guardrails and the disposable remote recovery rehearsal.

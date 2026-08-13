@@ -43,15 +43,25 @@ function invoiceContext(invoice: Stripe.Invoice, passPriceId: string) {
   if (parent?.type !== "subscription_details" || !parent.subscription_details) {
     throw new StripeEventRejected("Invoice is not associated with a Subscription");
   }
-  const includesPassPrice = invoice.lines.data.some((line) => {
+  const passLines = invoice.lines.data.filter((line) => {
     const price = line.pricing?.price_details?.price;
     return price ? objectId(price, "Invoice Price") === passPriceId : false;
   });
-  if (!includesPassPrice) throw new StripeEventRejected("Invoice does not contain the configured Pass Price");
+  if (passLines.length === 0) throw new StripeEventRejected("Invoice does not contain the configured Pass Price");
+  const periodStarts = passLines.map((line) => line.period.start);
+  const periodEnds = passLines.map((line) => line.period.end);
+  if ([...periodStarts, ...periodEnds].some((value) => !Number.isSafeInteger(value) || value <= 0)) {
+    throw new StripeEventRejected("Invoice line period is invalid");
+  }
+  const periodStart = Math.min(...periodStarts);
+  const periodEnd = Math.max(...periodEnds);
+  if (periodEnd <= periodStart) throw new StripeEventRejected("Invoice line period does not extend access");
   return {
     subscriberUserId: subscriberId(parent.subscription_details.metadata),
     customerId: objectId(invoice.customer, "Invoice Customer"),
     subscriptionId: objectId(parent.subscription_details.subscription, "Invoice Subscription"),
+    periodStart,
+    periodEnd,
   };
 }
 
@@ -93,8 +103,8 @@ export function translateStripeEvent(
           invoiceId: invoice.id,
           amountPaid: invoice.amount_paid,
           currency: invoice.currency,
-          periodStart: invoice.period_start,
-          periodEnd: invoice.period_end,
+          periodStart: shared.periodStart,
+          periodEnd: shared.periodEnd,
         },
       };
     }
@@ -103,7 +113,7 @@ export function translateStripeEvent(
       type: event.type,
       createdAt: event.created,
       mode,
-      data: { ...shared, invoiceId: invoice.id, periodEnd: invoice.period_end },
+      data: { ...shared, invoiceId: invoice.id, periodEnd: shared.periodEnd },
     };
   }
 
@@ -118,7 +128,7 @@ export function translateStripeEvent(
       data: {
         ...context,
         status: normalizeSubscriptionStatus(subscription.status),
-        cancelAtPeriodEnd: subscription.cancel_at_period_end,
+        cancelAtPeriodEnd: subscription.cancel_at_period_end || subscription.cancel_at != null,
       },
     };
   }

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 
-import { assertStripePlatformAccount } from "../src/billing/stripe/client";
-import { readStripeConnectOnboardingConfig, readStripeHostedBillingConfig, readStripeWebhookConfig } from "../src/billing/stripe/config";
+import { assertStripePlatformAccount, createStripeClient } from "../src/billing/stripe/client";
+import { readStripeConnectOnboardingConfig, readStripeHostedBillingConfig, readStripeTestSettlementConfig, readStripeWebhookConfig } from "../src/billing/stripe/config";
 
 const base = {
   APP_ENV: "staging",
@@ -38,6 +38,19 @@ assert.throws(
   } as unknown as CloudflareEnv),
   /key mode does not match/,
 );
+
+const restrictedTestKey = {
+  ...base,
+  STRIPE_SECRET_KEY: "rk_test_expiring_pilot_guard",
+  STRIPE_EXPECTED_ACCOUNT_ID: "acct_expected",
+  STRIPE_CONNECT_ONBOARDING_ENABLED: "1",
+  STRIPE_TEST_TRANSFERS_ENABLED: "1",
+} as unknown as CloudflareEnv;
+assert.doesNotThrow(() => createStripeClient("rk_test_expiring_pilot_guard", "staging"), "staging must accept an account-scoped restricted test key");
+assert.equal(readStripeConnectOnboardingConfig(restrictedTestKey)?.expectedAccountId, "acct_expected");
+assert.equal(readStripeTestSettlementConfig(restrictedTestKey)?.expectedAccountId, "acct_expected");
+assert.throws(() => createStripeClient("rk_live_wrong_mode", "staging"), /key mode does not match/);
+assert.throws(() => createStripeClient("rk_test_wrong_mode", "production"), /key mode does not match/);
 
 let retrieves = 0;
 const matchingStripe = {

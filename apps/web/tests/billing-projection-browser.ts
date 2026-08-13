@@ -194,7 +194,7 @@ try {
   await page.reload();
   await page.getByText("Apps Pass access active").waitFor();
   assert.equal(await page.getByText("Paid through Jan 1, 2100").isVisible(), true);
-  assert.equal(await page.getByText("Canceled; access remains active through the paid-through date.").isVisible(), true);
+  assert.equal(await page.getByText("Cancellation scheduled; access remains active through the paid-through date.").isVisible(), true);
 
   const deniedAuditStatus = await page.evaluate(async (subscriberUserId) => {
     return (await fetch(`/api/operator/billing/audit?subscriberUserId=${encodeURIComponent(subscriberUserId)}`)).status;

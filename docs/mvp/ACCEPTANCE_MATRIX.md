@@ -8,22 +8,21 @@ This matrix maps the binding PRD criteria to current evidence. `Passed` means th
 | --- | --- | --- | --- |
 | 1 | Pinned Next/OpenNext/Better Auth/D1 on staging | Passed | Deployed staging Worker, persistent session, and migrated staging D1. |
 | 2 | Subscriber and Publisher sessions and roles survive deploys | Passed | Rendered staging browser journeys and D1-backed roles. |
-| 3 | Real test-mode Connect onboarding and derived readiness | Partial | Local public seam and signed projection pass. Needs correct Stripe authentication, Publisher country, real hosted onboarding, signed provider Event, and staging evidence. |
+| 3 | Real test-mode Connect onboarding and derived readiness | Partial | Correct Stripe account, Connect webhook, local public seam, and signed projection pass. Needs Publisher country, real hosted onboarding, signed provider Event, and staging evidence. |
 | 4 | Real extension integrates SDK, submits, is approved, and loads generically | Partial | Monorepo real extension and clean tarball install pass. Still needs the external Publisher handoff/review boundary. |
-| 5 | Real test-mode hosted Checkout | Blocked | Approved at $10/month; CLI is authenticated to the wrong Stripe account. |
-| 6 | Signed, duplicate, delayed, reordered billing Events | Partial | Official signed fixtures pass locally. Provider-delivered staging Events remain unproved. |
-| 7 | Subscriber approves real extension and receives `active` | Partial | Real extension is active locally from normalized authority and inactive on unpaid staging. Needs the real paid staging projection. |
-| 8 | Cancellation, failed renewal, and paid-through expiry | Partial | Projection behavior passes locally. Real Portal cancellation/provider Events remain unproved. |
+| 5 | Real test-mode hosted Checkout | Passed | Real rendered `$10/month` Checkout, exact-account/Price reconciliation, and duplicate-Session reuse pass on staging. |
+| 6 | Signed, duplicate, delayed, reordered billing Events | Partial | Provider-delivered signed staging Events and real Event resend/replay pass; delayed/reordered cases remain provider-format local checks. |
+| 7 | Subscriber approves real extension and receives `active` | Passed | The real paid staging Subscriber links the actual Publisher extension; its SDK independently receives `active`. |
+| 8 | Cancellation, failed renewal, and paid-through expiry | Partial | Real rendered Portal cancellation and signed scheduled-cancellation projection pass while paid access remains active. Failed renewal and natural expiry remain local provider-format checks. |
 | 9 | Token isolation, replay, expiry, revocation, suspension | Passed | Real Chromium and authority checks pass; distinct failure states are preserved. |
-| 10 | Paid Invoice creates one Cash Receipt and balanced Allocation | Partial | Ledger path passes from signed local Invoice fixture. Needs real test Invoice and explicitly reviewed amounts. |
-| 11 | One idempotent test-mode Publisher Transfer | Blocked | Bounded test Transfer/reversal approved, but correct Stripe authentication, Publisher country/readiness, and exact Earning amount are missing. |
+| 10 | Paid Invoice creates one Cash Receipt and balanced Allocation | Partial | A real Stripe Invoice creates exactly one Cash Receipt; balanced allocation passes locally. Needs one explicitly reviewed allocation from a successful real receipt. |
+| 11 | One idempotent test-mode Publisher Transfer | Blocked | Bounded Transfer/reversal and exact Stripe account are approved; Publisher country/readiness and exact Earning amount remain. |
 | 12 | Publisher distinguishes Earning, Transfer, and bank Payout | Partial | Rendered local state distinctions pass; provider-driven Transfer/Payout evidence remains unproved. |
-| 13 | Secret-safe structured staging trace across journey | Partial | A protected Operator trace joins Checkout, billing, App sessions, Allocation, Earning, Settlement, and Transfer IDs; local browser/redaction checks pass, and deployed smoke correlation `a2a844a02b27d4dc` matched a count-only staging Workers Log event. The real Stripe staging journey and corresponding provider identifiers remain. |
+| 13 | Secret-safe structured staging trace across journey | Partial | The protected trace now reconciles real Checkout, billing, Cash Receipt, and App-session provider IDs with redaction and count-only Workers Logs. Allocation through Transfer provider IDs remain. |
 | 14 | Persistence and backup/recovery rehearsal | Passed | Deploy persistence and disposable remote D1 Time Travel rehearsal are documented separately. |
 | 15 | Automated and real-browser checks reported separately | Partial | Current local/staging reports distinguish them; final complete rerun awaits Stripe journey. |
 
 ## Current external inputs
 
-1. Authenticate Stripe tooling to `acct_1MwbFJI9EPtyKcIs`; the current CLI identity is `acct_1T3IiJE8IBJK847r` and must not be used.
-2. Supply the invited Publisher's two-letter Stripe country code.
-3. Before Transfer execution, approve an exact Publisher Earning amount. The local `$7 / $2 / $1` fixture is not policy.
+1. Approve the synthetic invited test Publisher's two-letter Stripe country code; no real Publisher identity or bank account will be used.
+2. Before allocation and Transfer execution, approve exact amounts for one successful real `$10` Cash Receipt. The local `$7 / $2 / $1` fixture is not policy.

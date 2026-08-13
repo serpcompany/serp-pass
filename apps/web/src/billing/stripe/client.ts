@@ -2,10 +2,14 @@ import Stripe from "stripe";
 
 const STRIPE_API_VERSION = "2026-07-29.dahlia" as const;
 
+export function stripeApiKeyMatchesEnvironment(secretKey: string, environment: CloudflareEnv["APP_ENV"]) {
+  if (environment === "production") return secretKey.startsWith("sk_live_");
+  return secretKey.startsWith("sk_test_") || secretKey.startsWith("rk_test_");
+}
+
 export function createStripeClient(secretKey: string, environment: CloudflareEnv["APP_ENV"]) {
-  const expectedPrefix = environment === "production" ? "sk_live_" : "sk_test_";
-  if (!secretKey.startsWith(expectedPrefix)) {
-    throw new Error(`Stripe secret key mode does not match ${environment}`);
+  if (!stripeApiKeyMatchesEnvironment(secretKey, environment)) {
+    throw new Error(`Stripe API key mode does not match ${environment}`);
   }
   return new Stripe(secretKey, {
     apiVersion: STRIPE_API_VERSION,

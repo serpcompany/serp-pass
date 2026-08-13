@@ -4,7 +4,7 @@ Updated: **2026-08-13**
 
 ## Current slice
 
-Slices 1–3 are complete. Slice 4, Subscriber billing, has explicit test-mode approval but cannot execute until Stripe authentication matches the intended account. Slice 5, real activation and entitlement, is implemented and deployed. Slice 6 now has a deployed but inert Publisher onboarding seam plus Connect-readiness and connected-account Payout projections. Slice 7 has deployed, empty allocation, Settlement, Transfer, reversal, and Payout-projection schemas plus local end-to-end evidence. Real Stripe purchase, Express Account creation, hosted onboarding, Transfer execution, and bank Payout remain unproved. Stripe account `acct_1MwbFJI9EPtyKcIs` (currently **SERP Pass**) is the only approved sandbox. A read-only CLI check returned a different account and stopped before any Stripe inventory or mutation.
+Slices 1–3 are complete. Slice 4 now has real Stripe test-mode Checkout, signed Event projection, replay evidence, one Cash Receipt per paid Invoice, and rendered Portal cancellation. Slice 5 now joins that real paid-through Subscription to the actual unpacked Publisher extension on staging. Slice 6 has configured split webhooks but Publisher onboarding remains disabled pending an explicitly approved test country. Slice 7 still has local end-to-end evidence and deployed empty settlement structures; allocation from a real receipt, Express onboarding, test Transfer/reversal, and any bank Payout remain unproved. Stripe account `acct_1MwbFJI9EPtyKcIs` (**SERP Pass**) is the only configured sandbox. Production remains absent.
 
 ## Environment evidence
 
@@ -12,9 +12,9 @@ Slices 1–3 are complete. Slice 4, Subscriber billing, has explicit test-mode a
 | --- | --- | --- |
 | Local Next | built | Next.js `16.2.11` typecheck and optimized build pass. Runtime use requires an ignored local `BETTER_AUTH_SECRET`. |
 | Local workerd | passed | OpenNext `1.19.9` Worker reads migrated local D1; rendered Chromium passes human auth, role denials, Operator bootstrap, one-time Publisher invitation, normalized billing, Publisher-scoped Connect onboarding, official Stripe-format billing and Connect projections, real extension activation/entitlement, immutable allocation posting, Settlement release simulation, Transfer reversal, Payout projection, replay/integrity rejection, and D1 rate limiting at `localhost:8788`. All 24 migrations apply both to the persistent local database and a fresh empty local D1. |
-| Cloudflare staging | deployed and passed | [`serp-apps-pass-staging.serpcompany.workers.dev`](https://serp-apps-pass-staging.serpcompany.workers.dev), Worker version `84e7b58a-c1d8-4dbc-950d-ceb6bb08bf39`, isolated `apps-pass-staging` D1 in APAC, health `200 ready`, all 24 migrations recorded with none pending, all Slice 1–3 journeys, and the unpaid Slice 5 activation/session path pass. The protected Operator journey-trace smoke passed and emitted a matching structured Workers Log event. Partial Slices 4, 6, and 7 remain inert: both Stripe webhook routes return `503 unconfigured`, anonymous Connect onboarding returns `401`, and only `BETTER_AUTH_SECRET` is configured. No Stripe Account ID, secret, Price, connected Account, processed Connect Event, Allocation Run, Publisher Earning, Settlement, Transfer Attempt, Payout, Transfer Event, or Payout Event exists. |
+| Cloudflare staging | deployed and passed | [`serp-apps-pass-staging.serpcompany.workers.dev`](https://serp-apps-pass-staging.serpcompany.workers.dev), Worker version `1b06335c-53a0-4c34-9548-25684e04d387`, isolated `apps-pass-staging` D1 in APAC, health `200 ready`, all 24 migrations current, real Stripe Checkout/Portal/Event projection, protected Operator trace, and real paid extension activation pass. Public Account/Price configuration is exact; Stripe API/platform/Connect signing values are separate staging secrets. Connect onboarding and test Transfers remain disabled. |
 | Production | not created or deployed | Production D1 still has a non-routable placeholder UUID; no production secret or Worker deployment exists. |
-| Stripe | approved target; authentication mismatch | Intended isolated account: `acct_1MwbFJI9EPtyKcIs`, currently **SERP Pass**. A read-only CLI check returned `acct_1T3IiJE8IBJK847r`; no inventory or mutation followed. No Product, Price, webhook, Checkout, Connect account, or payment has been created by Apps Pass. Test actions are approved only after authentication matches the intended account. |
+| Stripe | configured test sandbox | Exact account `acct_1MwbFJI9EPtyKcIs` (**SERP Pass**) was verified before mutation. One Product, `$10/month` Price, Portal configuration, platform webhook, and Connect webhook exist in test mode. Real test Customers/Subscriptions/Invoices/Events now exist; no connected Account, Transfer, live object, real card, or bank account exists. Full inventory: [STRIPE_SANDBOX_STATE.md](./STRIPE_SANDBOX_STATE.md). |
 
 ## D1 recovery evidence
 
@@ -23,7 +23,7 @@ Slices 1–3 are complete. Slice 4, Subscriber billing, has explicit test-mode a
 - The restore returned the previous bookmark required for an undo. The disposable database contained no Apps Pass or personal data and was permanently deleted after verification.
 - [D1_RECOVERY.md](./D1_RECOVERY.md) records the destructive-operation guardrails, exact rehearsal evidence, and the remaining maintenance-mode/full-domain reconciliation gap.
 
-## Partial Slice 4 evidence
+## Slice 4 evidence
 
 - Reviewed local migrations define mode-scoped Billing Customers, one current normalized Pass Subscription per Customer, Invoices, processed Billing Events, and one immutable Cash Receipt per paid Invoice.
 - A local-only HMAC adapter verifies the exact raw body and cannot run on staging or production; it is deliberately not named or presented as the Stripe webhook.
@@ -35,9 +35,11 @@ Slices 1–3 are complete. Slice 4, Subscriber billing, has explicit test-mode a
 - `/account` shows the normalized state; Checkout redirects do not participate in the decision.
 - A scoped Operator audit reports Customer, Subscription, Event, Invoice, and Cash Receipt counts and flags paid-Invoice/receipt inconsistencies. Its protected journey trace follows the Subscriber's operational IDs through Checkout, billing, App links/sessions, Allocation, Earnings, Settlement, and Transfer without returning credential/proof/payload/idempotency material, email, hosted URLs, installation identifiers, or revoke reasons. The response returns a correlation ID; Workers Logs receive only that ID, the Subscriber ID, outcome, and relationship counts. Subscriber access is rejected with `403`.
 - `pnpm mvp:operator-trace:test-staging` passed against the deployed Worker. Correlation ID `a2a844a02b27d4dc` matched the real-time `operator_journey_trace` Workers Log event; the event contained environment, outcome, Subscriber ID, and four relationship counts only.
-- Browser/workerd commands: `pnpm mvp:billing:test` and `pnpm mvp:stripe-adapter:test`. The Stripe-adapter check uses official generated signatures and Dahlia payload shapes but performs no Stripe API request.
-- Staging has all four billing migrations with zero Checkout Attempts, Billing Events, normalized Subscriptions, or Cash Receipts. The local fixture route returns `404`, the real Stripe webhook returns `503 unconfigured`, and unauthenticated Checkout/Portal routes return `401`.
-- The deployed bundle contains none of the ignored local fake Stripe/Auth values. The only staging secret remains `BETTER_AUTH_SECRET`.
+- Browser/workerd commands: `pnpm mvp:billing:test` and `pnpm mvp:stripe-adapter:test`. The Stripe-adapter check uses official generated signatures and Dahlia payload shapes without an API request.
+- `pnpm mvp:stripe-checkout:test-staging` performs real hosted Checkout and Portal interactions, exact-account/Price reconciliation, one-Cash-Receipt checks, signed scheduled cancellation, and real-extension entitlement.
+- `pnpm mvp:stripe-checkout:test-redirect-boundary` proves the Checkout return remains inactive while the platform endpoint is disabled; exact provider Event resend activates access, and Invoice replay remains one Event/receipt.
+- The first real purchase exposed and preserved a failed acceptance artifact: Invoice top-level period bounds did not represent its configured-Price service period. The adapter now uses configured-Price line periods, and fresh real purchases pass. Portal cancellation likewise required recognizing Dahlia's concrete `cancel_at` representation.
+- Staging secret names are `BETTER_AUTH_SECRET`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, and `STRIPE_CONNECT_WEBHOOK_SECRET`; values are never written to Git or output. The account-scoped restricted test key expires 2026-11-11.
 - Detailed boundary: [BILLING_PROJECTION.md](./BILLING_PROJECTION.md).
 
 ## What Slice 1 proves
@@ -87,10 +89,10 @@ Slices 1–3 are complete. Slice 4, Subscriber billing, has explicit test-mode a
 
 - Migration `0015_app_activation.sql` is applied to staging and all 15 migrations report no pending work.
 - The real extension creates an activation request from its stable runtime origin, a staging Better Auth Subscriber approves it, and proof exchange creates a D1-backed App Link and hash-only App session.
-- The extension receives `inactive` because staging has no normalized paid-through Subscription; the local billing fixture route remains `404` and cannot manufacture staging access.
+- The unpaid staging check still receives `inactive`, while the real Stripe-paid Subscriber now links the same extension and receives `active` directly from the shared authority.
 - A fresh real App session was created before the Worker-only redeploy. The exact stored App-session token hash remained present and its entitlement remained `inactive` after deployment of Worker version `c4edf729-284f-4d99-bbdc-6ff20c002044`.
 - Local and staging SDK storage are namespaced by authority origin as well as App ID, preventing dev-browser environment crossover. The historical proof explicitly selects its preserved non-MVP API prefix.
-- The only staging secret is still `BETTER_AUTH_SECRET`; the deployed build contains none of the ignored local Stripe fixture values.
+- Staging has separate Stripe API/platform-webhook/Connect-webhook secrets; the extension bundle contains none of them.
 
 ## Partial Slice 6 evidence
 
@@ -101,7 +103,7 @@ Slices 1–3 are complete. Slice 4, Subscriber billing, has explicit test-mode a
 - Migration `0024_publisher_connect_onboarding.sql` adds one immutable-country, idempotent onboarding record per Publisher and mode. An authenticated Publisher can request onboarding for only a Publisher Membership they own; cross-origin and wrong-role requests reject.
 - The real executor creates an Express Account with only the Transfers capability and generates single-use hosted Account Links. It is disabled unless an explicit enable flag, a mode-correct key, and the exact expected platform Account ID all pass. Account Link URLs are never stored or logged.
 - Returning or refreshing creates no readiness state. A later signed Event must match the Account created for that Publisher; mismatched Accounts reject.
-- `pnpm mvp:connect:test` passes against local workerd without any Stripe API request. Migration `0024` and the onboarding route are deployed inert to staging; they contain zero onboarding records, connected Accounts, Connect Events, Payouts, and Payout Events. Without Stripe secrets/configuration, the webhook remains `503`, and an anonymous onboarding request receives `401` before configuration is considered.
+- `pnpm mvp:connect:test` passes against local workerd without any Stripe API request. Migration `0024` and the onboarding route are deployed; the dedicated Connect webhook is configured and rejects unsigned requests. Onboarding remains disabled and there are zero connected Accounts, Connect Events, Payouts, and Payout Events until the test Publisher country is explicitly approved.
 
 ## Partial Slice 7 evidence
 
@@ -118,14 +120,14 @@ Slices 1–3 are complete. Slice 4, Subscriber billing, has explicit test-mode a
 
 - Email ownership or password recovery. Email/password currently avoids choosing an email provider during the composition spike.
 - A separately owned external repository or invited Publisher consuming the supplied SDK. A clean temporary project now installs and bundles the packed artifact without workspace access, but no registry has been selected, no package has been published, and no external Publisher has independently reviewed the handoff.
-- A real Stripe-hosted purchase or Portal session. No Stripe account has been accessed, so real API idempotency, Product/Price binding, and webhook delivery remain unproved.
-- A real Stripe-paid entitlement, Earning, Transfer, or Payout. App linking, paid-through entitlement behavior, allocation posting, Settlement state, Transfer/reversal projection, and Payout projection are real locally, but their Cash Receipt and provider Events are deliberately signed local fixtures until Stripe test actions are explicitly authorized.
-- Production readiness or permission to use Stripe.
+- A real-receipt Allocation, Publisher Earning, connected Account, Transfer, or Payout. Those boundaries still use local provider-format evidence until the remaining country/amount decisions are approved.
+- Production readiness, live-mode permission, email ownership/recovery, tax/refund/chargeback operations, or a real bank Payout.
 
 ## External staging resources created
 
 - Cloudflare Worker: `serp-apps-pass-staging`
 - D1 database: `apps-pass-staging` (`54d36df7-062d-4115-aabc-bcf984b9e2c8`)
-- Worker secret name: `BETTER_AUTH_SECRET` (value never written to the repository or command output)
+- Worker secret names: `BETTER_AUTH_SECRET`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, and `STRIPE_CONNECT_WEBHOOK_SECRET` (values never written to the repository or command output)
+- Stripe test objects and IDs: [STRIPE_SANDBOX_STATE.md](./STRIPE_SANDBOX_STATE.md)
 
 No production Cloudflare resource was created by this slice.

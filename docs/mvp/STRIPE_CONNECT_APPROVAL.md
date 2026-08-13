@@ -1,6 +1,6 @@
 # Stripe Connect sandbox approval packet
 
-Status: **bounded test-mode actions approved; country and exact Earning amount remain unresolved; authenticated account currently mismatches**
+Status: **bounded test-mode actions approved; exact account and Connect webhook are configured; country and exact Earning amount remain unresolved**
 
 Date: **2026-08-13**
 
@@ -55,6 +55,6 @@ Stop on any Account ID, mode, country, capability, destination, currency, amount
 - The Publisher identity, App identity, Publisher Membership, and pilot email already exist in Apps Pass.
 - Stripe still requires the Publisher's two-letter country code before the Express Account can be created. It must not be inferred from the platform account.
 - The user authorized a small test Transfer and full reversal, but the exact Earning amount is not yet fixed. The local `$7 / $2 / $1` example is test data, not an approved revenue-share policy.
-- The first read-only Stripe CLI identity check returned `acct_1T3IiJE8IBJK847r`, so the guard stopped before inventory or mutation. Execution may resume only when authenticated to `acct_1MwbFJI9EPtyKcIs`.
+- The isolated Stripe CLI profile now verifies exact platform Account `acct_1MwbFJI9EPtyKcIs`. The dedicated Connect webhook and signing secret are configured, but no connected Account exists and onboarding remains disabled pending the country decision.
 
 Official architecture references: [separate charges and transfers](https://docs.stripe.com/connect/separate-charges-and-transfers), [Connect webhooks](https://docs.stripe.com/connect/webhooks), and [account capabilities](https://docs.stripe.com/connect/account-capabilities).

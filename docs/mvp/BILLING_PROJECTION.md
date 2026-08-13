@@ -74,18 +74,18 @@ All monetary amounts are integer minor units. Test and live modes are constraine
 - exact replay is idempotent while changed-payload Event-ID reuse is rejected;
 - real Invoice and Subscription shapes enter the same normalized paid-through projection.
 
-## Still gated on explicit permission to access the selected Stripe sandbox
+## Real sandbox evidence and remaining billing gates
 
-The intended isolated Stripe account is `acct_1MwbFJI9EPtyKcIs`, currently named **SERP Pass**. Recording that public account identifier is not permission to access or configure the account. No Stripe credentials or objects are present in the application.
+The exact isolated Stripe account `acct_1MwbFJI9EPtyKcIs` (**SERP Pass**) is now configured in test mode under the approved packet. One Product, `$10/month` Price, Portal, and split webhook configuration exist. Real rendered Checkout, duplicate Session reuse, signature-verified Event projection, one Cash Receipt, Event resend/replay, Portal scheduled cancellation, and paid extension entitlement pass on deployed staging.
 
-- Product and recurring Price creation;
-- actual hosted Checkout and Customer Portal API responses;
-- real-account validation of idempotent Checkout creation and Customer reuse;
-- event-destination/webhook endpoint configuration and endpoint secret;
-- Stripe-backed reconciliation of missing or delayed Events;
-- deployed staging purchase and cancellation/failure scenarios.
+Still incomplete:
 
-The exact proposed mutations and rollback are in [STRIPE_SANDBOX_APPROVAL.md](./STRIPE_SANDBOX_APPROVAL.md).
+- a real provider-driven failed renewal and natural paid-through expiry;
+- refund, dispute, chargeback, and tax operational policy;
+- production credentials, live objects, and production deployment;
+- allocation and settlement from a successful real test Cash Receipt.
+
+The approved mutations and rollback are in [STRIPE_SANDBOX_APPROVAL.md](./STRIPE_SANDBOX_APPROVAL.md); current IDs and evidence are in [STRIPE_SANDBOX_STATE.md](./STRIPE_SANDBOX_STATE.md).
 
 Official references: [Checkout subscriptions](https://docs.stripe.com/payments/checkout/build-subscriptions), [raw-body webhook signatures](https://docs.stripe.com/webhooks/signature), [idempotent requests](https://docs.stripe.com/api/idempotent_requests), and [Customer Portal](https://docs.stripe.com/customer-management/integrate-customer-portal).
 

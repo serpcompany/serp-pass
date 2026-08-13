@@ -34,8 +34,8 @@ export default async function AccountPage() {
             <>
               <p><strong>Paid through {subscription.entitledUntil ? paidThroughLabel(subscription.entitledUntil) : "—"}</strong></p>
               <p className="muted">Provider state: {subscription.status} · {subscription.mode} mode</p>
-              {subscription.status === "canceled" && subscription.access === "active" && (
-                <p>Canceled; access remains active through the paid-through date.</p>
+              {subscription.cancelAtPeriodEnd && subscription.access === "active" && (
+                <p>Cancellation scheduled; access remains active through the paid-through date.</p>
               )}
               {subscription.status === "past_due" && subscription.access === "active" && (
                 <p>Renewal failed; previously paid access remains active through the paid-through date.</p>

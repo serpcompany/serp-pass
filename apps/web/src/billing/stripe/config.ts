@@ -1,3 +1,5 @@
+import { stripeApiKeyMatchesEnvironment } from "./client";
+
 export type StripeEnvironment = CloudflareEnv & {
   STRIPE_EXPECTED_ACCOUNT_ID?: string;
   STRIPE_SECRET_KEY?: string;
@@ -47,8 +49,7 @@ export function readStripeConnectOnboardingConfig(environment: CloudflareEnv) {
   const env = environment as StripeEnvironment;
   if (env.STRIPE_CONNECT_ONBOARDING_ENABLED !== "1") return null;
   if (!env.STRIPE_SECRET_KEY || !env.STRIPE_EXPECTED_ACCOUNT_ID) throw new Error("Stripe Connect onboarding is enabled without an API key and expected Account ID");
-  const expectedPrefix = environment.APP_ENV === "production" ? "sk_live_" : "sk_test_";
-  if (!env.STRIPE_SECRET_KEY.startsWith(expectedPrefix)) throw new Error("Stripe Connect API key mode does not match the environment");
+  if (!stripeApiKeyMatchesEnvironment(env.STRIPE_SECRET_KEY, environment.APP_ENV)) throw new Error("Stripe Connect API key mode does not match the environment");
   if (!/^acct_[A-Za-z0-9]+$/u.test(env.STRIPE_EXPECTED_ACCOUNT_ID)) throw new Error("Stripe expected Account ID format is invalid");
   return { secretKey: env.STRIPE_SECRET_KEY, expectedAccountId: env.STRIPE_EXPECTED_ACCOUNT_ID };
 }
@@ -57,7 +58,7 @@ export function readStripeTestSettlementConfig(environment: CloudflareEnv) {
   const env = environment as StripeEnvironment;
   if (environment.APP_ENV !== "staging" || env.STRIPE_TEST_TRANSFERS_ENABLED !== "1") return null;
   if (!env.STRIPE_SECRET_KEY || !env.STRIPE_EXPECTED_ACCOUNT_ID) throw new Error("Stripe test settlement is enabled without an API key and expected Account ID");
-  if (!env.STRIPE_SECRET_KEY.startsWith("sk_test_")) throw new Error("Stripe test settlement requires a test-mode API key");
+  if (!stripeApiKeyMatchesEnvironment(env.STRIPE_SECRET_KEY, environment.APP_ENV)) throw new Error("Stripe test settlement requires a test-mode API key");
   if (!/^acct_[A-Za-z0-9]+$/.test(env.STRIPE_EXPECTED_ACCOUNT_ID)) throw new Error("Stripe expected Account ID format is invalid");
   return { secretKey: env.STRIPE_SECRET_KEY, expectedAccountId: env.STRIPE_EXPECTED_ACCOUNT_ID };
 }

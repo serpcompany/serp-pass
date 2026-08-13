@@ -1,6 +1,6 @@
 # Stripe sandbox approval packet
 
-Status: **test-mode actions approved for the exact account; execution blocked by authenticated-account mismatch**
+Status: **approved test-mode billing actions executed and validated on the exact account**
 
 Date: **2026-08-13**
 
@@ -81,4 +81,4 @@ No pre-existing Stripe object may be deleted or modified merely to make the test
 
 The user explicitly approved the proposed Product/Price, hosted Checkout, Portal, webhook, and staging-secret actions in test mode on `acct_1MwbFJI9EPtyKcIs`. The annual Price is deferred.
 
-The first read-only Stripe CLI identity check returned `acct_1T3IiJE8IBJK847r`. The guard stopped before inventory or mutation. Execution may resume only after a new read-only check returns the intended Account ID.
+The first read-only Stripe CLI identity check returned `acct_1T3IiJE8IBJK847r`; the guard stopped before inventory or mutation. A new isolated `serp-appspass` profile then returned exact Account `acct_1MwbFJI9EPtyKcIs`. The approved Product, Price, Portal, webhooks, staging secrets, and real test Checkout were created only after that verification. Current IDs and evidence are recorded in [STRIPE_SANDBOX_STATE.md](./STRIPE_SANDBOX_STATE.md).

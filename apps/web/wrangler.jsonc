@@ -32,7 +32,9 @@
     "staging": {
       "name": "serp-apps-pass-staging",
       "vars": {
-        "APP_ENV": "staging"
+        "APP_ENV": "staging",
+        "STRIPE_EXPECTED_ACCOUNT_ID": "acct_1MwbFJI9EPtyKcIs",
+        "STRIPE_PASS_PRICE_ID": "price_1U3zRcI9EPtyKcIsot42EEhL"
       },
       "d1_databases": [
         {

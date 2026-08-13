@@ -65,7 +65,7 @@ function invoiceObject(input: {
     amount_paid: input.amountPaid ?? 0,
     currency: "usd",
     period_start: 4_070_908_800,
-    period_end: input.periodEnd ?? 4_102_444_800,
+    period_end: 4_070_908_800,
     parent: {
       type: "subscription_details",
       subscription_details: {
@@ -75,6 +75,7 @@ function invoiceObject(input: {
     },
     lines: {
       data: [{
+        period: { start: 4_070_908_800, end: input.periodEnd ?? 4_102_444_800 },
         pricing: {
           type: "price_details",
           price_details: { price: input.priceId ?? passPriceId, product: "prod_local_apps_pass_test" },
@@ -208,8 +209,9 @@ try {
       object: "subscription",
       customer: customerId,
       metadata: { apps_pass_subscriber_user_id: subscriberUserId },
-      status: "canceled",
-      cancel_at_period_end: true,
+      status: "active",
+      cancel_at_period_end: false,
+      cancel_at: 4_102_444_800,
       items: {
         data: [{
           id: `si_stripe_adapter_${suffix}`,
@@ -234,7 +236,7 @@ try {
       subscription: {
         provider: "stripe",
         mode: "test",
-        status: "canceled",
+        status: "active",
         cancelAtPeriodEnd: true,
         entitledUntil: "2100-01-01T00:00:00.000Z",
         access: "active",

@@ -10,7 +10,7 @@ Run a human-in-the-loop E2E QA session. You play **John Doe**, the invited third
 
 ## Contract
 
-- Work only in `/Users/devin/dev/repos/serp-appspass` on `mvp/private-pilot` unless the user explicitly changes scope.
+- Work only in `/Users/devin/dev/repos/serp-appspass` on `main` unless the user explicitly changes scope.
 - Read `AGENTS.md`, `PRD.md`, `ARCHITECTURE.md`, `CONTEXT.md`, and `docs/mvp/DELIVERY_PLAN.md` before acting.
 - Use `https://serp-apps-pass-staging.serpcompany.workers.dev`. Report local, staging, and production separately.
 - Use Stripe test mode only. Pause before opening or completing Checkout. Production and live money remain untouched.

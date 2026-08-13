@@ -4,7 +4,7 @@ Status: **Binding implementation contract; not approved for live money**
 
 Date: **2026-08-13**
 
-Branch: `mvp/private-pilot`
+Branch: `main`
 
 ## 1. Product outcome
 

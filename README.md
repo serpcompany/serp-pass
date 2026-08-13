@@ -6,7 +6,7 @@ The target and acceptance boundary are in [PRD.md](./PRD.md). The architecture i
 
 The completed proof remains executable local software, not a visual mockup, but it is not the launchable subscription product. Its PRD, architecture, freeze, evaluation, and plan are preserved under [docs/prototype/](./docs/prototype/).
 
-Implementation is in progress on `mvp/private-pilot`. Invited Publisher submission, approved App identity, deployed Subscriber billing, real extension activation, paid-through entitlement, and one real-receipt `$7/$2/$1` Allocation work on [serp-apps-pass-staging.serpcompany.workers.dev](https://serp-apps-pass-staging.serpcompany.workers.dev). Stripe test account `acct_1MwbFJI9EPtyKcIs` (**SERP Pass**) handles Subscriber billing only. The local Operator/Publisher journey proves immutable external Publisher Payment evidence; staging correctly awaits a payment actually completed elsewhere. Connect is dormant post-MVP evidence. Production has not been created or deployed.
+Implementation is integrated on `main`. Invited Publisher submission, approved App identity, deployed Subscriber billing, real extension activation, paid-through entitlement, and one real-receipt `$7/$2/$1` Allocation work on [serp-apps-pass-staging.serpcompany.workers.dev](https://serp-apps-pass-staging.serpcompany.workers.dev). Stripe test account `acct_1MwbFJI9EPtyKcIs` (**SERP Pass**) handles Subscriber billing only. The local Operator/Publisher journey proves immutable external Publisher Payment evidence; staging correctly awaits a payment actually completed elsewhere. Connect is dormant post-MVP evidence. Production has not been created or deployed.
 
 ## Product surfaces
 

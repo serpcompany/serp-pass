@@ -5,7 +5,7 @@ import { build } from "esbuild";
 
 const repositoryRoot = path.resolve(import.meta.dirname, "../..");
 const examplesRoot = path.join(repositoryRoot, "examples");
-const templateRoot = path.join(repositoryRoot, "extension-template");
+const templateRoot = path.join(repositoryRoot, "prototype/extension-shell");
 const authorityBaseUrl = process.env.APP_PASS_AUTHORITY_URL ?? "http://127.0.0.1:8787";
 
 function runtimeIdFromKey(key: string) {

@@ -1,3 +1,5 @@
+// Shared UI for the disposable example extensions. Real Publishers integrate
+// the SDK into their own extension instead of shipping this shell.
 import { createAppPass } from "@serp-apps-pass/sdk";
 
 declare const APP_PASS_CONFIG: {

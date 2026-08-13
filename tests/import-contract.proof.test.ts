@@ -7,7 +7,7 @@ import { after, before, test } from "node:test";
 
 const authorityUrl = "http://127.0.0.1:8787";
 let authority: ChildProcess | undefined;
-const temporaryDirectory = mkdtempSync(path.join(os.tmpdir(), "apps-pass-phase1-"));
+const temporaryDirectory = mkdtempSync(path.join(os.tmpdir(), "apps-pass-import-proof-"));
 
 function runPnpm(args: string[]) {
   return spawnSync("pnpm", args, {
@@ -100,34 +100,34 @@ test("both fixture Apps enter through operator:import-app", () => {
   requireSuccess(stateResult);
   assert.deepEqual(commandJson(stateResult.stdout), {
     publishers: [
-      { id: "pub_invited_phase1", name: "Invited Publisher" },
-      { id: "pub_serp_phase1", name: "SERP" },
+      { id: "pub_invited_reference", name: "Invited Publisher" },
+      { id: "pub_serp_reference", name: "SERP" },
     ],
     apps: [
       {
-        id: "app_invited_phase1",
-        publisherId: "pub_invited_phase1",
-        name: "Invited Publisher Phase 1 App",
+        id: "app_invited_reference",
+        publisherId: "pub_invited_reference",
+        name: "Invited Publisher Reference Extension",
         features: ["premium"],
         status: "approved",
       },
       {
-        id: "app_serp_phase1",
-        publisherId: "pub_serp_phase1",
-        name: "SERP Phase 1 App",
+        id: "app_serp_reference",
+        publisherId: "pub_serp_reference",
+        name: "SERP Reference Extension",
         features: ["premium"],
         status: "approved",
       },
     ],
     distributions: [
       {
-        appId: "app_invited_phase1",
+        appId: "app_invited_reference",
         browserFamily: "chromium",
         channel: "unpacked",
         runtimeId: "deigfiokgenocbkifhkognjkhfljcfgi",
       },
       {
-        appId: "app_serp_phase1",
+        appId: "app_serp_reference",
         browserFamily: "chromium",
         channel: "unpacked",
         runtimeId: "gnofcoijgmmjbpbkflpnlflkgpmhppkh",
@@ -195,7 +195,7 @@ test("runtime identities owned by another App are rejected atomically", () => {
 test("fixture identities are absent from migrations and authority source", () => {
   const result = spawnSync("rg", [
     "-n",
-    "pub_(serp|invited)_phase1|app_(serp|invited)_phase1|gnofcoijgmmjbpbkflpnlflkgpmhppkh|deigfiokgenocbkifhkognjkhfljcfgi",
+    "pub_(serp|invited)_reference|app_(serp|invited)_reference|gnofcoijgmmjbpbkflpnlflkgpmhppkh|deigfiokgenocbkifhkognjkhfljcfgi",
     "migrations",
     "src",
     "scripts",

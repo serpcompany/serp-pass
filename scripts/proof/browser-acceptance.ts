@@ -132,17 +132,17 @@ try {
   assert.equal(new Set(evidence.map((entry) => entry.runtimeId)).size, evidence.length);
   assert.ok(evidence.every((entry) => entry.entitlement.status === "active"));
 
-  const phase2State = await (await fetch(`${authorityBaseUrl}/operator/phase2-state`)).json() as {
+  const prototypeState = await (await fetch(`${authorityBaseUrl}/operator/prototype-state`)).json() as {
     subscriptions: Array<{ id: string; subscriberId: string; status: string }>;
     links: Array<{ appId: string; subscriberId: string }>;
   };
-  const subscription = phase2State.subscriptions.find((candidate) => candidate.id === "subscription_local");
+  const subscription = prototypeState.subscriptions.find((candidate) => candidate.id === "subscription_local");
   assert.deepEqual(subscription, {
     id: "subscription_local",
     subscriberId: "subscriber_local",
     status: "active",
   });
-  assert.ok(evidence.every(({ appId }) => phase2State.links.some((link) =>
+  assert.ok(evidence.every(({ appId }) => prototypeState.links.some((link) =>
     link.appId === appId && link.subscriberId === subscription.subscriberId)));
   process.stdout.write(`${JSON.stringify({ extensions: evidence, subscriptionId: subscription.id })}\n`);
 } catch (error) {

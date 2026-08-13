@@ -181,7 +181,7 @@ export async function setAppStatus(database: D1Database, appId: string, status: 
   return { appId, status };
 }
 
-export async function phase2State(database: D1Database) {
+export async function prototypeState(database: D1Database) {
   const db = drizzle(database);
   const [subscriberRows, subscriptionRows, requestRows, linkRows, sessionRows] = await Promise.all([
     db.select({ id: subscribers.id, email: subscribers.email }).from(subscribers),

@@ -1,6 +1,6 @@
 # SERP Apps Pass extension-inclusion proof PRD
 
-Status: **Approved corrective contract**
+Status: **Proof completed locally**
 Date: **2026-08-13**
 Branch: `prototype/apps-pass-integration-proof`
 Base: `fe65faa`
@@ -88,8 +88,6 @@ The exact binding acceptance sequence and freeze gate are in [docs/prototype/PLA
 - Store-ownership verification, Firefox, Safari, or native applications.
 - Archiving or tagging the proof.
 
-## 10. Reuse gate
+## 10. Reuse boundary
 
-No implementation from `prototype/apps-pass-e2e` may be copied wholesale. Only after the import boundary passes may later work selectively reuse its shared SDK behavior, proof-bound linking, opaque App sessions, entitlement decisions, D1/Drizzle schema concepts, deterministic local Subscription, browser harness concepts, safe state inspection, and focused tests.
-
-Seeded participating records, fixed fixture enumeration, unvalidated manifest parsing, hard-coded identities, and checkpoint claims that the earlier product hypothesis passed are discarded.
+The proof establishes behavior, not production architecture. The manifest contract, importer semantics, shared-SDK interface, App-scoped session model, entitlement states, and D1 domain concepts are candidates for deliberate reuse. The local Subscriber and Subscription, unauthenticated Operator routes, explanatory web page, example-extension shell, browser lifecycle, and proof tests are prototype mechanisms and must not silently become production defaults.

@@ -4,7 +4,7 @@
     "EXTENSION_DEV_BROWSER": "1"
   },
   "extensionDiscoveryRoot": "examples",
-  "watch": ["examples", "extension-template", "packages/app-pass-sdk/src"],
+  "watch": ["examples", "prototype/extension-shell", "packages/app-pass-sdk/src"],
   "previewPath": null,
   "refreshHttpTabs": true,
   "debounceMilliseconds": 250,

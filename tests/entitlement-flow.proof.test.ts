@@ -167,7 +167,7 @@ test("an approved link cannot exchange after expiry", async () => {
 });
 
 test("operator state exposes hashes but never App-session tokens", () => {
-  const result = runPnpm(["operator:phase2-state"]);
+  const result = runPnpm(["operator:prototype-state"]);
   requireSuccess(result);
   const state = commandJson(result.stdout) as {
     sessions: Array<{ id: string; appId: string; tokenHash: string; revokedAt: number | null }>;

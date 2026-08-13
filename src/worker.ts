@@ -3,6 +3,8 @@ import { drizzle } from "drizzle-orm/d1";
 import { appDistributions, apps, publishers } from "./db/schema";
 import { importApp, ImportConflictError } from "./import-app";
 import { ManifestValidationError } from "./manifest";
+// Disposable local integration authority. Operator routes intentionally omit
+// production authentication and must not be deployed as a production Worker.
 import {
   activateLocalSubscription,
   AppPassRequestError,
@@ -11,7 +13,7 @@ import {
   createLinkRequest,
   exchangeLinkRequest,
   expireLinkRequest,
-  phase2State,
+  prototypeState,
   revokeAppSession,
   setAppStatus,
 } from "./app-pass";
@@ -236,8 +238,8 @@ export default {
       if (request.method === "POST" && url.pathname === "/operator/local-subscription") {
         return Response.json(await activateLocalSubscription(env.DB, await request.json()));
       }
-      if (request.method === "GET" && url.pathname === "/operator/phase2-state") {
-        return Response.json(await phase2State(env.DB));
+      if (request.method === "GET" && url.pathname === "/operator/prototype-state") {
+        return Response.json(await prototypeState(env.DB));
       }
       const revocation = url.pathname.match(/^\/operator\/sessions\/([^/]+)\/revoke$/u);
       if (request.method === "POST" && revocation) {

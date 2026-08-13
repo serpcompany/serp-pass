@@ -1,3 +1,4 @@
+// Executable evidence for the disposable Chromium browser proof.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync } from "node:fs";
@@ -10,7 +11,7 @@ function runPnpm(args: string[]) {
 }
 
 test("every discovered unpacked extension links and receives active in Chromium", () => {
-  const result = spawnSync("pnpm", ["phase2:browser-acceptance"], {
+  const result = spawnSync("pnpm", ["proof:browser"], {
     cwd: process.cwd(),
     encoding: "utf8",
     env: process.env,
@@ -37,7 +38,7 @@ test("browser harness exercises a synthetic third discovered submission", () => 
   try {
     assert.equal(runPnpm(["dev:browser:stop"]).status, 0);
     assert.equal(runPnpm(["dev:browser"]).status, 0);
-    const result = runPnpm(["phase2:browser-acceptance"]);
+    const result = runPnpm(["proof:browser"]);
     assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
     const line = result.stdout.trim().split("\n").at(-1);
     assert.ok(line);

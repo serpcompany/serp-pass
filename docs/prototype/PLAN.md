@@ -1,10 +1,10 @@
 # Extension-inclusion proof plan
 
-Status: **Approved for implementation after documentation review**
+Status: **Completed locally**
 Branch: `prototype/apps-pass-integration-proof`
 Base: `fe65faa`
 
-The root [PRD](../../PRD.md) is the binding product contract. This plan is the binding immediate-delivery sequence. The work is a disposable, local-only integration proof and must not be described as a launchable product or production implementation.
+The root [PRD](../../PRD.md) records the question this plan tested. All twelve steps passed; the immutable evidence is recorded in [FREEZE.md](./FREEZE.md) and the observed result in [EVALUATION.md](./EVALUATION.md). This remains a disposable, local-only integration proof and must not be described as a launchable product or production implementation.
 
 ## Implementation constraints
 
@@ -17,7 +17,6 @@ The root [PRD](../../PRD.md) is the binding product contract. This plan is the b
 - Exact re-import is idempotent.
 - Malformed manifests, conflicting defining data, and conflicting runtime identities fail with no partial writes.
 - The SERP and invited-Publisher fixtures use the same import path.
-- Do not copy implementation wholesale from `prototype/apps-pass-e2e`. Selective reuse is permitted only after the import boundary passes.
 
 ## Exact acceptance sequence
 

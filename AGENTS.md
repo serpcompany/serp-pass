@@ -1,39 +1,19 @@
 # Repository guidance
 
-Read [PRD.md](./PRD.md), [CONTEXT.md](./CONTEXT.md), and [docs/prototype/PLAN.md](./docs/prototype/PLAN.md) before planning or changing this repository. The root PRD is the binding extension-inclusion proof; the prototype plan is the binding immediate-delivery sequence. Documents under `docs/product/` are historical, non-binding product intent.
+Read [README.md](./README.md), [ARCHITECTURE.md](./ARCHITECTURE.md), and [CONTEXT.md](./CONTEXT.md) before changing this repository.
 
-- Work only on `prototype/apps-pass-integration-proof`, based directly on `fe65faa`; preserve `prototype/apps-pass-e2e` unchanged at `b9e4bd4`.
-- Make `pnpm operator:import-app <path-to-apppass.json>` the sole participating registration path.
-- Keep migrations schema-only: no participating Publishers, Apps, Distributions, fixture identities, or registration seeds.
-- Treat `publisher_id` and `app_id` as Operator-issued public identifiers. A manifest may carry assigned identifiers but cannot claim, replace, or redefine an existing Publisher or App.
-- The trusted Operator import constitutes approval for this prototype.
-- Require versioned whole-manifest validation, idempotent exact re-import, and atomic rejection of malformed manifests, conflicting defining data, and conflicting runtime identities.
-- Never embed a platform or publisher secret in a browser extension.
-- Treat extension runtime IDs as public allowlist identities, not credentials.
-- Use D1 through Drizzle.
-- Freeze the authority revision and migration checksums before creating the decisive third fixture; then follow the plan without authority, migration, or seed edits.
-- Treat Stripe, Better Auth polish, landing-page UX, Cloudflare preview, and production deployment as non-goals.
-- Distinguish local validation, deployed preview, and production rollout in every handoff.
+This repository contains a **disposable local integration proof**, not a production Apps Pass implementation. The proof has already passed; [PRD.md](./PRD.md), [docs/prototype/PLAN.md](./docs/prototype/PLAN.md), [docs/prototype/FREEZE.md](./docs/prototype/FREEZE.md), and [docs/prototype/EVALUATION.md](./docs/prototype/EVALUATION.md) preserve the question, method, evidence boundary, and result.
 
-## Agent skills
+- Keep prototype-only mechanisms visibly labeled. Do not present local Operator routes, the deterministic Subscriber or Subscription, the example-extension shell, or the proof tests as production-ready code.
+- Treat `apppass.json`, `pnpm operator:import-app <path>`, and `@serp-apps-pass/sdk` as the three demonstrated interfaces.
+- Keep migrations schema-only and never embed platform or Publisher secrets in extensions.
+- Treat runtime IDs as public allowlist identities, not credentials.
+- Do not add Stripe, authentication, Publisher self-service, payouts, or deployment merely to make the proof look more complete. Those require a new product decision.
+- Report local validation, Cloudflare preview, and production separately.
 
-### Issue tracker
+## Project-owned browser
 
-Issues and PRDs live in GitHub Issues for `serpcompany/serp-appspass`. See `docs/agents/issue-tracker.md`.
-
-### Triage labels
-
-Use the standard five-label workflow. See `docs/agents/triage-labels.md`.
-
-### Domain docs
-
-This is a single-context repository using root `CONTEXT.md` and system-wide ADRs under `docs/adr/`. See `docs/agents/domain.md`.
-
-### Prototype browser
-
-- Run `pnpm dev:browser:status` before starting browser automation.
-- Reuse the project-owned browser and CDP endpoint recorded under `.extension-dev-browser/`; never launch a competing persistent browser for this repository.
-- Use headless mode for automated checks. Keep its profile, state, logs, and locks in the ignored project-local directory.
-- Extension outputs are discovered generically under `examples/*/dist`; do not add a fixed fixture list to the browser lifecycle.
-- Open tabs through the recorded CDP endpoint and never bring a page to the foreground automatically.
-- Stop only the recorded owner PID through `pnpm dev:browser:stop`.
+- Run `pnpm dev:browser:status` before browser automation.
+- Reuse the project-owned browser recorded under `.extension-dev-browser/`; do not launch a competing persistent browser.
+- Extension outputs are discovered generically under `examples/*/dist`.
+- Stop only the recorded owner PID with `pnpm dev:browser:stop`.

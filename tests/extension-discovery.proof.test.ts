@@ -1,3 +1,4 @@
+// Executable evidence for the disposable extension-discovery proof.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";

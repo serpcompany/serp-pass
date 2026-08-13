@@ -1,5 +1,7 @@
 # Authority freeze record
 
+> Historical evidence boundary: these restrictions applied from the recorded freeze through the decisive post-freeze extension commit. The proof is complete; this document does not permanently prohibit later cleanup or experimentation.
+
 Freeze timestamp: `2026-08-13T16:11:02+09:00`
 
 ## Frozen authority revision

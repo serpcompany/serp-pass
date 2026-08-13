@@ -1,10 +1,10 @@
 # SERP Apps Pass context
 
-## Current question
+## Proven question
 
-Can a compatible Chromium extension be submitted, validated, registered, linked, and entitled without modifying authority code, database migrations, or seed data?
+Yes: locally, a compatible Chromium extension can be submitted, validated, registered, linked, and entitled without modifying authority code, database migrations, or seed data.
 
-This repository is currently a single-context, disposable integration proof. The root `PRD.md` defines the binding product scope, and `docs/prototype/PLAN.md` defines the binding immediate-delivery sequence. Earlier launchable-product ideas under `docs/product/` are historical and non-binding.
+This repository is a completed, single-context, disposable integration proof. The root `PRD.md` records its scope, `docs/prototype/PLAN.md` records the completed acceptance sequence, and `ARCHITECTURE.md` explains which parts are demonstrated interfaces versus prototype substitutions. Earlier launchable-product ideas under `docs/product/` are historical and non-binding.
 
 ## Actors
 
@@ -22,6 +22,6 @@ This repository is currently a single-context, disposable integration proof. The
 - The shared SDK handles linking and entitlement checks without a platform or Publisher secret.
 - Conflicting defining data or runtime identity ownership rejects the complete import with no partial writes.
 
-## Proof boundary
+## Evidence boundary
 
-The initial SERP and invited-Publisher fixtures establish the import path. A third extension created after the authority and migrations are frozen decides whether the inclusion hypothesis passes.
+The initial SERP and invited-Publisher fixtures established the import path. A third extension created after the authority and migrations were frozen passed through the same path; the result is recorded in `docs/prototype/EVALUATION.md`.

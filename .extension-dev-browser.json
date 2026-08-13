@@ -1,11 +1,12 @@
 {
-  "buildCommand": ["pnpm", "extensions:build"],
+  "buildCommand": ["pnpm", "--filter", "@serp-apps-pass/invited-publisher-extension", "build"],
   "buildEnvironment": {
-    "EXTENSION_DEV_BROWSER": "1"
+    "EXTENSION_DEV_BROWSER": "1",
+    "APP_PASS_AUTHORITY_URL": "http://localhost:8788"
   },
-  "extensionDiscoveryRoot": "examples",
-  "watch": ["examples", "prototype/extension-shell", "packages/app-pass-sdk/src"],
-  "previewPath": null,
+  "extensionDiscoveryRoot": "apps",
+  "watch": ["apps/invited-publisher-extension/src", "apps/invited-publisher-extension/scripts", "packages/app-pass-sdk/src", "packages/app-pass-contracts/src"],
+  "previewPath": "popup.html",
   "refreshHttpTabs": true,
   "debounceMilliseconds": 250,
   "headless": true,

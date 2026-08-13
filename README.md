@@ -57,6 +57,15 @@ The staging inclusion command performs the one-time real Publisher journey when 
 
 The exact Publisher handoff, including what the IDs and JSON file mean, is in [docs/mvp/PUBLISHER_INTEGRATION.md](./docs/mvp/PUBLISHER_INTEGRATION.md).
 
+The real activation/entitlement journey runs through the repo-owned extension browser and local workerd:
+
+```sh
+pnpm dev:browser:status
+pnpm mvp:activation:test
+```
+
+The check leaves the shared browser running. It proves a real extension-origin request, authenticated Subscriber approve/deny UX, one-time proof exchange, hash-only App-session storage, normalized paid-through decisions, cross-App rejection, expiry, scoped revocation, App suspension, relinking, and a truthful `temporarily_unavailable` state. Its paid-through setup is the local signed fixture boundary; it does not access Stripe or represent a real purchase.
+
 The account-independent Subscriber billing projection can be exercised locally without any Stripe account:
 
 ```sh

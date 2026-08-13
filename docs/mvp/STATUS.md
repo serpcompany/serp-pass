@@ -4,14 +4,14 @@ Updated: **2026-08-13**
 
 ## Current slice
 
-Slices 1–3 are complete. Slice 4, Subscriber billing, is in progress. Its normalized projection and official Stripe signature/Event adapter pass against local workerd/D1, while hosted Checkout/Portal routes and durable attempt state are deployed inertly without Stripe configuration. Stripe account `acct_1MwbFJI9EPtyKcIs` (currently **SERP Pass**) is the intended isolated sandbox, but it has not been accessed or configured. Account selection is not authorization to mutate it.
+Slices 1–3 are complete. Slice 4, Subscriber billing, remains approval-gated after its account-independent implementation. Slice 5, real activation and entitlement, is complete locally and awaiting deployed staging verification. Stripe account `acct_1MwbFJI9EPtyKcIs` (currently **SERP Pass**) is the intended isolated sandbox, but it has not been accessed or configured. Account selection is not authorization to mutate it.
 
 ## Environment evidence
 
 | Environment | State | Evidence |
 | --- | --- | --- |
 | Local Next | built | Next.js `16.2.11` typecheck and optimized build pass. Runtime use requires an ignored local `BETTER_AUTH_SECRET`. |
-| Local workerd | passed | OpenNext `1.19.9` Worker reads migrated local D1; rendered Chromium passes human auth, role denials, Operator bootstrap, one-time Publisher invitation, normalized billing, official Stripe-format webhook projection, replay/integrity rejection, and D1 rate limiting at `localhost:8788`. A fresh empty local state applies all 14 migrations successfully. |
+| Local workerd | passed | OpenNext `1.19.9` Worker reads migrated local D1; rendered Chromium passes human auth, role denials, Operator bootstrap, one-time Publisher invitation, normalized billing, official Stripe-format webhook projection, real extension activation/entitlement, replay/integrity rejection, and D1 rate limiting at `localhost:8788`. A fresh empty local state applies all 15 migrations successfully. |
 | Cloudflare staging | deployed and passed | [`serp-apps-pass-staging.serpcompany.workers.dev`](https://serp-apps-pass-staging.serpcompany.workers.dev), Worker version `466986d0-3992-4b8e-89a7-9a06e73fc232`, isolated `apps-pass-staging` D1 in APAC, health `200 ready`, all Slice 1–3 journeys pass, and partial Slice 4 routes/schema are deployed with zero billing state and no Stripe Account ID, secret, or Price configuration. |
 | Production | not created or deployed | Production D1 still has a non-routable placeholder UUID; no production secret or Worker deployment exists. |
 | Stripe | selected but untouched | Intended isolated account: `acct_1MwbFJI9EPtyKcIs`, currently **SERP Pass**. It has not been accessed. No credentials, Product, Price, webhook, Checkout, Connect account, or payment exists. Every Stripe action remains approval-gated. |
@@ -63,12 +63,23 @@ Slices 1–3 are complete. Slice 4, Subscriber billing, is in progress. Its norm
 - Chromium loads that source with stable runtime ID `deigfiokgenocbkifhkognjkhfljcfgi`; staging recognizes it as approved under `app_invited_pilot_real` and `pub_invited_pilot_real`.
 - The same rendered-browser flow passes locally and against deployed staging; the fixed real-extension staging check is safely repeatable once approved.
 
+## Local Slice 5 evidence
+
+- `app_link_request`, `app_link`, and `app_session` are separate reviewed records linked to the real Better Auth user, approved App, and runtime Distribution; no prototype Subscriber or manually active prototype Subscription is used.
+- The independently built Publisher extension creates its proof challenge from its actual `chrome-extension://deigfiokgenocbkifhkognjkhfljcfgi` origin, receives an expiring activation URL, and stores its installation and opaque App-session token in `chrome.storage.local`.
+- `/activate/[requestId]` shows the canonical Publisher/App identity and accepts one authenticated Subscriber approve/deny decision. The human cookie is never embedded in the extension.
+- Exchange is proof-bound, runtime-origin-bound, expiring, and single-use. D1 stores the App-session token only as a SHA-256 hash.
+- Entitlement reads the environment-specific normalized `entitled_until`: linked but unpaid is `inactive`; a signed local paid Invoice becomes `active`; Checkout return state is irrelevant.
+- Cross-App claims return `401`; one session can be revoked without changing another; App suspension returns `revoked`; reapproval restores a non-revoked session; the extension can deliberately relink after revocation.
+- Authority failure becomes `temporarily_unavailable`, not a false inactive decision. Denied, expired, exchanged, and already-used requests have distinct terminal UX.
+- `pnpm mvp:activation:test` connects to the repo-owned persistent browser over CDP, exercises the real extension and rendered website, and leaves the browser alive.
+
 ## What it does not prove
 
 - Email ownership or password recovery. Email/password currently avoids choosing an email provider during the composition spike.
 - A separately owned external repository consuming a published SDK package. The real reference extension has its own source/build boundary but currently consumes the private workspace SDK; package distribution and an invited developer handoff remain before the external pilot.
 - A real Stripe-hosted purchase or Portal session. No Stripe account has been accessed, so real API idempotency, Product/Price binding, and webhook delivery remain unproved.
-- Real App linking, paid entitlement, earnings, Transfer, or Payout behavior.
+- A real Stripe-paid entitlement, earnings, Transfer, or Payout. App linking and paid-through entitlement behavior are real locally, but their paid-through source is the deliberately local signed billing fixture until a Stripe test purchase is authorized.
 - Production readiness or permission to use Stripe.
 
 ## External staging resources created

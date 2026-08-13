@@ -1,9 +1,6 @@
-export type Entitlement =
-  | { status: "active"; features: string[] }
-  | { status: "inactive"; reason: "no_subscription" }
-  | { status: "unauthenticated"; reason: "not_linked" | "session_expired" }
-  | { status: "revoked"; reason: "session_revoked" | "app_suspended" }
-  | { status: "temporarily_unavailable" };
+import type { Entitlement } from "@serp-apps-pass/contracts";
+
+export type { Entitlement } from "@serp-apps-pass/contracts";
 
 export type AppPassStorage = {
   get(key: string): Promise<string | undefined>;
@@ -19,7 +16,7 @@ export type AppPassClientOptions = {
   fetch?: typeof globalThis.fetch;
 };
 
-type PendingLink = { requestId: string; proofKey: string };
+type PendingLink = { requestId: string; proofKey: string; activationUrl: string; expiresAt: string };
 
 function base64Url(bytes: Uint8Array) {
   let binary = "";
@@ -60,8 +57,8 @@ function chromeStorage(): AppPassStorage {
 }
 
 async function responseJson<T>(response: Response): Promise<T> {
-  const body = await response.json() as T & { error?: string };
-  if (!response.ok) throw new Error(body.error ?? `App Pass request failed (${response.status})`);
+  const body = await response.json() as T & { error?: string; message?: string };
+  if (!response.ok) throw new Error(body.message ?? body.error ?? `App Pass request failed (${response.status})`);
   return body;
 }
 
@@ -85,8 +82,8 @@ export function createAppPass(options: AppPassClientOptions) {
   return {
     async beginLink() {
       const proofKey = randomToken();
-      const link = await responseJson<{ requestId: string; expiresAt: string }>(await request(
-        endpoint("/app-pass/link-requests"),
+      const link = await responseJson<{ requestId: string; expiresAt: string; activationUrl: string }>(await request(
+        endpoint("/api/app-pass/link-requests"),
         {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -98,8 +95,31 @@ export function createAppPass(options: AppPassClientOptions) {
           }),
         },
       ));
-      await storage.set(pendingKey, JSON.stringify({ requestId: link.requestId, proofKey } satisfies PendingLink));
+      await storage.set(pendingKey, JSON.stringify({ ...link, proofKey } satisfies PendingLink));
       return link;
+    },
+
+    async linkState() {
+      if (await storage.get(sessionKey)) return { status: "linked" as const };
+      const rawPending = await storage.get(pendingKey);
+      if (!rawPending) return { status: "unlinked" as const };
+      try {
+        const pending = JSON.parse(rawPending) as PendingLink;
+        if (!pending.requestId || !pending.activationUrl || !pending.expiresAt) throw new Error("invalid");
+        return { status: "pending" as const, requestId: pending.requestId, activationUrl: pending.activationUrl, expiresAt: pending.expiresAt };
+      } catch {
+        await storage.remove(pendingKey);
+        return { status: "unlinked" as const };
+      }
+    },
+
+    async clearPendingLink() {
+      await storage.remove(pendingKey);
+    },
+
+    async resetLink() {
+      await storage.remove(pendingKey);
+      await storage.remove(sessionKey);
     },
 
     async finishLink() {
@@ -107,7 +127,7 @@ export function createAppPass(options: AppPassClientOptions) {
       if (!rawPending) throw new Error("No pending App Pass link");
       const pending = JSON.parse(rawPending) as PendingLink;
       const session = await responseJson<{ token: string }>(await request(
-        endpoint(`/app-pass/link-requests/${pending.requestId}/exchange`),
+        endpoint(`/api/app-pass/link-requests/${pending.requestId}/exchange`),
         {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -122,7 +142,7 @@ export function createAppPass(options: AppPassClientOptions) {
       const token = await storage.get(sessionKey);
       if (!token) return { status: "unauthenticated", reason: "not_linked" };
       try {
-        const response = await request(endpoint("/app-pass/entitlements/check"), {
+        const response = await request(endpoint("/api/app-pass/entitlements/check"), {
           method: "POST",
           headers: {
             authorization: `Bearer ${token}`,

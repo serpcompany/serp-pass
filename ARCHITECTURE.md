@@ -138,6 +138,31 @@ Interface:
 
 The module hides proof storage, token hashing, App/Distribution validation, Subscription lookup, and public decision mapping.
 
+Implemented Slice 5 flow:
+
+```mermaid
+sequenceDiagram
+    participant E as Publisher extension
+    participant W as Apps Pass Worker
+    participant S as Subscriber browser
+    participant D as Environment D1
+
+    E->>W: App ID + runtime ID + installation ID + proof challenge
+    W->>D: Verify approved Distribution; store expiring request
+    W-->>E: Activation URL
+    S->>W: Open URL with Better Auth session
+    W-->>S: Canonical Publisher and App identity
+    S->>W: Approve or deny
+    W->>D: Bind decision to Subscriber
+    E->>W: Exchange one-time proof key
+    W->>D: Create App Link and hashed, scoped App Session
+    E->>W: Check using opaque token + App/runtime claims
+    W->>D: Read session, App, Distribution, and paid-through Subscription
+    W-->>E: active / inactive / revoked / unauthenticated / temporarily unavailable
+```
+
+The extension request must originate from the exact `chrome-extension://<runtime-id>` origin registered in the approved Distribution. The activation page is a human Better Auth surface; its cookies never enter the extension. The App-session token is returned once to the extension and stored only as a SHA-256 hash in D1. A Checkout redirect never affects this decision: only the normalized environment-specific `entitled_until` projection can produce `active`.
+
 ### Earnings ledger
 
 Interface:

@@ -76,6 +76,8 @@ Browser evidence: test purchase changes the Subscriber UI only after the webhook
 
 ## 5. Real activation and entitlement slice
 
+Status: **implemented and browser-verified locally; deployed staging verification pending**
+
 - port the proven link/App-session behavior behind authenticated activation UX;
 - SDK returns/opens an activation URL;
 - `/activate/[requestId]` shows canonical Publisher and App identity;
@@ -84,6 +86,8 @@ Browser evidence: test purchase changes the Subscriber UI only after the webhook
 - session revocation and App suspension.
 
 Browser evidence: the real extension links and unlocks after purchase; another App cannot reuse its session; expiry and failure states are truthful.
+
+Local evidence uses the signed billing-fixture boundary only to establish paid-through authority without accessing Stripe. The independently built Publisher extension performs the request and exchange from its real `chrome-extension://` origin, the Subscriber approves through Better Auth, and D1 stores only the App-session token hash. Approve, deny, already-used, expiry, unpaid, paid-through active, cross-App rejection, scoped revocation, App suspension/reapproval, relinking, and temporary authority failure all pass in Chromium. Staging must still prove the same persistent App-session path; it cannot prove `active` until the approved Stripe test purchase exists.
 
 ## 6. Publisher Connect slice
 

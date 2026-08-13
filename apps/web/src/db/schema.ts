@@ -389,3 +389,60 @@ export const billingCheckoutAttempts = sqliteTable(
     index("billing_checkout_subscriber_idx").on(table.subscriberUserId, table.mode),
   ],
 );
+
+export const appLinkRequests = sqliteTable(
+  "app_link_request",
+  {
+    id: text("id").primaryKey(),
+    appId: text("app_id").notNull().references(() => apps.id, { onDelete: "restrict" }),
+    runtimeId: text("runtime_id").notNull(),
+    installationId: text("installation_id").notNull(),
+    proofChallenge: text("proof_challenge").notNull(),
+    status: text("status", { enum: ["requested", "approved", "denied", "exchanged"] }).notNull(),
+    subscriberUserId: text("subscriber_user_id").references(() => user.id, { onDelete: "restrict" }),
+    expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+    decidedAt: integer("decided_at", { mode: "timestamp" }),
+    exchangedAt: integer("exchanged_at", { mode: "timestamp" }),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  },
+  (table) => [
+    index("app_link_request_app_status_idx").on(table.appId, table.status),
+    index("app_link_request_subscriber_idx").on(table.subscriberUserId, table.createdAt),
+    index("app_link_request_expiry_idx").on(table.expiresAt),
+  ],
+);
+
+export const appLinks = sqliteTable(
+  "app_link",
+  {
+    id: text("id").primaryKey(),
+    appId: text("app_id").notNull().references(() => apps.id, { onDelete: "restrict" }),
+    subscriberUserId: text("subscriber_user_id").notNull().references(() => user.id, { onDelete: "restrict" }),
+    installationId: text("installation_id").notNull(),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+    lastLinkedAt: integer("last_linked_at", { mode: "timestamp" }).notNull(),
+  },
+  (table) => [
+    uniqueIndex("app_link_installation_unique").on(table.appId, table.subscriberUserId, table.installationId),
+    index("app_link_subscriber_idx").on(table.subscriberUserId, table.appId),
+  ],
+);
+
+export const appSessions = sqliteTable(
+  "app_session",
+  {
+    id: text("id").primaryKey(),
+    appLinkId: text("app_link_id").notNull().references(() => appLinks.id, { onDelete: "restrict" }),
+    linkRequestId: text("link_request_id").notNull().references(() => appLinkRequests.id, { onDelete: "restrict" }),
+    runtimeId: text("runtime_id").notNull(),
+    tokenHash: text("token_hash").notNull(),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+    revokedAt: integer("revoked_at", { mode: "timestamp" }),
+    revokeReason: text("revoke_reason"),
+  },
+  (table) => [
+    uniqueIndex("app_session_link_request_unique").on(table.linkRequestId),
+    uniqueIndex("app_session_token_hash_unique").on(table.tokenHash),
+    index("app_session_link_idx").on(table.appLinkId, table.createdAt),
+  ],
+);

@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "SERP Apps Pass Reference",
+  "version": "0.0.1",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApN19w2WLRMkNWgdCnEDiTfI/hlGScnAWbdNpvZMrCKqfBsMpvep59eQKqOp2XJUlxy7eMEiZRzU6co+cHGNuIojVxTXlLcPAhHFYkKhmRIgMNxB5YDYRBfHa0gSJeAGygIWa0fHO6fXerekuyHP4mtyDBngTLh+TxRCiDzUK2Excpvk4GAwCZc20WlLYbBLLxD3ZXPlS9qsYE2LVnmwQDBl/QnmDY36ROm0nZIRC1lTqxhyda0jakjItBBrQ4DuZR5K1jMLURoBi5ylM1xzIyFjH97VcmUw9Co5xfc9uvimnvwZZAJ5Renh7m/BgEScgXwChnnEWWEqXjR2djEYqGwIDAQAB",
+  "permissions": ["storage"],
+  "host_permissions": ["http://127.0.0.1:8787/*"],
+  "action": {
+    "default_popup": "popup.html"
+  }
+}

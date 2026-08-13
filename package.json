@@ -7,19 +7,36 @@
   "scripts": {
     "db:reset": "tsx scripts/db/reset.ts",
     "db:migrate": "wrangler d1 migrations apply apps-pass-integration-proof --local --persist-to .wrangler/state",
+    "extensions:build": "tsx scripts/extensions/build.ts",
     "operator:serve": "wrangler dev --local --port 8787 --persist-to .wrangler/state",
     "operator:import-app": "tsx scripts/operator/import-app.ts",
+    "operator:activate-local-subscription": "tsx scripts/operator/activate-local-subscription.ts",
+    "operator:approve-link": "tsx scripts/operator/approve-link.ts",
+    "operator:expire-link": "tsx scripts/operator/expire-link.ts",
+    "operator:phase2-state": "tsx scripts/operator/phase2-state.ts",
+    "operator:revoke-session": "tsx scripts/operator/revoke-session.ts",
+    "operator:set-app-status": "tsx scripts/operator/set-app-status.ts",
     "operator:state": "tsx scripts/operator/state.ts",
     "phase1:test": "tsx --test --test-concurrency=1 tests/phase1.test.ts",
-    "typecheck": "tsc --noEmit"
+    "phase2:test": "tsx --test --test-concurrency=1 tests/phase2.test.ts",
+    "phase2:browser-acceptance": "tsx scripts/phase2/browser-acceptance.ts",
+    "typecheck": "tsc --noEmit",
+    "dev:browser": "node scripts/extension-dev-browser.mjs start",
+    "dev:browser:status": "node scripts/extension-dev-browser.mjs status",
+    "dev:browser:open": "node scripts/extension-dev-browser.mjs open",
+    "dev:browser:logs": "node scripts/extension-dev-browser.mjs logs",
+    "dev:browser:stop": "node scripts/extension-dev-browser.mjs stop"
   },
   "dependencies": {
+    "@serp-apps-pass/sdk": "workspace:*",
     "ajv": "8.20.0",
     "drizzle-orm": "0.45.2"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "5.20260813.1",
     "@types/node": "26.2.0",
+    "esbuild": "0.28.2",
+    "playwright": "1.62.1",
     "tsx": "4.23.12",
     "typescript": "5.9.3",
     "wrangler": "4.122.0"

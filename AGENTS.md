@@ -28,3 +28,12 @@ Use the standard five-label workflow. See `docs/agents/triage-labels.md`.
 ### Domain docs
 
 This is a single-context repository using root `CONTEXT.md` and system-wide ADRs under `docs/adr/`. See `docs/agents/domain.md`.
+
+### Prototype browser
+
+- Run `pnpm dev:browser:status` before starting browser automation.
+- Reuse the project-owned browser and CDP endpoint recorded under `.extension-dev-browser/`; never launch a competing persistent browser for this repository.
+- Use headless mode for automated checks. Keep its profile, state, logs, and locks in the ignored project-local directory.
+- Extension outputs are discovered generically under `examples/*/dist`; do not add a fixed fixture list to the browser lifecycle.
+- Open tabs through the recorded CDP endpoint and never bring a page to the foreground automatically.
+- Stop only the recorded owner PID through `pnpm dev:browser:stop`.

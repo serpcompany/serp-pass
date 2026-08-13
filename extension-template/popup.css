@@ -1,0 +1,28 @@
+body {
+  width: 340px;
+  margin: 0;
+  font: 14px/1.4 system-ui, sans-serif;
+}
+
+main {
+  padding: 16px;
+}
+
+h1 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+
+.actions {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0;
+}
+
+button {
+  min-height: 36px;
+}
+
+pre {
+  white-space: pre-wrap;
+}

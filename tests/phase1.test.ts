@@ -124,13 +124,13 @@ test("both fixture Apps enter through operator:import-app", () => {
         appId: "app_invited_phase1",
         browserFamily: "chromium",
         channel: "unpacked",
-        runtimeId: "ponmlkjihgfedcbaponmlkjihgfedcba",
+        runtimeId: "deigfiokgenocbkifhkognjkhfljcfgi",
       },
       {
         appId: "app_serp_phase1",
         browserFamily: "chromium",
         channel: "unpacked",
-        runtimeId: "abcdefghijklmnopabcdefghijklmnop",
+        runtimeId: "gnofcoijgmmjbpbkflpnlflkgpmhppkh",
       },
     ],
   });
@@ -195,7 +195,7 @@ test("runtime identities owned by another App are rejected atomically", () => {
 test("fixture identities are absent from migrations and authority source", () => {
   const result = spawnSync("rg", [
     "-n",
-    "pub_(serp|invited)_phase1|app_(serp|invited)_phase1|abcdefghijklmnopabcdefghijklmnop|ponmlkjihgfedcbaponmlkjihgfedcba",
+    "pub_(serp|invited)_phase1|app_(serp|invited)_phase1|gnofcoijgmmjbpbkflpnlflkgpmhppkh|deigfiokgenocbkifhkognjkhfljcfgi",
     "migrations",
     "src",
     "scripts",

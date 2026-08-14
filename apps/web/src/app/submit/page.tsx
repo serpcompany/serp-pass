@@ -10,7 +10,7 @@ const steps = [
     number: "01",
     title: "Receive an invitation",
     description:
-      "A SERP Operator invites your Publisher account and assigns the public Publisher and App IDs for your extension.",
+      "A SERP Operator invites your Publisher account; Apps Pass generates immutable Publisher and App IDs.",
   },
   {
     number: "02",
@@ -45,7 +45,7 @@ export default function SubmitPage() {
         <span className="eyebrow">For invited Chromium extension Publishers</span>
         <h1>Bring your extension into one subscription.</h1>
         <p>
-          Apps Pass gives Subscribers access to approved, independently published extensions through one Pass. The private pilot is invitation-only, so SERP assigns your public IDs before you integrate or submit.
+          Apps Pass gives Subscribers access to approved, independently published extensions through one Pass. The private pilot is invitation-only. Apps Pass generates your public identities, while you submit the extension facts and ownership evidence SERP reviews.
         </p>
         <div className="actions">
           <Link className="primary-button" href="/docs">
@@ -95,7 +95,7 @@ export default function SubmitPage() {
             <ul className="clean-list">
               <li>Add the SDK to your extension source</li>
               <li>Declare the Apps Pass host permission</li>
-              <li>Use the assigned public IDs in apppass.json</li>
+              <li>Use the generated App ID in the SDK; submit the real runtime identity in apppass.json</li>
               <li>Rebuild and test the real extension</li>
               <li>Submit the manifest and ownership evidence for review</li>
             </ul>

@@ -50,7 +50,7 @@ Evidence: [STATUS.md](./STATUS.md). The initial Operator is explicitly bootstrap
 
 Status: **completed on Cloudflare staging 2026-08-13**
 
-- Operator invitation and assigned public IDs.
+- Operator invitation with Apps Pass-generated immutable Publisher and App IDs.
 - authenticated Publisher manifest submission.
 - versioned validation and pending Submission record.
 - ownership-evidence field and Operator approval/rejection CLI.

@@ -103,9 +103,9 @@ sequenceDiagram
     participant D as Staging D1
     participant E as Publisher extension
 
-    O->>W: Create email-bound invitation and assign public IDs
-    W->>D: Publisher, App Assignment, hashed invitation
-    P->>W: Accept invitation and submit apppass.json plus evidence
+    O->>W: Create email-bound invitation from supplied Publisher facts
+    W->>D: Generate Publisher/App IDs; store Assignment and hashed invitation
+    P->>W: Accept invitation; submit product/Distribution facts plus evidence
     W->>D: Validate canonical contract and store pending Submission
     O->>W: Approve or reject with review reason
     W->>D: Create approved App and Distribution only on approval
@@ -114,7 +114,7 @@ sequenceDiagram
     W-->>E: Approved identity or not found
 ```
 
-The Submission contract lives in `packages/app-pass-contracts`. It contains the JSON Schema, generated Worker-safe validator, canonicalization, and public manifest types. The extension client lives in `packages/app-pass-sdk`; its packed `0.1.0` pilot artifact has no runtime or workspace dependency. The real pilot integration lives in `apps/invited-publisher-extension`; its public Chrome manifest key stabilizes `chrome.runtime.id`, while its `apppass.json` binds that runtime identity to the Operator-issued App and Publisher IDs. None of these public artifacts contains a secret.
+The Submission contract lives in `packages/app-pass-contracts`. It contains the JSON Schema, generated Worker-safe validator, canonicalization, and public manifest types. Apps Pass generates Publisher and App IDs when it creates the invitation/Assignment; neither human chooses storage identities. The generated App ID configures the extension client. The browser supplies `chrome.runtime.id` at runtime, while `apppass.json` declares the Distribution identity and facts the Operator reviews. One App may later have several Distributions, so an App ID is never derived from a browser runtime ID. None of these public artifacts contains a secret.
 
 The monorepo reference extension uses a workspace link for live development. That is not the distribution proof. A separate clean-project check packs the SDK, installs the tarball with npm, imports its compiled module, exercises the public client, and bundles an extension entry without monorepo resolution. The SDK remains non-publishable until the Operator chooses and approves a registry; a pilot Publisher receives the exact tarball and checksum privately.
 

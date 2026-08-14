@@ -79,7 +79,7 @@ export default async function PublisherPage() {
       <section className="account-card">
         <span className="status active">Publisher role active</span>
         <h1>Publisher pilot area</h1>
-        <p className="muted">Your public identifiers were assigned by a SERP Operator. Your manifest may reference them but cannot create or replace them.</p>
+        <p className="muted">Apps Pass generated your immutable public identifiers. Configure the SDK with the App ID, and submit your extension&apos;s real runtime identity and ownership evidence for Operator review.</p>
         <h2>Pilot payments</h2>
         <p className="muted">Stripe bills Subscribers only. During the private pilot, SERP pays Publishers outside Apps Pass and records the completed payment here. Apps Pass never asks for or stores your bank or payment-account credentials.</p>
         <h2>Publisher Earnings</h2>

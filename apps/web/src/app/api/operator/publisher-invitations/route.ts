@@ -2,6 +2,7 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 import { getHumanIdentityFromHeaders } from "@/auth/identity";
 import { hasSameOrigin } from "@/auth/request";
+import { generateAppId, generatePublisherId } from "@/apps/public-id";
 import { generateInvitationToken, hashInvitationToken } from "@/invitations/token";
 import { logEvent } from "@/observability/log";
 
@@ -18,20 +19,28 @@ export async function POST(request: Request) {
 
   const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
   const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
-  const publisherId = typeof body?.publisherId === "string" ? body.publisherId.trim() : "";
   const publisherName = typeof body?.publisherName === "string" ? body.publisherName.trim() : "";
-  const appId = typeof body?.appId === "string" ? body.appId.trim() : "";
+  const appName = typeof body?.appName === "string" ? body.appName.trim() : "";
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return Response.json({ message: "A valid Publisher email is required." }, { status: 400 });
-  }
-  if (!/^pub_[a-z0-9][a-z0-9_]{2,59}$/.test(publisherId) || !/^app_[a-z0-9][a-z0-9_]{2,59}$/.test(appId)) {
-    return Response.json({ message: "Operator-issued Publisher and App IDs are invalid." }, { status: 400 });
   }
   if (publisherName.length < 1 || publisherName.length > 100) {
     return Response.json({ message: "Publisher name must be between 1 and 100 characters." }, { status: 400 });
   }
+  if (appName.length < 1 || appName.length > 100) {
+    return Response.json({ message: "First App name must be between 1 and 100 characters." }, { status: 400 });
+  }
 
   const invitationId = crypto.randomUUID();
+  const suffix = crypto.randomUUID().slice(0, 8);
+  const publisherBaseId = generatePublisherId(publisherName);
+  const appBaseId = generateAppId(appName);
+  const [publisherCollision, appCollision] = await Promise.all([
+    env.DB.prepare("SELECT id FROM publisher WHERE id = ?").bind(publisherBaseId).first(),
+    env.DB.prepare("SELECT app_id FROM app_assignment WHERE app_id = ?").bind(appBaseId).first(),
+  ]);
+  const publisherId = publisherCollision ? generatePublisherId(publisherName, suffix) : publisherBaseId;
+  const appId = appCollision ? generateAppId(appName, suffix) : appBaseId;
   const auditId = crypto.randomUUID();
   const invitationCode = generateInvitationToken();
   const tokenHash = await hashInvitationToken(invitationCode);
@@ -52,7 +61,7 @@ export async function POST(request: Request) {
         .bind(auditId, identity.session.user.id, invitationId, now),
     ]);
   } catch {
-    return Response.json({ message: "Publisher ID, App ID, or invitation conflicts with an existing assignment." }, { status: 409 });
+    return Response.json({ message: "The invitation conflicts with an existing Publisher assignment." }, { status: 409 });
   }
 
   logEvent("info", {
@@ -63,5 +72,5 @@ export async function POST(request: Request) {
     invitationId,
   });
 
-  return Response.json({ invitationCode, expiresAt: new Date(expiresAt * 1000).toISOString() }, { headers: { "cache-control": "no-store" } });
+  return Response.json({ publisherId, appId, invitationCode, expiresAt: new Date(expiresAt * 1000).toISOString() }, { headers: { "cache-control": "no-store" } });
 }

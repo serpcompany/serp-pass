@@ -1,9 +1,9 @@
 {
   "$schema": "https://pass.serp.co/schema/app-manifest-v1.json",
   "schema_version": 1,
-  "publisher_id": "pub_invited_pilot_real",
+  "publisher_id": "pub_invited_publisher_pilot",
   "publisher_name": "Invited Publisher Pilot",
-  "app_id": "app_invited_pilot_real",
+  "app_id": "app_invited_publisher_video_notes",
   "name": "Invited Publisher Video Notes",
   "features": ["premium"],
   "distributions": [

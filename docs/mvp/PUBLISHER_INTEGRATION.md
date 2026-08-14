@@ -16,7 +16,7 @@ These IDs are names assigned by SERP, not passwords. The Publisher may put them 
 ## What the Publisher changes
 
 1. Install the exact SDK pilot tarball supplied by SERP. For example, `npm install ./serp-apps-pass-sdk-0.1.0.tgz`. The package contains compiled JavaScript and TypeScript declarations and has no workspace or runtime package dependency.
-2. Create the SDK client with the assigned App ID, `chrome.runtime.id`, and the Apps Pass authority URL.
+2. Create the SDK client with the Apps Pass-generated App ID and authority URL. Read the Distribution identity from `chrome.runtime.id`; do not ask a human to type it into SDK calls.
 3. Add the authority hostname to the extension's Manifest V3 `host_permissions`.
 4. Call the SDK from the extension's existing premium-access boundary. Slice 3 can check approved identity; Subscriber activation and real entitlement unlock arrive in Slice 5.
 5. Rebuild the extension normally. The SDK becomes part of its JavaScript bundle; no Stripe, SERP, or Publisher secret is bundled.
@@ -58,13 +58,13 @@ SERP sends the Publisher the tarball and checksum through the agreed private cha
 
 It says:
 
-- which Operator-issued Publisher and App IDs this Submission uses;
+- which Apps Pass-generated Publisher and App IDs bind this Submission;
 - the human-readable names shown during review and activation;
 - which premium feature names the App requests;
 - which Chromium runtime ID belongs to the built extension;
 - whether that identity is being reviewed as an unpacked pilot or Chrome Web Store Distribution.
 
-The Publisher copies the JSON into the authenticated `/publisher` Submission form and adds ownership evidence. Apps Pass validates the whole document. Unknown fields, malformed IDs, an unassigned App ID, or an already claimed runtime identity are rejected.
+The Publisher copies the JSON into the authenticated `/publisher` Submission form and adds ownership evidence. Apps Pass validates the whole document and binds it to the Publisher's generated App Assignment. Unknown fields, substituted Publisher/App IDs, or an already claimed runtime identity are rejected.
 
 ## What SERP does after submission
 

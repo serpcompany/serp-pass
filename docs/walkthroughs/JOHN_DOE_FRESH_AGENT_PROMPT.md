@@ -7,7 +7,7 @@ Use $apps-pass-publisher-walkthrough to run the complete John Doe Publisher E2E 
 
 You are the invited developer, John Doe. I am the SERP Operator and optionally the Subscriber. Automate John’s preparation, account, invitation acceptance, website Submission, and objective verification. Walk me through my real decisions one at a time in chat. After each human step, stop and wait for me to say `done`; do not race ahead or silently perform my approval.
 
-Start by reading the repo instructions and running the skill’s non-mutating package/browser/staging preflight. Your first response must give me the verified repo, branch, HEAD, browser-extension result, staging health, whether the fixed example identity is unused, and exactly one next action. Use staging and Stripe test mode only. Never touch production, live money, or another Stripe account.
+Start by reading the repo instructions and running the skill’s non-mutating package/browser/staging preflight. Your first response must give me the verified repo, branch, HEAD, browser-extension result, staging health, and exactly one next action. Apps Pass must generate the Publisher and App IDs during the invitation; neither of us should invent them. Use staging and Stripe test mode only. Never touch production, live money, or another Stripe account.
 ```
 
 Expected first response shape:
@@ -17,7 +17,7 @@ John Doe package: PASS|FAIL
 Repository: ...
 Branch / HEAD: ...
 Staging: healthy|unhealthy
-Example identity: unused|already registered
+Example runtime: ready|already registered
 
 Your next step as SERP Operator:
 <one concrete instruction>

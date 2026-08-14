@@ -18,10 +18,7 @@ Run a human-in-the-loop E2E QA session. You play **John Doe**, the invited third
 - Never claim a human step happened until the user confirms it or direct UI/state evidence proves it.
 - Keep the Publisher human session, Operator human session, Subscriber human session, and extension App session distinct in every explanation.
 - Treat the one-time invitation code and generated test password as transient. Do not commit them or print the password.
-- Use `apps/john-doe-focus-timer-extension/apppass.json` exactly. The fixed public identities are:
-  - Publisher: `pub_john_doe_studio`
-  - App: `app_john_doe_focus_timer`
-  - Chromium runtime: `bpjnchabpcjomgncmbgphbdggkgkobdb`
+- Use `apps/john-doe-focus-timer-extension/apppass.json` as the Submission template. Apps Pass generates the Publisher and App IDs from the supplied names; read the returned values and use those exact values in the submitted manifest and SDK build. The fixed extension Distribution identity is Chromium runtime `bpjnchabpcjomgncmbgphbdggkgkobdb`.
 
 ## 1. Prove the package before roleplay
 
@@ -65,13 +62,12 @@ Generate a unique Publisher login email such as `john.doe.walkthrough.<UTC times
 Give the user these exact form values:
 
 - Publisher email: the generated email
-- Publisher public ID: `pub_john_doe_studio`
 - Publisher name: `John Doe Studio`
-- First App public ID: `app_john_doe_focus_timer`
+- First App name: `John Doe Focus Timer`
 
-Ask them to click **Create Publisher invitation**, paste the one-time invitation code into chat, and say `done`. Wait.
+Ask them to click **Create Publisher invitation**. Apps Pass displays the generated Publisher ID, generated App ID, and one-time invitation code. Ask them to paste all three values into chat and say `done`. Wait.
 
-Completion criterion: the user supplies a newly issued code bound to John’s exact email.
+Completion criterion: the user supplies the generated identities and newly issued code bound to John’s exact email. Validate the public-ID shapes; John may use the generated values but may not substitute different identities.
 
 ## 4. Act as John: accept and submit
 
@@ -79,8 +75,8 @@ Use an isolated browser session, separate from the user's Operator session. Thro
 
 1. Create John’s account at `/account` with the invited email.
 2. Enter the code at `/publisher/invitation`.
-3. Confirm `/publisher` shows **Publisher role active** and the assigned App ID.
-4. Paste the exact contents of `apps/john-doe-focus-timer-extension/apppass.json` into **App manifest JSON**.
+3. Confirm `/publisher` shows **Publisher role active** and the same generated Publisher and App IDs.
+4. In transient memory, replace the template's `publisher_id` and `app_id` with the generated values. Do not change the names, features, or Distribution. Paste that resulting manifest into **App manifest JSON**.
 5. Submit this truthful evidence, substituting the verified HEAD:
 
    `Walkthrough example source: apps/john-doe-focus-timer-extension at repository HEAD <HEAD>. The package browser check loaded runtime bpjnchabpcjomgncmbgphbdggkgkobdb and confirmed the premium feature is gated before entitlement. This is a SERP-owned staged example of an external Publisher handoff, not independent third-party ownership verification.`
@@ -97,7 +93,7 @@ Completion criterion: John has submitted through the site, and the user has made
 
 ## 5. Verify approval without mutating authority
 
-After an approval, verify:
+After an approval, rebuild John’s extension with `APP_PASS_APP_ID=<generated-app-id>` and verify:
 
 - the exact identity endpoint returns 200;
 - `/apps` visibly lists **John Doe Focus Timer**;

@@ -10,6 +10,7 @@ const outputRoot = process.env.EXTENSION_OUTPUT_DIR
   ? path.resolve(process.env.EXTENSION_OUTPUT_DIR)
   : fileURLToPath(new URL("../dist/", import.meta.url));
 const authorityBaseUrl = process.env.APP_PASS_AUTHORITY_URL ?? "https://serp-apps-pass-staging.serpcompany.workers.dev";
+const appId = process.env.APP_PASS_APP_ID ?? "app_john_doe_focus_timer";
 
 await mkdir(outputRoot, { recursive: true });
 await Promise.all([
@@ -23,7 +24,10 @@ await Promise.all([
     format: "esm",
     platform: "browser",
     target: "chrome120",
-    define: { APP_PASS_AUTHORITY_URL: JSON.stringify(authorityBaseUrl) },
+    define: {
+      APP_PASS_APP_ID: JSON.stringify(appId),
+      APP_PASS_AUTHORITY_URL: JSON.stringify(authorityBaseUrl),
+    },
   }),
 ]);
 

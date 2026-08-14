@@ -70,7 +70,7 @@ export default async function OperatorPage() {
       <section className="account-card">
         <span className="status active">Operator role active</span>
         <h1>Operator controls</h1>
-        <p className="muted">Create a one-time, email-bound invitation. The raw code is shown once and must be shared with the intended Publisher through a private channel.</p>
+        <p className="muted">Create a one-time, email-bound invitation. Apps Pass generates the internal Publisher and App identities; the Publisher later supplies extension facts and ownership evidence for your approval or rejection.</p>
         <PublisherInvitationForm />
         <div className="review-list">
           <h2>Post Publisher Allocation</h2>

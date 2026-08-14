@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     .get();
 
   if (!assignment || assignment.status !== "assigned" || assignment.publisherId !== manifest.publisher_id || assignment.publisherName !== manifest.publisher_name) {
-    return Response.json({ message: "Manifest identities do not match an active Operator-issued App Assignment." }, { status: 409 });
+    return Response.json({ message: "Manifest identities do not match an active Apps Pass-generated App Assignment." }, { status: 409 });
   }
 
   const submissionId = crypto.randomUUID();

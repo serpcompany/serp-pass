@@ -50,7 +50,7 @@ pnpm mvp:operator:bootstrap -- --local operator@example.com
 pnpm mvp:operator:bootstrap -- --staging operator@example.com
 ```
 
-The command requires the trusted local shell or authenticated SERP Cloudflare CLI; there is no public bootstrap endpoint. Visit `/operator`, enter the intended Publisher email, Operator-issued Publisher ID and first App ID, and copy the returned invitation code once. The signed-in Publisher enters it at `/publisher/invitation`. Codes expire after seven days, are bound to that email, are consumed once, and are stored only as hashes.
+The command requires the trusted local shell or authenticated SERP Cloudflare CLI; there is no public bootstrap endpoint. Visit `/operator`, enter the intended Publisher email, Publisher name, and first App name. Apps Pass generates immutable Publisher and App IDs and returns them with the one-time invitation code. The signed-in Publisher enters that code at `/publisher/invitation`. Codes expire after seven days, are bound to that email, are consumed once, and are stored only as hashes.
 
 The Publisher then submits the complete `apppass.json` plus ownership evidence from `/publisher`. The Operator records a review reason and approves or rejects it from `/operator`. Approval—not submission—creates the canonical App and Distribution used by the authority.
 

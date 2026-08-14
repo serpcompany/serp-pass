@@ -1,6 +1,6 @@
 import { createAppPass } from "@serp-apps-pass/sdk";
 
-const APP_ID = "app_invited_pilot_real";
+const APP_ID = "app_invited_publisher_video_notes";
 declare const APP_PASS_AUTHORITY_URL: string;
 declare const APP_PASS_ALLOW_AUTHORITY_OVERRIDE: boolean;
 const requestedAuthority = APP_PASS_ALLOW_AUTHORITY_OVERRIDE ? new URLSearchParams(location.search).get("authority") : null;

@@ -40,9 +40,8 @@ if (response.status === 404) {
 
     await operatorPage.goto(`${authority}/operator`);
     await operatorPage.getByLabel("Publisher email").fill(publisherEmail);
-    await operatorPage.getByLabel("Publisher public ID").fill(manifest.publisher_id);
     await operatorPage.getByLabel("Publisher name").fill(manifest.publisher_name);
-    await operatorPage.getByLabel("First App public ID").fill(manifest.app_id);
+    await operatorPage.getByLabel("First App name").fill(manifest.name);
     await operatorPage.getByRole("button", { name: "Create Publisher invitation" }).click();
     const invitationCode = await operatorPage.getByTestId("invitation-code").innerText();
 

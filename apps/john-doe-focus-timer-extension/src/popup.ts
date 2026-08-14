@@ -1,6 +1,7 @@
 import { createAppPass, type Entitlement } from "@serp-apps-pass/sdk";
 
-const APP_ID = "app_john_doe_focus_timer";
+declare const APP_PASS_APP_ID: string;
+const APP_ID = APP_PASS_APP_ID;
 declare const APP_PASS_AUTHORITY_URL: string;
 const AUTHORITY = APP_PASS_AUTHORITY_URL;
 const runtimeId = chrome.runtime.id;

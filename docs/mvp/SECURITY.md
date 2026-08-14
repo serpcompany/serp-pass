@@ -21,7 +21,7 @@ An extension is not a trusted server, even when its runtime ID is approved. A ru
 | Forged Stripe webhook | Raw-body signature verification with pinned endpoint secret | Invalid signature rejected; valid fixture accepted |
 | Duplicate/out-of-order Stripe delivery | Unique Event IDs plus state reconciliation against event/object chronology | Replay and reorder tests |
 | Checkout redirect granting access | Entitlement trusts normalized webhook projection only | Redirect-before-webhook remains inactive |
-| Publisher claiming another extension | Operator-issued IDs, recorded ownership evidence, globally unique browser-family/runtime identity regardless of distribution channel, manual approval | Rejected conflicting Submission and audit event |
+| Publisher claiming another extension | Apps Pass-generated IDs, recorded ownership evidence, globally unique browser-family/runtime identity regardless of distribution channel, manual approval | Rejected conflicting Submission and audit event |
 | Extension impersonating another App | Approved Distribution check plus App-scoped session token | Cross-App token/runtime tests |
 | Untrusted client fabricating an extension request | Treat runtime ID and Origin as public browser/CORS metadata, not authentication; show canonical identity, require human approval, require proof possession, and rate-limit public link/exchange calls | Wrong browser origins reject, abuse is bounded, and only the proof holder can exchange an approved request |
 | Stolen/replayed link proof | High entropy, short expiry, proof challenge, single exchange | Wrong, expired, and replayed proof tests |

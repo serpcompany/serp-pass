@@ -80,10 +80,11 @@ async function ensureRealApp(browserContext: BrowserContext) {
     runPnpm(["mvp:operator:bootstrap", "--", "--local", operatorEmail]);
     await operatorPage.goto(`${appOrigin}/operator`);
     await operatorPage.getByLabel("Publisher email").fill(publisherEmail);
-    await operatorPage.getByLabel("Publisher public ID").fill(appManifest.publisher_id);
     await operatorPage.getByLabel("Publisher name").fill(appManifest.publisher_name);
-    await operatorPage.getByLabel("First App public ID").fill(appManifest.app_id);
+    await operatorPage.getByLabel("First App name").fill(appManifest.name);
     await operatorPage.getByRole("button", { name: "Create Publisher invitation" }).click();
+    const generatedPublisherId = await operatorPage.getByTestId("generated-publisher-id").innerText();
+    const generatedAppId = await operatorPage.getByTestId("generated-app-id").innerText();
     const invitationCode = await operatorPage.getByTestId("invitation-code").innerText();
 
     const publisherPage = await publisherContext.newPage();
@@ -92,16 +93,17 @@ async function ensureRealApp(browserContext: BrowserContext) {
     await publisherPage.getByLabel("Invitation code").fill(invitationCode);
     await publisherPage.getByRole("button", { name: "Accept Publisher invitation" }).click();
     await publisherPage.getByRole("heading", { name: "Publisher pilot area" }).waitFor();
-    await publisherPage.getByLabel("App manifest JSON").fill(JSON.stringify(appManifest, null, 2));
+    const generatedManifest = { ...appManifest, publisher_id: generatedPublisherId, app_id: generatedAppId };
+    await publisherPage.getByLabel("App manifest JSON").fill(JSON.stringify(generatedManifest, null, 2));
     await publisherPage.getByLabel("Ownership evidence").fill("Independently built Publisher extension source and stable Chromium runtime reviewed for the activation slice.");
     await publisherPage.getByRole("button", { name: "Submit App for review" }).click();
-    await publisherPage.getByText(`${appManifest.app_id} · pending`).waitFor();
+    await publisherPage.getByText(`${generatedAppId} · pending`).waitFor();
 
     await operatorPage.reload();
-    const review = operatorPage.locator("form").filter({ hasText: `${appManifest.app_id} · pending` });
+    const review = operatorPage.locator("form").filter({ hasText: `${generatedAppId} · pending` });
     await review.getByLabel("Review reason").fill("Independent extension source, manifest, ownership evidence, and runtime identity reviewed.");
     await review.getByRole("button", { name: "Approve Submission" }).click();
-    await operatorPage.getByText(`${appManifest.app_id} · pending`).waitFor({ state: "detached" });
+    await operatorPage.getByText(`${generatedAppId} · pending`).waitFor({ state: "detached" });
   } finally {
     await operatorContext.close();
     await publisherContext.close();

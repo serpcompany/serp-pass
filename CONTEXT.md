@@ -29,8 +29,16 @@ One approved product participating in the Pass; initially a Chromium extension.
 _Avoid_: Plugin, integration
 
 **App Assignment**:
-An Operator-issued reservation authorizing one Publisher to submit a specific public App identifier.
+A system-generated reservation authorizing one Publisher to submit facts for one immutable public App identifier.
 _Avoid_: Slot, claimed App ID
+
+**Public Publisher ID**:
+An immutable Apps Pass-generated identity for one Publisher. It is not chosen by a Publisher or Operator and is separate from the Publisher's display name.
+_Avoid_: Publisher name, developer ID
+
+**Public App ID**:
+An immutable Apps Pass-generated identity for one App, used by the SDK and authority. It is separate from every browser runtime or store identity.
+_Avoid_: Extension ID, runtime ID, App name
 
 **Distribution**:
 An approved public browser/channel/runtime identity through which an App is installed.

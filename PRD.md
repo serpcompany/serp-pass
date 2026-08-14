@@ -24,22 +24,22 @@ Creates an account, purchases the Pass, approves App links, sees Subscription st
 
 ### Publisher
 
-Is invited by SERP, integrates the SDK into an extension, submits the assigned manifest, and sees App, Earning, and Publisher Payment status relevant to that Publisher. Payment-account credentials are exchanged with SERP outside Apps Pass.
+Is invited by SERP, supplies product and Distribution facts, integrates the SDK into an extension using the generated App ID, submits the manifest, and sees App, Earning, and Publisher Payment status relevant to that Publisher. Payment-account credentials are exchanged with SERP outside Apps Pass.
 
 ### Operator
 
-Invites Publishers, assigns public IDs, reviews and approves App submissions, suspends Apps, revokes App sessions, posts Publisher allocations, records completed Publisher Payments, reconciles Stripe billing events, and controls production rollout.
+Invites Publishers, reviews and approves or declines App submissions, suspends Apps, revokes App sessions, posts Publisher allocations, records completed Publisher Payments, reconciles Stripe billing events, and controls production rollout. Apps Pass generates immutable Publisher and App IDs; the Operator does not invent them.
 
 ## 3. Required end-to-end journeys
 
 ### Publisher inclusion
 
-1. The Operator creates an invitation and assigns `publisher_id` and `app_id` values.
+1. The Operator creates an email-bound invitation from the prospective Publisher's supplied contact and company information; Apps Pass generates immutable `publisher_id` and `app_id` values.
 2. The Publisher signs in through the invitation.
-3. The Publisher integrates the public SDK into a real Chromium extension and rebuilds it.
-4. The Publisher submits the versioned `apppass.json` manifest through the authenticated pilot area.
+3. The Publisher configures the public SDK with the generated App ID; the SDK reads the installed extension's actual identity from `chrome.runtime.id`; the Publisher rebuilds the extension.
+4. The Publisher submits the versioned `apppass.json` product and Distribution facts plus ownership evidence through the authenticated pilot area.
 5. The system validates the complete manifest and records a pending Submission without approving the App.
-6. The Operator reviews ownership evidence and approves the Submission.
+6. The Operator inspects the submitted product facts, runtime identity, and ownership evidence and explicitly approves or declines the Submission.
 7. The approved Publisher, App, and Distribution become eligible for linking.
 
 ### Purchase

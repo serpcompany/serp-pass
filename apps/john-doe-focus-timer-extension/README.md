@@ -2,13 +2,19 @@
 
 This is a standalone example of an invited third-party Publisher App. The free five-minute timer is John Doe Studio's feature. The premium 25-minute timer is unlocked only when the shared Apps Pass SDK returns `active`.
 
-The extension contains only public identifiers:
+The extension contains only public identifiers. Apps Pass generates the Publisher and App IDs when the Operator creates the invitation; the runtime identity comes from the actual extension:
 
 - Publisher ID: `pub_john_doe_studio`
 - App ID: `app_john_doe_focus_timer`
 - Chromium runtime ID: `bpjnchabpcjomgncmbgphbdggkgkobdb`
 
-`apppass.json` is the file John submits for review. It does not create those identities and contains no password, Stripe key, proof key, or App-session token.
+`apppass.json` is the Submission template John completes with those generated IDs. It does not create identities and contains no password, Stripe key, proof key, or App-session token.
+
+Build the SDK configuration with the generated App ID returned by the invitation flow:
+
+```sh
+APP_PASS_APP_ID=<generated-app-id> pnpm walkthrough:john-doe:build
+```
 
 Run the non-mutating checks from the repository root:
 

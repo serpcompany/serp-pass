@@ -8,8 +8,8 @@ import { chromium } from "playwright";
 const appOrigin = process.env.APP_ORIGIN ?? "http://localhost:8788";
 const email = `operator-bootstrap-${Date.now()}@example.test`;
 const publisherEmail = `invited-publisher-${Date.now()}@example.test`;
-const publisherId = `pub_pilot_${Date.now()}`;
-const appId = `app_pilot_${Date.now()}`;
+let publisherId = "";
+let appId = "";
 const runtimeId = Array.from(randomBytes(16), (byte) => `${String.fromCharCode(97 + (byte >> 4))}${String.fromCharCode(97 + (byte & 15))}`).join("");
 const repositoryRoot = path.resolve(import.meta.dirname, "../../..");
 
@@ -39,12 +39,24 @@ try {
   assert.equal(await page.getByRole("heading", { name: "Operator controls" }).isVisible(), true);
 
   await page.getByLabel("Publisher email").fill(publisherEmail);
-  await page.getByLabel("Publisher public ID").fill(publisherId);
   await page.getByLabel("Publisher name").fill("Invited Publisher Pilot");
-  await page.getByLabel("First App public ID").fill(appId);
+  await page.getByLabel("First App name").fill("Invited Video Downloader");
   await page.getByRole("button", { name: "Create Publisher invitation" }).click();
+  publisherId = await page.getByTestId("generated-publisher-id").innerText();
+  appId = await page.getByTestId("generated-app-id").innerText();
+  assert.match(publisherId, /^pub_[a-z0-9_]+$/);
+  assert.match(appId, /^app_[a-z0-9_]+$/);
   const invitationCode = await page.getByTestId("invitation-code").innerText();
   assert.match(invitationCode, /^[A-Za-z0-9_-]{32,}$/);
+
+  await page.getByLabel("Publisher email").fill(`duplicate-name-${Date.now()}@example.test`);
+  await page.getByLabel("Publisher name").fill("Invited Publisher Pilot");
+  await page.getByLabel("First App name").fill("Invited Video Downloader");
+  await page.getByRole("button", { name: "Create Publisher invitation" }).click();
+  const duplicatePublisherId = await page.getByTestId("generated-publisher-id").innerText();
+  const duplicateAppId = await page.getByTestId("generated-app-id").innerText();
+  assert.notEqual(duplicatePublisherId, publisherId);
+  assert.notEqual(duplicateAppId, appId);
 
   const publisherContext = await browser.newContext(appOrigin.includes("localhost") ? { extraHTTPHeaders: { "cf-connecting-ip": "192.0.2.31" } } : {});
   const publisherPage = await publisherContext.newPage();
@@ -140,14 +152,13 @@ try {
   });
 
   const conflictingPublisherEmail = `runtime-conflict-publisher-${Date.now()}@example.test`;
-  const conflictingPublisherId = `pub_conflict_${Date.now()}`;
-  const conflictingAppId = `app_conflict_${Date.now()}`;
   await page.goto(`${appOrigin}/operator`);
   await page.getByLabel("Publisher email").fill(conflictingPublisherEmail);
-  await page.getByLabel("Publisher public ID").fill(conflictingPublisherId);
   await page.getByLabel("Publisher name").fill("Runtime Conflict Publisher");
-  await page.getByLabel("First App public ID").fill(conflictingAppId);
+  await page.getByLabel("First App name").fill("Runtime Conflict App");
   await page.getByRole("button", { name: "Create Publisher invitation" }).click();
+  const conflictingPublisherId = await page.getByTestId("generated-publisher-id").innerText();
+  const conflictingAppId = await page.getByTestId("generated-app-id").innerText();
   const conflictingInvitationCode = await page.getByTestId("invitation-code").innerText();
 
   const conflictingPublisherContext = await browser.newContext(appOrigin.includes("localhost") ? { extraHTTPHeaders: { "cf-connecting-ip": "192.0.2.33" } } : {});

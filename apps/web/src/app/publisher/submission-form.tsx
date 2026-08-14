@@ -11,17 +11,15 @@ export function SubmissionForm() {
     event.preventDefault();
     setMessage("");
     const fields = new FormData(event.currentTarget);
-    let manifest: unknown;
     try {
-      manifest = JSON.parse(String(fields.get("manifest") ?? ""));
+      JSON.parse(String(fields.get("manifest") ?? ""));
     } catch {
       setMessage("App manifest must be valid JSON.");
       return;
     }
     const response = await fetch("/api/publisher/submissions", {
       method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ manifest, ownershipEvidence: String(fields.get("ownershipEvidence") ?? "") }),
+      body: fields,
     });
     const result = await response.json() as { message?: string };
     if (!response.ok) setMessage(result.message ?? "Submission could not be recorded.");
@@ -35,6 +33,8 @@ export function SubmissionForm() {
     <form onSubmit={submit}>
       <label>App manifest JSON<textarea name="manifest" rows={16} required /></label>
       <label>Ownership evidence<textarea name="ownershipEvidence" rows={4} minLength={20} maxLength={2000} required /></label>
+      <label>Exact installable extension ZIP<input name="reviewPackage" type="file" accept=".zip,application/zip" required /></label>
+      <p className="muted">SERP stores this package privately and records its SHA-256 digest, extension manifest, permissions, and intake checks. The package is reviewed; uploading it does not approve the App.</p>
       <button type="submit">Submit App for review</button>
       {message && <p role="status" className={message.startsWith("Submission recorded") ? "" : "form-message"}>{message}</p>}
     </form>

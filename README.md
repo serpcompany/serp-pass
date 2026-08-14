@@ -1,6 +1,6 @@
 # SERP Apps Pass private-pilot MVP
 
-This branch converts the completed extension-inclusion proof into a minimal, trustworthy private-pilot product: invited Publisher submission, real Subscriber purchase, authenticated App activation, entitlement, auditable Publisher Earning, and Operator-recorded evidence of Publisher payments completed outside Apps Pass.
+This branch converts the completed extension-inclusion proof into a minimal, trustworthy private-pilot product: curated Publisher application and review, real Subscriber purchase, authenticated App activation, entitlement, auditable Publisher Earning, and Operator-recorded evidence of Publisher payments completed outside Apps Pass.
 
 The target and acceptance boundary are in [PRD.md](./PRD.md). The architecture is in [ARCHITECTURE.md](./ARCHITECTURE.md), delivery order in [docs/mvp/DELIVERY_PLAN.md](./docs/mvp/DELIVERY_PLAN.md), current criterion-by-criterion evidence in [docs/mvp/ACCEPTANCE_MATRIX.md](./docs/mvp/ACCEPTANCE_MATRIX.md), money invariants in [docs/mvp/MONEY_MODEL.md](./docs/mvp/MONEY_MODEL.md), and threats in [docs/mvp/SECURITY.md](./docs/mvp/SECURITY.md).
 
@@ -12,11 +12,11 @@ Implementation is integrated on `main`. Invited Publisher submission, approved A
 
 - `/` — public Pass overview and starting point
 - `/apps` — real approved-App catalog
-- `/submit` — invited-Publisher process
+- `/submit` — public Publisher Application and curated admission process
 - `/docs` — beginner-oriented extension integration guide
 - `/account` — Subscriber sign-in, Subscription, and billing
 - `/publisher` — authenticated Submission, Earning, and Payment workspace
-- `/operator` — protected invitation, review, allocation, and payment controls
+- `/operator` — protected preliminary Application review, technical review, allocation, and payment controls
 
 ## MVP stack walkthrough
 
@@ -50,9 +50,9 @@ pnpm mvp:operator:bootstrap -- --local operator@example.com
 pnpm mvp:operator:bootstrap -- --staging operator@example.com
 ```
 
-The command requires the trusted local shell or authenticated SERP Cloudflare CLI; there is no public bootstrap endpoint. Visit `/operator`, enter the intended Publisher email, Publisher name, and first App name. Apps Pass generates immutable Publisher and App IDs and returns them with the one-time invitation code. The signed-in Publisher enters that code at `/publisher/invitation`. Codes expire after seven days, are bound to that email, are consumed once, and are stored only as hashes.
+The command requires the trusted local shell or authenticated SERP Cloudflare CLI; there is no public bootstrap endpoint. A developer first applies at `/submit` with their contact, public listing, ownership attestation, product case, and permissions/privacy explanation. That Application grants no role or App authority. The Operator inspects it at `/operator` and either declines it or preliminarily accepts it. Acceptance—not the applicant—generates immutable Publisher and App IDs plus a one-time invitation code. The signed-in accepted Publisher enters that code at `/publisher/invitation`. Codes expire after seven days, are bound to the accepted email, are consumed once, and are stored only as hashes.
 
-The Publisher then submits the complete `apppass.json` plus ownership evidence from `/publisher`. The Operator records a review reason and approves or rejects it from `/operator`. Approval—not submission—creates the canonical App and Distribution used by the authority.
+The Publisher then submits the complete `apppass.json`, ownership evidence, and the exact installable extension ZIP from `/publisher`. Apps Pass validates bounded Manifest V3 facts, stores the package privately in R2, and stores its digest and inspection metadata in D1. The Operator downloads and inspects that exact package, records a reason, and approves or rejects it from `/operator`. Final approval—not Application acceptance or package upload—creates the canonical App and Distribution used by the authority. Source access is optional/risk-based for this pilot; the exact candidate package is mandatory.
 
 The real invited-Publisher source project is [`apps/invited-publisher-extension`](./apps/invited-publisher-extension/). Build and verify its actual unpacked Chromium package with:
 

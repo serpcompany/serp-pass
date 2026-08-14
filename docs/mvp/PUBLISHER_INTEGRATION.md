@@ -2,11 +2,18 @@
 
 Status: **private-pilot version 1**
 
-This is the concrete handoff between SERP Apps Pass and an invited Chromium-extension Publisher. It does not transfer source-code ownership to SERP and does not require a platform secret inside the extension.
+This is the concrete handoff between SERP Apps Pass and an accepted Chromium-extension Publisher. It does not transfer source-code ownership to SERP and does not require a platform secret inside the extension.
+
+## Before technical integration
+
+1. The developer submits a public Publisher Application at `/submit`.
+2. SERP inspects the public listing, ownership attestation, product/catalog case, and permissions/privacy explanation.
+3. SERP declines the Application or preliminarily accepts it for technical onboarding.
+4. Preliminary acceptance generates the public Publisher/App IDs and one-time invitation. Applying alone creates no account role, ID, catalog entry, or entitlement authority.
 
 ## What SERP gives the Publisher
 
-1. A Publisher invitation tied to the Publisher's sign-in email.
+1. A Publisher invitation tied to the preliminarily accepted email.
 2. A public `publisher_id`, such as `pub_invited_pilot_real`.
 3. A public `app_id`, such as `app_invited_pilot_real`.
 4. A versioned Apps Pass SDK pilot tarball, its SHA-256 checksum, and the authority hostname.
@@ -64,14 +71,16 @@ It says:
 - which Chromium runtime ID belongs to the built extension;
 - whether that identity is being reviewed as an unpacked pilot or Chrome Web Store Distribution.
 
-The Publisher copies the JSON into the authenticated `/publisher` Submission form and adds ownership evidence. Apps Pass validates the whole document and binds it to the Publisher's generated App Assignment. Unknown fields, substituted Publisher/App IDs, or an already claimed runtime identity are rejected.
+The Publisher copies the JSON into the authenticated `/publisher` Submission form, adds ownership evidence, and uploads the exact installable ZIP proposed for the pilot. Apps Pass validates the whole document and binds it to the Publisher's generated App Assignment. Unknown fields, substituted Publisher/App IDs, or an already claimed runtime identity are rejected.
+
+The ZIP is a technical release candidate, not a source-code repository. For the pilot it must be a bounded Manifest V3 archive with one root `manifest.json`. Apps Pass records its SHA-256 digest, size, file count, declared permissions, and host permissions in D1 while keeping the bytes in a private R2 bucket. SERP may request source or repository access when risk or ownership review requires it, but source submission is not a universal automated requirement in this MVP.
 
 ## What SERP does after submission
 
-1. Store the validated Submission as `pending`; this does not grant access.
-2. Review the ownership evidence and actual extension/runtime identity.
-3. Reject with a reason so the same App Assignment can be corrected and resubmitted, or approve it.
-4. On approval only, create the canonical Publisher/App/Distribution authority records.
+1. Store the validated Submission and exact package as `pending`; this does not grant access.
+2. Download the same private package by Submission ID and verify its digest, manifest facts, behavior, permissions, ownership evidence, and actual extension/runtime identity.
+3. Reject with a reason so the same App Assignment can be corrected and resubmitted with a new immutable package, or approve it.
+4. On final approval only, create the canonical Publisher/App/Distribution authority records.
 5. Let the extension identify itself with its public App ID and actual `chrome.runtime.id`.
 
 The extension does not decide that it is approved. The Apps Pass authority checks D1 and returns the canonical result.

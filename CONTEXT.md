@@ -12,6 +12,18 @@ _Avoid_: Admin, owner
 A person or organization authorized to submit and earn from one or more Apps.
 _Avoid_: Partner, developer, vendor
 
+**Publisher Applicant**:
+A person or organization asking SERP to consider one proposed App. An Applicant is not a Publisher and has no submission, catalog, or earning authority.
+_Avoid_: Publisher, invited Publisher
+
+**Publisher Application**:
+A public, developer-initiated proposal containing contact, product, ownership, distribution, privacy, and quality facts for SERP's preliminary review.
+_Avoid_: Invitation, App Submission, Publisher account
+
+**Preliminary Acceptance**:
+The Operator decision that admits an Applicant to technical onboarding and causes Apps Pass to generate Publisher/App identities and an email-bound invitation. It does not approve an App for the Pass.
+_Avoid_: Approval, publication, invitation
+
 **Publisher Membership**:
 The authorization connecting one signed-in human to one Publisher.
 _Avoid_: Publisher role, developer account
@@ -45,8 +57,12 @@ An approved public browser/channel/runtime identity through which an App is inst
 _Avoid_: Extension ID, store listing
 
 **Submission**:
-A versioned Publisher proposal to register one App and its Distributions, pending Operator review.
-_Avoid_: App, manifest
+A versioned technical release candidate containing the public App manifest, ownership evidence, and the exact installable Review Package, pending Operator review.
+_Avoid_: Publisher Application, App, manifest
+
+**Review Package**:
+The immutable installable extension archive that a Publisher proposes for one App version. Its digest and inspection facts identify exactly what SERP reviewed; it is not automatically source code.
+_Avoid_: Source repository, store URL, App manifest
 
 **Ownership Evidence**:
 The Publisher-supplied material an Operator reviews to establish control of a proposed Distribution.

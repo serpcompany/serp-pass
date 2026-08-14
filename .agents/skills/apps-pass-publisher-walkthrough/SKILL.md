@@ -1,26 +1,26 @@
 ---
 name: apps-pass-publisher-walkthrough
-description: Run the John Doe example Publisher through the SERP Apps Pass staging invitation, submission, review, catalog, and optional Subscriber activation journey with human checkpoints.
+description: Run the John Doe example through Publisher Application, preliminary review, onboarding, exact-package Submission, final review, catalog, and optional Subscriber activation with human checkpoints.
 disable-model-invocation: true
 ---
 
 # Apps Pass Publisher walkthrough
 
-Run a human-in-the-loop E2E QA session. You play **John Doe**, the invited third-party Publisher. The user plays the **SERP Operator** and, optionally, a **Subscriber**. Automate developer work and objective verification; pause for human judgment.
+Run a human-in-the-loop staging acceptance session. You play **John Doe**, first as a Publisher Applicant and then—only after acceptance—as the Publisher. The user plays the **SERP Operator** and optionally a **Subscriber**. Automate John’s work and objective verification; pause for human judgment.
 
 ## Contract
 
-- Work only in `/Users/devin/dev/repos/serp-appspass` on `main` unless the user explicitly changes scope.
+- Work only in `/Users/devin/dev/repos/serp-appspass` on `main` unless the user changes scope.
 - Read `AGENTS.md`, `PRD.md`, `ARCHITECTURE.md`, `CONTEXT.md`, and `docs/mvp/DELIVERY_PLAN.md` before acting.
 - Use `https://serp-apps-pass-staging.serpcompany.workers.dev`. Report local, staging, and production separately.
-- Use Stripe test mode only. Pause before opening or completing Checkout. Production and live money remain untouched.
-- John may prepare, accept, and submit. John cannot approve his own Submission. The user must inspect it and choose approve or reject.
+- Use Stripe test mode only. Pause before Checkout. Production and live money remain untouched.
+- John may apply, accept onboarding, integrate, package, and submit. John cannot preliminarily accept his own Application or finally approve his own Submission.
 - Never claim a human step happened until the user confirms it or direct UI/state evidence proves it.
-- Keep the Publisher human session, Operator human session, Subscriber human session, and extension App session distinct in every explanation.
-- Treat the one-time invitation code and generated test password as transient. Do not commit them or print the password.
-- Use `apps/john-doe-focus-timer-extension/apppass.json` as the Submission template. Apps Pass generates the Publisher and App IDs from the supplied names; read the returned values and use those exact values in the submitted manifest and SDK build. The fixed extension Distribution identity is Chromium runtime `bpjnchabpcjomgncmbgphbdggkgkobdb`.
+- Keep Applicant, Publisher, Operator, Subscriber, and extension App-session authority distinct.
+- Treat the invitation code and generated test password as transient. Never commit or log them.
+- Use `apps/john-doe-focus-timer-extension/apppass.json`, runtime `bpjnchabpcjomgncmbgphbdggkgkobdb`, and the ZIP produced by `pnpm walkthrough:john-doe:package`.
 
-## 1. Prove the package before roleplay
+## 1. Preflight the candidate
 
 Run:
 
@@ -29,110 +29,92 @@ git status --short
 git branch --show-current
 git rev-parse --short HEAD
 pnpm walkthrough:john-doe:test
+pnpm walkthrough:john-doe:package
 pnpm walkthrough:john-doe:preflight
 ```
 
-The browser check must load the built extension, observe the fixed runtime ID, and prove the free timer is enabled while the premium timer is gated. The preflight must report staging healthy plus one of:
+Verify the free timer works, premium remains gated, the package contains one root Manifest V3 manifest, and no platform secret or App-session token is embedded. If the fixed identity is already approved, stop and offer to review the existing run.
 
-- `unused_ready_for_walkthrough`: continue with step 2.
-- `already_registered_review_existing_run`: stop before creating accounts or invitations. Tell the user the fixed walkthrough has already been completed and offer to review its existing catalog/extension result. Do not invent another identity or alter the committed example.
+Completion: report repository, branch, HEAD, package/browser result, staging health, identity state, and one next action.
 
-First response completion criterion: report repository, branch, HEAD, browser result, staging result, submission state, and the one next action. Do not dump later steps on the user.
+## 2. Apply as John
 
-## 2. Establish the Operator
+Generate a unique email `john.doe.walkthrough.<UTC timestamp>@example.test`. Keep a random 16+ character password only in transient state. Through `/submit`, submit:
 
-Tell the user:
+- Publisher/company: `John Doe Studio`
+- Extension: `John Doe Focus Timer`
+- Public review location and source: `https://github.com/serpcompany/serp-appspass/tree/main/apps/john-doe-focus-timer-extension`
+- Product: a five-minute free timer plus a premium twenty-five-minute focus timer gated by Apps Pass
+- Permissions/privacy: local storage plus the staging Apps Pass host permission; no personal-data sale
+- Ownership: explicitly identify this as a SERP-owned staged example of an external Publisher handoff, not independent ownership evidence
 
-> John Doe has finished the extension package. You are now the SERP Operator. Open the staging `/account` page, create or sign into the account you want to use as Operator, then send me that exact email and say `done`.
+Confirm the site returns a pending Application and `/publisher` remains unavailable. Tell the user:
 
-Wait. After the user responds, validate the email shape and run:
+> Developer applicant John Doe submitted **John Doe Focus Timer**. John is not a Publisher and nothing is approved. Sign in as the SERP Operator, open `/operator`, inspect **Pending Publisher Applications**, and tell me when you can see it.
+
+Completion: one pending Application exists and no Publisher/App authority was created.
+
+## 3. Establish the Operator
+
+If the user lacks an Operator session, ask them to sign in at `/account` and provide the exact email. Bootstrap only that email:
 
 ```sh
 pnpm mvp:operator:bootstrap -- --staging <exact-email>
 ```
 
-Ask the user to refresh `/operator` and confirm they see **Operator role active**. Wait for `done`.
+Ask them to refresh `/operator` and confirm **Operator role active**.
 
-Completion criterion: the user has a staging human session with the explicit Operator role.
+Completion: the user has the explicit staging Operator role.
 
-## 3. Ask the Operator to invite John
+## 4. Preliminary human decision
 
-Generate a unique Publisher login email such as `john.doe.walkthrough.<UTC timestamp>@example.test`. Keep a random 16+ character test password only in transient process/session state.
+Ask the user to expand John’s Application and inspect the listing/source, product case, permissions/privacy answer, and ownership statement. They must enter a real reason and choose **Accept for technical onboarding** or **Decline Application**.
 
-Give the user these exact form values:
+- Decline is a valid result: record it and stop unless asked to submit a corrected Application.
+- After acceptance, ask the user to paste the generated Publisher ID, App ID, and one-time invitation code. Validate their shapes; do not substitute identities.
 
-- Publisher email: the generated email
-- Publisher name: `John Doe Studio`
-- First App name: `John Doe Focus Timer`
+Completion: a human decision exists. Only acceptance creates IDs and onboarding access; it is not App approval.
 
-Ask them to click **Create Publisher invitation**. Apps Pass displays the generated Publisher ID, generated App ID, and one-time invitation code. Ask them to paste all three values into chat and say `done`. Wait.
+## 5. Onboard and submit the exact package
 
-Completion criterion: the user supplies the generated identities and newly issued code bound to John’s exact email. Validate the public-ID shapes; John may use the generated values but may not substitute different identities.
+Using an isolated browser separate from the Operator session:
 
-## 4. Act as John: accept and submit
+1. Create John’s account with the exact Application email.
+2. Accept the code at `/publisher/invitation`.
+3. Confirm `/publisher` shows the generated Publisher/App identities.
+4. Replace only `publisher_id` and `app_id` in the template with generated values.
+5. Upload the complete JSON, truthful ownership/build evidence including the verified HEAD, and `apps/john-doe-focus-timer-extension/review-package/john-doe-focus-timer.zip`.
+6. Confirm the Submission is `pending` and record the returned SHA-256 digest.
 
-Use an isolated browser session, separate from the user's Operator session. Through the visible staging UI:
+Tell the user:
 
-1. Create John’s account at `/account` with the invited email.
-2. Enter the code at `/publisher/invitation`.
-3. Confirm `/publisher` shows **Publisher role active** and the same generated Publisher and App IDs.
-4. In transient memory, replace the template's `publisher_id` and `app_id` with the generated values. Do not change the names, features, or Distribution. Paste that resulting manifest into **App manifest JSON**.
-5. Submit this truthful evidence, substituting the verified HEAD:
+> Publisher John Doe submitted the exact installable **John Doe Focus Timer** ZIP. It is pending—not approved. Open `/operator`, inspect the manifest, ownership evidence, digest, extension manifest, permissions, and automated intake results. Download and test that exact ZIP, then enter a reason and choose Approve or Reject. Tell me your decision and say `done`.
 
-   `Walkthrough example source: apps/john-doe-focus-timer-extension at repository HEAD <HEAD>. The package browser check loaded runtime bpjnchabpcjomgncmbgphbdggkgkobdb and confirmed the premium feature is gated before entitlement. This is a SERP-owned staged example of an external Publisher handoff, not independent third-party ownership verification.`
+Completion: a versioned pending Submission has a private Review Package and digest; the user makes the final technical decision.
 
-6. Confirm the Publisher UI reports the Submission as `pending`.
+## 6. Verify approval
 
-Then tell the user:
+After approval, rebuild with `APP_PASS_APP_ID=<generated-app-id>` and verify:
 
-> Developer John Doe just submitted **John Doe Focus Timer**. It is pending—not approved. Open `/operator`, expand **Inspect the developer submission**, check the manifest and ownership evidence, enter a review reason, and choose Approve or Reject. Tell me your decision and say `done`.
+- the exact App/runtime authority endpoint returns 200;
+- `/apps` lists **John Doe Focus Timer**;
+- a fresh extension build shows **Approved by Apps Pass**;
+- premium remains gated without a Subscriber App session and paid entitlement.
 
-Wait. A rejection is a valid QA outcome: report it accurately and stop unless the user asks to rerun with a corrected Submission.
+Explain that Application acceptance authorized onboarding, while final approval promoted the specifically reviewed package identity. Neither step required authority source changes, migrations, or seed edits during the run.
 
-Completion criterion: John has submitted through the site, and the user has made the Operator decision.
+## 7. Optional Subscriber journey
 
-## 5. Verify approval without mutating authority
+Ask whether to stop after inclusion or continue. If continuing:
 
-After an approval, rebuild John’s extension with `APP_PASS_APP_ID=<generated-app-id>` and verify:
-
-- the exact identity endpoint returns 200;
-- `/apps` visibly lists **John Doe Focus Timer**;
-- a fresh build of John’s extension shows **Approved by Apps Pass**;
-- the premium timer remains gated before a Subscriber App session and active entitlement.
-
-Explain the proof in plain language: the site accepted a Publisher-authored manifest, the Operator approved it, the authority now recognizes this exact App/runtime pair, and catalog discovery changed without changing authority source code or a database migration.
-
-Completion criterion: identity, catalog, and real extension all agree on the approved App.
-
-## 6. Offer the optional Subscriber journey
-
-Ask whether the user wants to stop after Publisher inclusion or continue through test purchase, activation, and entitlement. If they stop, deliver the evidence report.
-
-If they continue:
-
-1. Reconfirm Stripe test mode and the configured account ID `acct_1MwbFJI9EPtyKcIs` before any Stripe action.
-2. Have the user create or select a staging Subscriber human session at `/account`.
-3. Pause before **Subscribe through Stripe Checkout**. The user performs the test Checkout and says `done`.
-4. Verify normalized D1 Subscription state; never infer access from the redirect alone.
-5. Load John’s unpacked extension in an isolated, disposable Chromium profile without replacing or stopping the repo-owned dev browser.
-6. Start linking from the extension, have the signed-in Subscriber inspect and approve the exact App, finish the one-time exchange, then check entitlement.
-7. Confirm the 25-minute premium timer changes from disabled to enabled only after `active`.
-
-Completion criterion: a verified Stripe test event projected paid-through authority into D1, the extension obtained its own scoped App session, and John’s premium feature unlocked from an `active` decision.
+1. Reconfirm Stripe test mode and account `acct_1MwbFJI9EPtyKcIs`.
+2. Have the user use a separate Subscriber session.
+3. Pause before Checkout; the user completes it and says `done`.
+4. Verify normalized D1 Subscription state; never infer access from the redirect.
+5. Load the extension in an isolated Chromium profile without replacing the repo-owned browser.
+6. Have the Subscriber inspect and approve the exact App, complete the one-time exchange, and check entitlement.
+7. Confirm the premium timer unlocks only after `active`.
 
 ## Evidence report
 
-End with a compact table of each journey boundary and observed PASS/FAIL/BLOCKED evidence. Include:
-
-- Developer package and stable runtime
-- Operator invitation
-- Publisher acceptance and Submission
-- Human Operator review decision
-- Authority identity and `/apps` catalog
-- Optional Stripe test purchase
-- Optional extension activation and premium unlock
-- Local state
-- Deployed staging state
-- Production: always `not deployed` for this walkthrough
-
-List every unexpected UX ambiguity as a finding. A partial journey is `BLOCKED`, never PASS.
+End with PASS/FAIL/BLOCKED evidence for Application, preliminary review, generated identities/onboarding, exact package and digest, final review, authority/catalog, optional Stripe purchase, optional activation/unlock, local, staging, and production (`not deployed`). List every UX ambiguity and manual workaround.

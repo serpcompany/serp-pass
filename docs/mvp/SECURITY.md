@@ -5,11 +5,12 @@ Status: **binding MVP security boundary; not a completed security audit**
 ## Trust domains
 
 - Public internet and unauthenticated browsers.
+- Unauthenticated Publisher Applicants and untrusted Application claims.
 - Authenticated Subscriber browser.
-- Authenticated invited-Publisher browser.
+- Authenticated accepted-Publisher browser.
 - Publisher-owned extension code and local extension storage.
 - Trusted Operator CLI/session.
-- Apps Pass Worker and D1.
+- Apps Pass Worker, D1, and private review-package R2 bucket.
 - Stripe webhook and server API traffic.
 
 An extension is not a trusted server, even when its runtime ID is approved. A runtime ID is public identity metadata, not a secret.
@@ -22,6 +23,8 @@ An extension is not a trusted server, even when its runtime ID is approved. A ru
 | Duplicate/out-of-order Stripe delivery | Unique Event IDs plus state reconciliation against event/object chronology | Replay and reorder tests |
 | Checkout redirect granting access | Entitlement trusts normalized webhook projection only | Redirect-before-webhook remains inactive |
 | Publisher claiming another extension | Apps Pass-generated IDs, recorded ownership evidence, globally unique browser-family/runtime identity regardless of distribution channel, manual approval | Rejected conflicting Submission and audit event |
+| Applicant self-granting Publisher/App authority | Public Application is pending evidence only; Operator preliminary acceptance atomically generates IDs and invitation | Applicant remains unauthorized; retired arbitrary-invitation route rejects; generated identities cannot be applicant-supplied |
+| Malicious or substituted review package | Private R2 storage, bounded ZIP validation, root Manifest V3 inspection, SHA-256 binding, Operator-only exact download, and no execution in the Worker | Unsafe paths/oversize/invalid manifest reject; downloaded bytes and digest equal submitted candidate; approval requires a package |
 | Extension impersonating another App | Approved Distribution check plus App-scoped session token | Cross-App token/runtime tests |
 | Untrusted client fabricating an extension request | Treat runtime ID and Origin as public browser/CORS metadata, not authentication; show canonical identity, require human approval, require proof possession, and rate-limit public link/exchange calls | Wrong browser origins reject, abuse is bounded, and only the proof holder can exchange an approved request |
 | Stolen/replayed link proof | High entropy, short expiry, proof challenge, single exchange | Wrong, expired, and replayed proof tests |
@@ -43,6 +46,7 @@ An extension is not a trusted server, even when its runtime ID is approved. A ru
 
 - Stripe secrets, webhook secrets, Better Auth secrets, email credentials, and Operator credentials live in environment secrets.
 - No `NEXT_PUBLIC_` or extension bundle may contain a privileged secret.
+- Review packages remain private R2 objects; only an authenticated Operator route returns the exact candidate with its digest and no-store headers.
 - Dormant Connect Account Link URLs remain short-lived secrets and are neither persisted unnecessarily nor logged.
 - App-session tokens are stored only in the linked extension installation and as hashes in D1.
 - Logs may contain opaque record IDs and correlation IDs, but not tokens, proof keys, cookies, raw webhook bodies, payment methods, or identity-verification payloads.

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { PublisherApplicationForm } from "./application-form";
 
 export const metadata: Metadata = {
   title: "Submit an App",
@@ -8,33 +9,33 @@ export const metadata: Metadata = {
 const steps = [
   {
     number: "01",
-    title: "Receive an invitation",
+    title: "Apply",
     description:
-      "A SERP Operator invites your Publisher account; Apps Pass generates immutable Publisher and App IDs.",
+      "Tell SERP who you are, where the extension is publicly listed, what it does, what it can access, and why you are authorized to submit it.",
   },
   {
     number: "02",
-    title: "Add the integration",
+    title: "Pass preliminary review",
     description:
-      "Add the Apps Pass SDK and the required host permission. No platform secrets or payment credentials belong in your extension.",
+      "A SERP Operator accepts or declines the product. Acceptance—not application—generates your Publisher/App IDs and private onboarding invitation.",
   },
   {
     number: "03",
-    title: "Rebuild and test",
+    title: "Integrate and package",
     description:
-      "Rebuild your Chromium extension and test the Subscriber linking and access flow against the pilot environment.",
+      "Add the SDK, rebuild and test the extension, then prepare the exact installable ZIP that you want SERP to review.",
   },
   {
     number: "04",
     title: "Submit for review",
     description:
-      "In the authenticated Publisher area, submit apppass.json together with evidence that you control the extension distribution.",
+      "In the authenticated Publisher area, submit apppass.json, ownership evidence, and the exact installable extension ZIP.",
   },
   {
     number: "05",
     title: "Become eligible",
     description:
-      "SERP reviews the Submission and ownership evidence. Approval makes the App and its approved Distribution eligible for Subscriber linking.",
+      "SERP inspects the package, permissions, behavior, ownership evidence, and integration. Only explicit final approval makes the reviewed version eligible.",
   },
 ];
 
@@ -42,26 +43,24 @@ export default function SubmitPage() {
   return (
     <main>
       <section className="page-hero">
-        <span className="eyebrow">For invited Chromium extension Publishers</span>
+        <span className="eyebrow">Applications open for the private pilot</span>
         <h1>Bring your extension into one subscription.</h1>
         <p>
-          Apps Pass gives Subscribers access to approved, independently published extensions through one Pass. The private pilot is invitation-only. Apps Pass generates your public identities, while you submit the extension facts and ownership evidence SERP reviews.
+          Apps Pass gives Subscribers access to approved, independently published extensions through one Pass. You can apply below; applying does not grant Publisher access or place an extension in the catalog. SERP screens the product first and reviews the exact integrated package before final approval.
         </p>
         <div className="actions">
           <Link className="primary-button" href="/docs">
             Read integration docs
           </Link>
-          <Link className="secondary-button" href="/publisher/invitation">
-            Accept an invitation
-          </Link>
+          <a className="secondary-button" href="#apply">Apply now</a>
         </div>
       </section>
 
       <section className="section" aria-labelledby="integration-steps">
         <div className="section-heading">
           <span className="eyebrow">How the private pilot works</span>
-          <h2 id="integration-steps">From invitation to an approved App</h2>
-          <p>Five clear steps take your extension from assigned identity to eligibility in the Pass.</p>
+          <h2 id="integration-steps">From Application to an approved App</h2>
+          <p>Five gated steps separate asking to join, technical onboarding, and approval of the version Subscribers will run.</p>
         </div>
         <div className="step-grid">
           {steps.map((step) => (
@@ -74,6 +73,15 @@ export default function SubmitPage() {
         </div>
       </section>
 
+      <section className="section" id="apply" aria-labelledby="application-heading">
+        <div className="section-heading">
+          <span className="eyebrow">Step 1 · Preliminary review</span>
+          <h2 id="application-heading">Apply to publish an extension</h2>
+          <p>SERP reviews this information internally. If accepted, we issue private technical-onboarding access. A final App approval still requires the integrated extension package.</p>
+        </div>
+        <div className="info-panel"><PublisherApplicationForm /></div>
+      </section>
+
       <section className="section" aria-labelledby="responsibilities">
         <div className="section-heading">
           <span className="eyebrow">A small integration boundary</span>
@@ -83,11 +91,11 @@ export default function SubmitPage() {
           <article className="info-panel">
             <h3>SERP gives you</h3>
             <ul className="clean-list">
-              <li>An invitation tied to your Publisher account</li>
-              <li>Assigned public Publisher and App IDs</li>
+              <li>A reasoned preliminary Application decision</li>
+              <li>After acceptance, an email-bound invitation and generated public IDs</li>
               <li>The SDK and versioned apppass.json contract</li>
               <li>Subscriber linking and entitlement authority</li>
-              <li>A review trail for Submissions and ownership evidence</li>
+              <li>A review trail for the exact package, evidence, and final decision</li>
             </ul>
           </article>
           <article className="info-panel">
@@ -97,7 +105,7 @@ export default function SubmitPage() {
               <li>Declare the Apps Pass host permission</li>
               <li>Use the generated App ID in the SDK; submit the real runtime identity in apppass.json</li>
               <li>Rebuild and test the real extension</li>
-              <li>Submit the manifest and ownership evidence for review</li>
+              <li>Submit the manifest, ownership evidence, and exact installable ZIP for review</li>
             </ul>
           </article>
         </div>

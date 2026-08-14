@@ -8,9 +8,13 @@ type SubmissionReviewFormProps = {
   appId: string;
   manifestJson: string;
   ownershipEvidence: string;
+  packageFilename: string | null;
+  packageSizeBytes: number | null;
+  packageSha256: string | null;
+  packageInspectionJson: string | null;
 };
 
-export function SubmissionReviewForm({ submissionId, appId, manifestJson, ownershipEvidence }: SubmissionReviewFormProps) {
+export function SubmissionReviewForm({ submissionId, appId, manifestJson, ownershipEvidence, packageFilename, packageSizeBytes, packageSha256, packageInspectionJson }: SubmissionReviewFormProps) {
   const router = useRouter();
   const [message, setMessage] = useState("");
 
@@ -38,10 +42,17 @@ export function SubmissionReviewForm({ submissionId, appId, manifestJson, owners
         <pre className="submission-evidence">{JSON.stringify(JSON.parse(manifestJson), null, 2)}</pre>
         <h3>Ownership evidence</h3>
         <p className="submission-evidence">{ownershipEvidence}</p>
+        <h3>Exact Review Package</h3>
+        {packageInspectionJson && packageFilename && packageSha256 && packageSizeBytes !== null ? <>
+          <p className="submission-evidence"><strong>{packageFilename}</strong> · {packageSizeBytes.toLocaleString()} bytes<br />SHA-256 <code>{packageSha256}</code></p>
+          <pre className="submission-evidence">{JSON.stringify(JSON.parse(packageInspectionJson), null, 2)}</pre>
+          <a className="health" href={`/api/operator/submissions/${submissionId}/package`}>Download exact package for human review</a>
+          <p className="muted">The automated intake proves only bounded ZIP structure, safe paths, a root manifest, and Manifest V3. Approval still requires ownership, permission, privacy, functional, and quality review.</p>
+        </> : <p className="form-message">No Review Package is attached. This legacy Submission cannot be approved.</p>}
       </details>
       <label>Review reason<input name="reason" minLength={10} maxLength={1000} required /></label>
       <div className="actions">
-        <button type="submit" name="decision" value="approve">Approve Submission</button>
+        <button type="submit" name="decision" value="approve" disabled={!packageInspectionJson}>Approve Submission</button>
         <button type="submit" name="decision" value="reject">Reject Submission</button>
       </div>
       {message && <p role="status" className="form-message">{message}</p>}

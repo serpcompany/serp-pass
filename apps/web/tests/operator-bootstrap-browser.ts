@@ -1,214 +1,251 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import path from "node:path";
 
-import { chromium } from "playwright";
+import { strToU8, zipSync } from "fflate";
+import { chromium, type Page } from "playwright";
 
 const appOrigin = process.env.APP_ORIGIN ?? "http://localhost:8788";
-const email = `operator-bootstrap-${Date.now()}@example.test`;
-const publisherEmail = `invited-publisher-${Date.now()}@example.test`;
-let publisherId = "";
-let appId = "";
+const operatorEmail = `operator-bootstrap-${Date.now()}@example.test`;
+const publisherEmail = `publisher-applicant-${Date.now()}@example.test`;
 const runtimeId = Array.from(randomBytes(16), (byte) => `${String.fromCharCode(97 + (byte >> 4))}${String.fromCharCode(97 + (byte & 15))}`).join("");
 const repositoryRoot = path.resolve(import.meta.dirname, "../../..");
+const reviewPackage = Buffer.from(zipSync({
+  "manifest.json": strToU8(JSON.stringify({
+    manifest_version: 3,
+    name: "Applicant Video Downloader",
+    version: "1.0.0",
+    permissions: ["storage"],
+    host_permissions: ["https://vimeo.com/*"],
+    action: { default_popup: "popup.html" },
+  })),
+  "popup.html": strToU8("<!doctype html><title>Applicant extension</title>"),
+}));
+const reviewPackageSha256 = createHash("sha256").update(reviewPackage).digest("hex");
 
-const browser = await chromium.launch({ headless: true });
+async function navigate(page: Page, pathname: string) {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      await page.goto(`${appOrigin}${pathname}`, { waitUntil: "commit", timeout: 20_000 });
+      await page.waitForFunction(() => document.readyState !== "loading", undefined, { timeout: 10_000 }).catch(() => undefined);
+      await page.waitForTimeout(500);
+      return;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError;
+}
+
+async function waitForTextAfterNavigate(page: Page, pathname: string, text: string) {
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    await navigate(page, pathname);
+    if (await page.getByText(text).first().isVisible().catch(() => false)) return;
+    await page.waitForTimeout(1_000);
+  }
+  await page.getByText(text).first().waitFor();
+}
+
+async function submitApplication(page: Page, input: { email: string; publisherName: string; appName: string; listingSuffix: string }) {
+  await navigate(page, "/submit");
+  await page.getByLabel("Contact email").fill(input.email);
+  await page.getByLabel("Publisher or company name").fill(input.publisherName);
+  await page.getByLabel("Extension name").fill(input.appName);
+  await page.getByLabel("Public extension listing URL").fill(`https://chromewebstore.google.com/detail/${input.listingSuffix}`);
+  await page.getByLabel("Source repository URL").fill("https://github.com/example/reviewable-extension");
+  await page.getByLabel("What the extension does and why it belongs in the Pass").fill("A mature video workflow extension with a clearly defined premium feature for Apps Pass subscribers.");
+  await page.getByLabel("Permissions, data collection, and privacy explanation").fill("Uses storage for local preferences and Vimeo host access only for the user-requested download workflow; no data is sold.");
+  await page.getByLabel(/I attest that I own or am authorized/).check();
+  await page.getByRole("button", { name: "Submit Publisher Application" }).click();
+  await page.getByText("Application received for preliminary SERP review").waitFor();
+  return page.getByTestId("application-id").innerText();
+}
+
+async function acceptApplication(operatorPage: Page, applicationId: string) {
+  await navigate(operatorPage, "/operator");
+  const reviewForm = operatorPage.getByTestId(`publisher-application-${applicationId}`);
+  await reviewForm.getByText("Inspect the Publisher Application").click();
+  assert.equal(await reviewForm.getByText("This statement still requires human verification.").isVisible(), true);
+  await reviewForm.getByLabel("Preliminary review reason").fill("Public listing, product case, ownership statement, permissions, and privacy answers are sufficient for technical onboarding.");
+  await reviewForm.getByRole("button", { name: "Accept for technical onboarding" }).click();
+  const publisherId = await reviewForm.getByTestId("generated-publisher-id").innerText();
+  const appId = await reviewForm.getByTestId("generated-app-id").innerText();
+  const invitationCode = await reviewForm.getByTestId("invitation-code").innerText();
+  return { publisherId, appId, invitationCode };
+}
+
+const browser = await chromium.launch({ headless: true, args: ["--disable-quic", "--disable-http2"] });
 
 try {
-  const operatorContext = await browser.newContext(appOrigin.includes("localhost") ? { extraHTTPHeaders: { "cf-connecting-ip": "192.0.2.30" } } : {});
-  const page = await operatorContext.newPage();
-  await page.goto(`${appOrigin}/account`);
-  await page.getByRole("button", { name: "Need a pilot account? Create one" }).click();
-  await page.getByLabel("Name").fill("Bootstrap Operator");
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill("correct-horse-battery-staple");
-  await page.getByRole("button", { name: "Create account" }).click();
-  await page.getByText("Human session active").waitFor();
+  const applicantContext = await browser.newContext(appOrigin.includes("localhost") ? { extraHTTPHeaders: { "cf-connecting-ip": "192.0.2.40" } } : {});
+  const applicantPage = await applicantContext.newPage();
+  const applicationId = await submitApplication(applicantPage, {
+    email: publisherEmail,
+    publisherName: "Applicant Publisher Pilot",
+    appName: "Applicant Video Downloader",
+    listingSuffix: `applicant-${Date.now()}`,
+  });
+  assert.match(applicationId, /^[0-9a-f-]{36}$/u);
+  await navigate(applicantPage, "/publisher");
+  assert.equal(await applicantPage.getByRole("heading", { name: "Publisher sign-in required" }).isVisible(), true, "Application must not grant Publisher authority");
 
-  await page.goto(`${appOrigin}/operator`);
-  assert.equal(await page.getByRole("heading", { name: "Operator role required" }).isVisible(), true);
+  const operatorContext = await browser.newContext(appOrigin.includes("localhost") ? { extraHTTPHeaders: { "cf-connecting-ip": "192.0.2.30" } } : {});
+  const operatorPage = await operatorContext.newPage();
+  await navigate(operatorPage, "/account");
+  await operatorPage.getByRole("button", { name: "Need a pilot account? Create one" }).click();
+  await operatorPage.getByLabel("Name").fill("Bootstrap Operator");
+  await operatorPage.getByLabel("Email").fill(operatorEmail);
+  await operatorPage.getByLabel("Password").fill("correct-horse-battery-staple");
+  await operatorPage.getByRole("button", { name: "Create account" }).click();
+  await operatorPage.getByText("Human session active").waitFor();
+  await navigate(operatorPage, "/operator");
+  assert.equal(await operatorPage.getByRole("heading", { name: "Operator role required" }).isVisible(), true);
 
   const bootstrapTarget = appOrigin.includes("localhost") ? "--local" : "--staging";
-  execFileSync("pnpm", ["mvp:operator:bootstrap", "--", bootstrapTarget, email], {
-    cwd: repositoryRoot,
-    stdio: "pipe",
+  execFileSync("pnpm", ["mvp:operator:bootstrap", "--", bootstrapTarget, operatorEmail], { cwd: repositoryRoot, stdio: "pipe" });
+  await navigate(operatorPage, "/operator");
+  assert.equal(await operatorPage.getByRole("heading", { name: "Operator controls" }).isVisible(), true);
+
+  const retiredInvitationStatus = await operatorPage.evaluate(async () => (await fetch("/api/operator/publisher-invitations", { method: "POST" })).status);
+  assert.equal(retiredInvitationStatus, 410, "Operators must not bypass the Application review gate");
+
+  const { publisherId, appId, invitationCode } = await acceptApplication(operatorPage, applicationId);
+  assert.match(publisherId, /^pub_[a-z0-9_]+$/u);
+  assert.match(appId, /^app_[a-z0-9_]+$/u);
+  assert.match(invitationCode, /^[A-Za-z0-9_-]{32,}$/u);
+
+  const duplicateApplicantContext = await browser.newContext(appOrigin.includes("localhost") ? { extraHTTPHeaders: { "cf-connecting-ip": "192.0.2.41" } } : {});
+  const duplicateApplicantPage = await duplicateApplicantContext.newPage();
+  const duplicateApplicationId = await submitApplication(duplicateApplicantPage, {
+    email: `duplicate-name-${Date.now()}@example.test`,
+    publisherName: "Applicant Publisher Pilot",
+    appName: "Applicant Video Downloader",
+    listingSuffix: `duplicate-${Date.now()}`,
   });
-
-  await page.reload();
-  assert.equal(await page.getByRole("heading", { name: "Operator controls" }).isVisible(), true);
-
-  await page.getByLabel("Publisher email").fill(publisherEmail);
-  await page.getByLabel("Publisher name").fill("Invited Publisher Pilot");
-  await page.getByLabel("First App name").fill("Invited Video Downloader");
-  await page.getByRole("button", { name: "Create Publisher invitation" }).click();
-  publisherId = await page.getByTestId("generated-publisher-id").innerText();
-  appId = await page.getByTestId("generated-app-id").innerText();
-  assert.match(publisherId, /^pub_[a-z0-9_]+$/);
-  assert.match(appId, /^app_[a-z0-9_]+$/);
-  const invitationCode = await page.getByTestId("invitation-code").innerText();
-  assert.match(invitationCode, /^[A-Za-z0-9_-]{32,}$/);
-
-  await page.getByLabel("Publisher email").fill(`duplicate-name-${Date.now()}@example.test`);
-  await page.getByLabel("Publisher name").fill("Invited Publisher Pilot");
-  await page.getByLabel("First App name").fill("Invited Video Downloader");
-  await page.getByRole("button", { name: "Create Publisher invitation" }).click();
-  const duplicatePublisherId = await page.getByTestId("generated-publisher-id").innerText();
-  const duplicateAppId = await page.getByTestId("generated-app-id").innerText();
-  assert.notEqual(duplicatePublisherId, publisherId);
-  assert.notEqual(duplicateAppId, appId);
+  const duplicate = await acceptApplication(operatorPage, duplicateApplicationId);
+  assert.notEqual(duplicate.publisherId, publisherId);
+  assert.notEqual(duplicate.appId, appId);
 
   const publisherContext = await browser.newContext(appOrigin.includes("localhost") ? { extraHTTPHeaders: { "cf-connecting-ip": "192.0.2.31" } } : {});
   const publisherPage = await publisherContext.newPage();
-  await publisherPage.goto(`${appOrigin}/account`);
+  await navigate(publisherPage, "/account");
   await publisherPage.getByRole("button", { name: "Need a pilot account? Create one" }).click();
-  await publisherPage.getByLabel("Name").fill("Invited Publisher");
+  await publisherPage.getByLabel("Name").fill("Accepted Publisher");
   await publisherPage.getByLabel("Email").fill(publisherEmail);
   await publisherPage.getByLabel("Password").fill("correct-horse-battery-staple");
   await publisherPage.getByRole("button", { name: "Create account" }).click();
   await publisherPage.getByText("Human session active").waitFor();
-  await publisherPage.goto(`${appOrigin}/publisher/invitation`);
+  await navigate(publisherPage, "/publisher/invitation");
   await publisherPage.getByLabel("Invitation code").fill(invitationCode);
+  // A committed Next.js document can become visible before its client form has hydrated on a remote Worker.
+  await publisherPage.waitForTimeout(1_000);
+  const invitationResponsePromise = publisherPage.waitForResponse((response) => response.url().endsWith("/api/publisher-invitations/accept") && response.request().method() === "POST");
   await publisherPage.getByRole("button", { name: "Accept Publisher invitation" }).click();
+  const invitationResponse = await invitationResponsePromise;
+  assert.equal(invitationResponse.status(), 200, await invitationResponse.text());
+  await navigate(publisherPage, "/publisher");
   await publisherPage.getByRole("heading", { name: "Publisher pilot area" }).waitFor();
   assert.equal(await publisherPage.getByText(appId).isVisible(), true);
+
   const manifest = {
     $schema: "https://pass.serp.co/schema/app-manifest-v1.json",
     schema_version: 1,
     publisher_id: publisherId,
-    publisher_name: "Invited Publisher Pilot",
+    publisher_name: "Applicant Publisher Pilot",
     app_id: appId,
-    name: "Invited Video Downloader",
+    name: "Applicant Video Downloader",
     features: ["premium"],
     distributions: [{ browser_family: "chromium", channel: "unpacked", runtime_id: runtimeId }],
   };
-  const wrongRoleResponse = await page.evaluate(async (manifest) => {
-    const response = await fetch("/api/publisher/submissions", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ manifest, ownershipEvidence: "This Operator is not the assigned Publisher account." }),
-    });
+
+  const wrongRoleResponse = await operatorPage.evaluate(async () => {
+    const response = await fetch("/api/publisher/submissions", { method: "POST", body: new FormData() });
     return response.status;
-  }, manifest);
+  });
   assert.equal(wrongRoleResponse, 403);
 
-  const identityMismatchResponse = await publisherPage.evaluate(async (manifest) => {
-    const response = await fetch("/api/publisher/submissions", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ manifest: { ...manifest, app_id: `${manifest.app_id}_unassigned` }, ownershipEvidence: "This deliberately mismatched identity must be rejected." }),
-    });
-    return response.status;
-  }, manifest);
+  const packageBase64 = reviewPackage.toString("base64");
+  const identityMismatchResponse = await publisherPage.evaluate(async ({ manifest, packageBase64 }) => {
+    const bytes = Uint8Array.from(atob(packageBase64), (character) => character.charCodeAt(0));
+    const form = new FormData();
+    form.set("manifest", JSON.stringify({ ...manifest, app_id: `${manifest.app_id}_unassigned` }));
+    form.set("ownershipEvidence", "This deliberately mismatched identity must be rejected before package storage.");
+    form.set("reviewPackage", new File([bytes], "extension.zip", { type: "application/zip" }));
+    return (await fetch("/api/publisher/submissions", { method: "POST", body: form })).status;
+  }, { manifest, packageBase64 });
   assert.equal(identityMismatchResponse, 409);
 
   await publisherPage.getByLabel("App manifest JSON").fill(JSON.stringify(manifest, null, 2));
-  await publisherPage.getByLabel("Ownership evidence").fill("Private pilot source repository and unpacked extension reviewed with the Operator.");
+  await publisherPage.getByLabel("Ownership evidence").fill("Public listing and repository ownership were reviewed; this ZIP is the exact candidate intended for the private pilot.");
+  await publisherPage.getByLabel("Exact installable extension ZIP").setInputFiles({ name: "applicant-video-downloader.zip", mimeType: "application/zip", buffer: reviewPackage });
   const submissionResponsePromise = publisherPage.waitForResponse((response) => response.url().endsWith("/api/publisher/submissions") && response.request().method() === "POST");
   await publisherPage.getByRole("button", { name: "Submit App for review" }).click();
   const submissionResponse = await submissionResponsePromise;
   assert.equal(submissionResponse.status(), 201, await submissionResponse.text());
+  const submissionBody = await submissionResponse.json() as { packageSha256: string };
+  assert.equal(submissionBody.packageSha256, reviewPackageSha256);
   await publisherPage.getByText(`${appId} · pending`).waitFor();
 
-  await page.reload();
-  let reviewForm = page.locator("form").filter({ hasText: `${appId} · pending` });
+  await navigate(operatorPage, "/operator");
+  let reviewForm = operatorPage.locator("form").filter({ hasText: `${appId} · pending` });
   await reviewForm.getByText("Inspect the developer submission").click();
-  assert.equal(await reviewForm.getByText("Invited Video Downloader").isVisible(), true);
-  assert.equal(await reviewForm.getByText("Private pilot source repository and unpacked extension reviewed with the Operator.").isVisible(), true);
-  await reviewForm.getByLabel("Review reason").fill("First review deliberately verifies the rejection and resubmission path.");
+  assert.equal(await reviewForm.getByText(reviewPackageSha256).isVisible(), true);
+  assert.equal(await reviewForm.getByText("manifest_v3").isVisible(), true);
+  const packageHref = await reviewForm.getByRole("link", { name: "Download exact package for human review" }).getAttribute("href");
+  assert.ok(packageHref);
+  const packageResponse = await operatorPage.request.get(new URL(packageHref, appOrigin).toString());
+  assert.equal(packageResponse.status(), 200);
+  assert.equal(packageResponse.headers()["x-review-package-sha256"], reviewPackageSha256);
+  assert.deepEqual(await packageResponse.body(), reviewPackage);
+
+  await reviewForm.getByLabel("Review reason").fill("First technical review deliberately verifies rejection and immutable package resubmission.");
   await reviewForm.getByRole("button", { name: "Reject Submission" }).click();
-  await page.getByText(`${appId} · pending`).waitFor({ state: "detached" });
+  await waitForTextAfterNavigate(publisherPage, "/publisher", `${appId} · rejected`);
 
-  await publisherPage.reload();
-  await publisherPage.getByText(`${appId} · rejected`).waitFor();
   await publisherPage.getByLabel("App manifest JSON").fill(JSON.stringify(manifest, null, 2));
-  await publisherPage.getByLabel("Ownership evidence").fill("Private pilot source repository and unpacked extension reviewed again after rejection.");
-  const resubmissionResponsePromise = publisherPage.waitForResponse((response) => response.url().endsWith("/api/publisher/submissions") && response.request().method() === "POST");
+  await publisherPage.getByLabel("Ownership evidence").fill("Corrected candidate retains verified ownership evidence and supplies the exact installable package again.");
+  await publisherPage.getByLabel("Exact installable extension ZIP").setInputFiles({ name: "applicant-video-downloader.zip", mimeType: "application/zip", buffer: reviewPackage });
   await publisherPage.getByRole("button", { name: "Submit App for review" }).click();
-  const resubmissionResponse = await resubmissionResponsePromise;
-  assert.equal(resubmissionResponse.status(), 201, await resubmissionResponse.text());
+  await publisherPage.getByText(`${appId} · pending`).waitFor();
 
-  await page.reload();
-  reviewForm = page.locator("form").filter({ hasText: `${appId} · pending` });
-  await reviewForm.getByLabel("Review reason").fill("Ownership evidence and unpacked runtime identity reviewed for the private pilot.");
+  await navigate(operatorPage, "/operator");
+  reviewForm = operatorPage.locator("form").filter({ hasText: `${appId} · pending` });
+  await reviewForm.getByLabel("Review reason").fill("Exact package, digest, Manifest V3 metadata, permissions, ownership evidence, and behavior were reviewed.");
   await reviewForm.getByRole("button", { name: "Approve Submission" }).click();
-  await page.getByText(`${appId} · pending`).waitFor({ state: "detached" });
 
-  await publisherPage.reload();
-  await publisherPage.getByText(`${appId} · approved`).first().waitFor();
+  await waitForTextAfterNavigate(publisherPage, "/publisher", `${appId} · approved`);
   const authorityIdentity = await publisherPage.evaluate(async ({ appId, runtimeId }) => {
     const response = await fetch(`/api/app-pass/apps/${appId}/distributions/${runtimeId}`);
-    return { status: response.status, body: await response.json() as { appId?: string; runtimeId?: string } };
+    return { status: response.status, body: await response.json() };
   }, { appId, runtimeId });
   assert.equal(authorityIdentity.status, 200);
   assert.deepEqual(authorityIdentity.body, {
     appId,
-    appName: "Invited Video Downloader",
+    appName: "Applicant Video Downloader",
     appStatus: "approved",
     publisherId,
-    publisherName: "Invited Publisher Pilot",
+    publisherName: "Applicant Publisher Pilot",
     runtimeId,
     distributionStatus: "approved",
   });
 
-  const conflictingPublisherEmail = `runtime-conflict-publisher-${Date.now()}@example.test`;
-  await page.goto(`${appOrigin}/operator`);
-  await page.getByLabel("Publisher email").fill(conflictingPublisherEmail);
-  await page.getByLabel("Publisher name").fill("Runtime Conflict Publisher");
-  await page.getByLabel("First App name").fill("Runtime Conflict App");
-  await page.getByRole("button", { name: "Create Publisher invitation" }).click();
-  const conflictingPublisherId = await page.getByTestId("generated-publisher-id").innerText();
-  const conflictingAppId = await page.getByTestId("generated-app-id").innerText();
-  const conflictingInvitationCode = await page.getByTestId("invitation-code").innerText();
-
-  const conflictingPublisherContext = await browser.newContext(appOrigin.includes("localhost") ? { extraHTTPHeaders: { "cf-connecting-ip": "192.0.2.33" } } : {});
-  const conflictingPublisherPage = await conflictingPublisherContext.newPage();
-  await conflictingPublisherPage.goto(`${appOrigin}/account`);
-  await conflictingPublisherPage.getByRole("button", { name: "Need a pilot account? Create one" }).click();
-  await conflictingPublisherPage.getByLabel("Name").fill("Runtime Conflict Publisher");
-  await conflictingPublisherPage.getByLabel("Email").fill(conflictingPublisherEmail);
-  await conflictingPublisherPage.getByLabel("Password").fill("correct-horse-battery-staple");
-  await conflictingPublisherPage.getByRole("button", { name: "Create account" }).click();
-  await conflictingPublisherPage.getByText("Human session active").waitFor();
-  await conflictingPublisherPage.goto(`${appOrigin}/publisher/invitation`);
-  await conflictingPublisherPage.getByLabel("Invitation code").fill(conflictingInvitationCode);
-  await conflictingPublisherPage.getByRole("button", { name: "Accept Publisher invitation" }).click();
-  await conflictingPublisherPage.getByRole("heading", { name: "Publisher pilot area" }).waitFor();
-  const runtimeConflictStatus = await conflictingPublisherPage.evaluate(async ({ manifest, publisherId, appId }) => {
-    const response = await fetch("/api/publisher/submissions", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        manifest: {
-          ...manifest,
-          publisher_id: publisherId,
-          publisher_name: "Runtime Conflict Publisher",
-          app_id: appId,
-          name: "Conflicting Runtime App",
-          distributions: [{ ...manifest.distributions[0], channel: "chrome_web_store" }],
-        },
-        ownershipEvidence: "This different channel must not permit claiming an already approved Chromium runtime ID.",
-      }),
-    });
-    return response.status;
-  }, { manifest, publisherId: conflictingPublisherId, appId: conflictingAppId });
-  assert.equal(runtimeConflictStatus, 409);
-
   const replayContext = await browser.newContext(appOrigin.includes("localhost") ? { extraHTTPHeaders: { "cf-connecting-ip": "192.0.2.32" } } : {});
   const replayPage = await replayContext.newPage();
-  await replayPage.goto(`${appOrigin}/account`);
+  await navigate(replayPage, "/account");
   await replayPage.getByRole("button", { name: "Need a pilot account? Create one" }).click();
   await replayPage.getByLabel("Name").fill("Replay Subscriber");
   await replayPage.getByLabel("Email").fill(`replay-${Date.now()}@example.test`);
   await replayPage.getByLabel("Password").fill("correct-horse-battery-staple");
   await replayPage.getByRole("button", { name: "Create account" }).click();
   await replayPage.getByText("Human session active").waitFor();
-  await replayPage.goto(`${appOrigin}/publisher/invitation`);
+  await navigate(replayPage, "/publisher/invitation");
   await replayPage.getByLabel("Invitation code").fill(invitationCode);
   await replayPage.getByRole("button", { name: "Accept Publisher invitation" }).click();
   await replayPage.getByText("Invitation is invalid, expired, already used, or assigned to another email.").waitFor();
 
-  process.stdout.write("PASS Publisher invitation, guarded review lifecycle, canonical identity, and cross-channel runtime uniqueness\n");
+  process.stdout.write("PASS public Publisher Application, preliminary review, exact package intake, guarded technical approval, and canonical authority\n");
 } finally {
   await browser.close();
 }

@@ -8,11 +8,11 @@ Branch: `main`
 
 ## 1. Product outcome
 
-SERP Apps Pass is one subscription that grants a Subscriber access to every approved App in the Pass. Apps may be owned by SERP or by an invited Publisher.
+SERP Apps Pass is one subscription that grants a Subscriber access to every approved App in the Pass. Apps may be owned by SERP or by an independently applying Publisher.
 
 The private-pilot MVP is complete only when this loop works on deployed Cloudflare staging:
 
-> An invited Publisher submits a real SDK-enabled Chromium extension, a Subscriber buys the Pass through Stripe Checkout, the Subscriber links the extension and receives active access, the payment creates an auditable Publisher Earning, and an Operator records evidence that SERP paid that Earning through an approved external payment method.
+> A developer applies, SERP preliminarily accepts the product, the accepted Publisher submits the exact SDK-enabled Chromium extension package for technical review, an Operator explicitly approves it, a Subscriber buys the Pass through Stripe Checkout, the Subscriber links the extension and receives active access, the payment creates an auditable Publisher Earning, and an Operator records evidence that SERP paid that Earning through an approved external payment method.
 
 The local extension-inclusion proof is preserved under [`docs/prototype/`](./docs/prototype/). It established useful interfaces but is not the MVP implementation.
 
@@ -22,25 +22,31 @@ The local extension-inclusion proof is preserved under [`docs/prototype/`](./doc
 
 Creates an account, purchases the Pass, approves App links, sees Subscription status, opens Stripe's billing portal, and uses premium App features while entitled.
 
+### Publisher Applicant
+
+Submits contact, product, public listing or source URL, ownership, distribution, privacy, permissions, and quality information for preliminary SERP review. Applying creates no Publisher role, identifiers, App authority, catalog entry, or entitlement.
+
 ### Publisher
 
-Is invited by SERP, supplies product and Distribution facts, integrates the SDK into an extension using the generated App ID, submits the manifest, and sees App, Earning, and Publisher Payment status relevant to that Publisher. Payment-account credentials are exchanged with SERP outside Apps Pass.
+Has passed preliminary review, accepts an email-bound onboarding invitation, integrates the SDK using the generated App ID, and submits a versioned manifest plus the exact installable extension Review Package. The Publisher sees App, Earning, and Publisher Payment status relevant to that Publisher. Payment-account credentials are exchanged with SERP outside Apps Pass.
 
 ### Operator
 
-Invites Publishers, reviews and approves or declines App submissions, suspends Apps, revokes App sessions, posts Publisher allocations, records completed Publisher Payments, reconciles Stripe billing events, and controls production rollout. Apps Pass generates immutable Publisher and App IDs; the Operator does not invent them.
+Reviews Publisher Applications, preliminarily accepts or declines them, reviews and approves or rejects technical App Submissions, suspends Apps, revokes App sessions, posts Publisher allocations, records completed Publisher Payments, reconciles Stripe billing events, and controls production rollout. Preliminary acceptance generates immutable Publisher and App IDs plus an email-bound onboarding invitation; the Operator does not invent them.
 
 ## 3. Required end-to-end journeys
 
 ### Publisher inclusion
 
-1. The Operator creates an email-bound invitation from the prospective Publisher's supplied contact and company information; Apps Pass generates immutable `publisher_id` and `app_id` values.
-2. The Publisher signs in through the invitation.
-3. The Publisher configures the public SDK with the generated App ID; the SDK reads the installed extension's actual identity from `chrome.runtime.id`; the Publisher rebuilds the extension.
-4. The Publisher submits the versioned `apppass.json` product and Distribution facts plus ownership evidence through the authenticated pilot area.
-5. The system validates the complete manifest and records a pending Submission without approving the App.
-6. The Operator inspects the submitted product facts, runtime identity, and ownership evidence and explicitly approves or declines the Submission.
-7. The approved Publisher, App, and Distribution become eligible for linking.
+1. A developer submits a Publisher Application through the public site. Submission is never approval.
+2. The Operator inspects the applicant, product, public listing/source URL, ownership attestation, permissions/privacy answers, and product-quality evidence, then declines, requests follow-up outside the MVP, or preliminarily accepts it with a reason.
+3. Only preliminary acceptance generates immutable `publisher_id` and `app_id` values and one expiring, email-bound onboarding invitation.
+4. The accepted Publisher signs in through that invitation.
+5. The Publisher configures the public SDK with the generated App ID; the SDK reads the installed extension's actual identity from `chrome.runtime.id`; the Publisher rebuilds the extension.
+6. The Publisher submits the versioned `apppass.json`, ownership evidence, and the exact installable extension ZIP intended for review.
+7. The system validates the manifest, stores the private Review Package outside D1, records its digest and package-inspection facts, and creates a pending technical Submission without approving the App.
+8. The Operator inspects the product facts, runtime identity, ownership evidence, Review Package metadata, automated intake results, permissions, and actual behavior, then explicitly approves or rejects that version with a reason.
+9. Only the approved Publisher, App, Distribution, and reviewed version become eligible for catalog display and linking. Material updates create a new immutable Submission and require review.
 
 ### Purchase
 
@@ -91,16 +97,16 @@ Invites Publishers, reviews and approves or declines App submissions, suspends A
 
 ### Invited Publisher
 
-- `/submit` — public explanation of the invitation, integration, Submission, review, and payment process.
+- `/submit` — public Publisher Application plus an explanation of preliminary review, technical onboarding, Submission, final review, and payment.
 - `/docs` — public private-pilot integration guide with SDK and manifest examples.
-- `/publisher/invitation` — authenticated one-time invitation acceptance.
+- `/publisher/invitation` — authenticated one-time onboarding acceptance available only after preliminary Application acceptance.
 - `/publisher` — App Submission, approved App status, Earnings, and recorded Publisher Payment status.
 
-The Publisher area is private and invitation-only. It is not a public marketplace or general developer portal.
+Applications are public; technical onboarding and the Publisher area are private. Applying never self-grants Publisher authority.
 
 ### Operator
 
-A protected CLI or minimal protected form is sufficient for invitations, identifier assignment, Submission approval, App suspension, session revocation, allocation posting, completed-payment recording, and reconciliation. There is no polished Operator dashboard requirement.
+A protected CLI or minimal protected form is sufficient for Application decisions, one-time invitation delivery, technical Submission approval, private Review Package retrieval, App suspension, session revocation, allocation posting, completed-payment recording, and reconciliation. There is no polished Operator dashboard requirement.
 
 ## 5. Required implementation shape
 
@@ -121,9 +127,9 @@ A protected CLI or minimal protected form is sufficient for invitations, identif
 The MVP requires durable records for:
 
 - human users, sessions, accounts, and verification state;
-- Operator invitations and role assignments;
+- Publisher Applications, preliminary decisions, Operator invitations, and role assignments;
 - Publishers and Publisher Memberships;
-- App Submissions, Apps, and Distributions;
+- App Submissions, immutable Review Package metadata/digests, Apps, and Distributions;
 - Subscribers and normalized Subscriptions;
 - Stripe Customers, Subscriptions, Invoices, and processed Events;
 - Link Requests, App Links, and App Sessions;
@@ -139,7 +145,9 @@ Every external Stripe object is stored with its mode (`test` or `live`). Test an
 - Make Checkout creation, allocation posting, and Publisher Payment recording idempotent.
 - Require an authenticated role and CSRF-safe method for every human state change.
 - Keep Operator mutation surfaces unavailable to unauthenticated public traffic.
-- Validate Publisher ownership evidence before approval; the exact pilot evidence is recorded per Submission.
+- Rate-limit public Applications and keep applicant data unavailable to other applicants and Publishers.
+- Validate Publisher ownership evidence and inspect the exact Review Package before approval; the exact pilot evidence and package digest are recorded per Submission.
+- Keep Review Packages private, authorize Operator retrieval server-side, reject unsafe archives and unsupported package shapes, and never execute submitted code in the application Worker.
 - Never embed platform, Stripe, or Publisher secrets in an extension.
 - Store App-session tokens only as hashes and redact credentials, proof keys, account-link URLs, and personal/payment details from logs.
 - Preserve an audit trail for App approval, suspension, allocation, Publisher Payment recording, and reconciliation.
@@ -152,20 +160,21 @@ The detailed threat model is in [`docs/mvp/SECURITY.md`](./docs/mvp/SECURITY.md)
 The MVP is staging-complete only when all of the following have durable evidence:
 
 1. The pinned Next.js/OpenNext/Better Auth/D1 combination runs on deployed Cloudflare staging.
-2. Subscriber and invited-Publisher human sessions survive Worker restarts and enforce roles.
-3. An invited Publisher can participate without a Stripe connected account or payment credentials stored in Apps Pass.
-4. A real Chromium extension integrates the SDK in its own source, submits the standard manifest, is approved, and loads without prototype fixture enumeration.
-5. A Subscriber completes Stripe test-mode hosted Checkout.
-6. Signed, duplicate, delayed, and deliberately reordered webhook fixtures produce the correct normalized Subscription without double application.
-7. The Subscriber approves the real extension and it receives `active` through its own App session.
-8. Cancellation and failed renewal stop extending access; paid-through expiry produces `inactive`.
-9. Cross-App token use, link replay, expired links, session revocation, and App suspension behave correctly.
-10. The paid Invoice produces one Cash Receipt and a balanced, auditable Allocation Run.
-11. One completed external Publisher payment is deliberately recorded once against the exact eligible Earning; exact retry is a no-op and conflicting evidence rejects.
-12. The Publisher can distinguish an accrued Earning from a recorded Publisher Payment, while Apps Pass makes no claim that an unobserved bank deposit succeeded.
-13. Structured staging logs allow an Operator to trace the Checkout, webhook, link, entitlement, allocation, and Publisher Payment using identifiers without exposing secrets.
-14. D1 state persists across deployments and a documented backup/recovery rehearsal succeeds in staging.
-15. Automated contract/integration checks and real Chromium browser checks are reported separately and pass.
+2. Subscriber and accepted-Publisher human sessions survive Worker restarts and enforce roles.
+3. A developer can apply without receiving Publisher authority; only a reasoned preliminary Operator acceptance generates identities and onboarding access.
+4. An accepted Publisher can participate without a Stripe connected account or payment credentials stored in Apps Pass.
+5. A real Chromium extension integrates the SDK in its own source, submits the standard manifest and exact installable package, passes package intake, is meaningfully reviewed and approved, and loads without prototype fixture enumeration.
+6. A Subscriber completes Stripe test-mode hosted Checkout.
+7. Signed, duplicate, delayed, and deliberately reordered webhook fixtures produce the correct normalized Subscription without double application.
+8. The Subscriber approves the real extension and it receives `active` through its own App session.
+9. Cancellation and failed renewal stop extending access; paid-through expiry produces `inactive`.
+10. Cross-App token use, link replay, expired links, session revocation, and App suspension behave correctly.
+11. The paid Invoice produces one Cash Receipt and a balanced, auditable Allocation Run.
+12. One completed external Publisher payment is deliberately recorded once against the exact eligible Earning; exact retry is a no-op and conflicting evidence rejects.
+13. The Publisher can distinguish an accrued Earning from a recorded Publisher Payment, while Apps Pass makes no claim that an unobserved bank deposit succeeded.
+14. Structured staging logs allow an Operator to trace the Application, reviews, Checkout, webhook, link, entitlement, allocation, and Publisher Payment using identifiers without exposing secrets or private packages.
+15. D1 state persists across deployments and a documented backup/recovery rehearsal succeeds in staging.
+16. Automated contract/integration checks and real Chromium browser checks are reported separately and pass.
 
 ## 9. Live-money gate
 
@@ -185,7 +194,8 @@ The live smoke test must use a deliberately limited price and settlement amount,
 ## 10. Explicit non-goals
 
 - Public marketplace catalog, search, categories, ratings, reviews, or discovery.
-- Public Publisher applications or automated Publisher approval.
+- Automated Publisher/Application approval or automatic catalog inclusion.
+- A promise of source-level audit or reproducible builds; the MVP reviews the submitted installable package. Source intake may be required later by an approved risk policy.
 - Automated extension ownership verification.
 - Usage analytics or usage-weighted revenue allocation.
 - Automatic allocation or automatic Transfer release.

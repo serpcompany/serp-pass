@@ -8,8 +8,8 @@ This matrix maps the binding PRD criteria to current evidence. `Passed` means th
 | --- | --- | --- | --- |
 | 1 | Pinned Next/OpenNext/Better Auth/D1 on staging | Passed | Deployed staging Worker, persistent session, and migrated staging D1. |
 | 2 | Subscriber and Publisher sessions and roles survive deploys | Passed | Rendered staging browser journeys and D1-backed roles. |
-| 3 | Publisher participates without Stripe connected account or stored payment credentials | Passed | Invitation, Membership, Submission, Earning, and Publisher view do not depend on Connect. Connect onboarding is disabled in staging. |
-| 4 | Real extension integrates SDK, submits, is approved, and loads generically | Partial | Monorepo real extension and clean tarball install pass. Still needs the external Publisher handoff/review boundary. |
+| 3 | Publisher participates without Stripe connected account or stored payment credentials | Passed | Public Application, preliminary acceptance, Membership, exact-package Submission, Earning, and Publisher view do not depend on Connect. Connect onboarding is disabled in staging. |
+| 4 | Real extension integrates SDK, submits an exact package, is approved, and loads generically | Partial | Monorepo real extension, clean SDK tarball install, private R2 package upload/download/digest verification, rejection/resubmission, and final approval pass locally and on staging. Still needs an independently operated external Publisher handoff/review. |
 | 5 | Real test-mode hosted Checkout | Passed | Real rendered `$10/month` Checkout, exact-account/Price reconciliation, and duplicate-Session reuse pass on staging. |
 | 6 | Signed, duplicate, delayed, reordered billing Events | Partial | Provider-delivered signed staging Events and real Event resend/replay pass; delayed/reordered cases remain provider-format local checks. |
 | 7 | Subscriber approves real extension and receives `active` | Passed | The real paid staging Subscriber links the actual Publisher extension; its SDK independently receives `active`. |

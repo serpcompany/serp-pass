@@ -19,6 +19,12 @@
       "migrations_dir": "migrations"
     }
   ],
+  "r2_buckets": [
+    {
+      "binding": "REVIEW_PACKAGES",
+      "bucket_name": "serp-apps-pass-review-packages-local"
+    }
+  ],
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1,
@@ -44,6 +50,12 @@
           "migrations_dir": "migrations"
         }
       ],
+      "r2_buckets": [
+        {
+          "binding": "REVIEW_PACKAGES",
+          "bucket_name": "serp-apps-pass-review-packages-staging"
+        }
+      ],
       "observability": {
         "enabled": true,
         "head_sampling_rate": 1,
@@ -64,6 +76,12 @@
           "database_name": "apps-pass-production",
           "database_id": "00000000-0000-0000-0000-000000000012",
           "migrations_dir": "migrations"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "REVIEW_PACKAGES",
+          "bucket_name": "serp-apps-pass-review-packages-production"
         }
       ],
       "observability": {

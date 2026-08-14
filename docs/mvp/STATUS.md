@@ -4,15 +4,15 @@ Updated: **2026-08-14**
 
 ## Current slice
 
-Slices 1–3 are complete. Slice 4 has real Stripe test-mode Checkout, signed Event projection, replay evidence, one Cash Receipt per paid Invoice, and rendered Portal cancellation. Slice 5 joins that real paid-through Subscription to the actual unpacked Publisher extension on staging. Slice 6 has been simplified: Stripe bills Subscribers only, while Publisher payment instructions remain outside Apps Pass. Slice 7 has a real-receipt `$7/$2/$1` Allocation plus a locally verified, immutable external Publisher Payment record. Staging Payment evidence correctly remains absent until SERP actually completes a payment elsewhere. Stripe account `acct_1MwbFJI9EPtyKcIs` (**SERP Pass**) is the only configured sandbox. Production remains absent.
+Slices 1–3 are complete after correcting Slice 3 from invitation-first intake to curated admission: public Application, Operator preliminary decision, system-generated identities, accepted-Publisher onboarding, exact package upload to private R2, rejection/resubmission, and final approval now pass locally and on deployed staging. Slice 4 has real Stripe test-mode Checkout, signed Event projection, replay evidence, one Cash Receipt per paid Invoice, and rendered Portal cancellation. Slice 5 joins that real paid-through Subscription to the actual unpacked Publisher extension on staging. Slice 6 has been simplified: Stripe bills Subscribers only, while Publisher payment instructions remain outside Apps Pass. Slice 7 has a real-receipt `$7/$2/$1` Allocation plus a locally verified, immutable external Publisher Payment record. Staging Payment evidence correctly remains absent until SERP actually completes a payment elsewhere. Stripe account `acct_1MwbFJI9EPtyKcIs` (**SERP Pass**) is the only configured sandbox. Production remains absent.
 
 ## Environment evidence
 
 | Environment | State | Evidence |
 | --- | --- | --- |
 | Local Next | built | Next.js `16.2.11` typecheck and optimized build pass. Runtime use requires an ignored local `BETTER_AUTH_SECRET`. |
-| Local workerd | passed | OpenNext `1.19.9` Worker reads migrated local D1; rendered Chromium passes human auth, role denials, Operator bootstrap, one-time Publisher invitation, normalized billing, real extension activation/entitlement, immutable allocation posting, Operator-only external Publisher Payment recording, replay/conflict/immutability checks, and D1 rate limiting at `localhost:8788`. Dormant Connect/Transfer projection tests remain historical evidence. All 25 migrations apply to the persistent local database. |
-| Cloudflare staging | deployed and passed | Worker version `af75b844-dcb2-42bc-9145-1a83c8ae4b8a`, isolated APAC D1, health `200 ready`, and all 25 migrations current. Public Home, Apps, Submit, and Docs surfaces pass at desktop and mobile widths; the catalog reads approved D1 Apps without exposing runtime or Submission IDs. Real Stripe Checkout/Portal/Event projection, real paid extension activation, real-receipt Allocation, Operator-only Payment route, and simplified Publisher UI pass. Connect onboarding and Stripe Transfers are disabled. The real `$7` Earning correctly remains accrued with zero Payment rows. |
+| Local workerd | passed | OpenNext `1.19.9` Worker reads migrated local D1; rendered Chromium passes human auth, role denials, Operator bootstrap, curated Application review, exact package intake, normalized billing, real extension activation/entitlement, immutable allocation posting, Operator-only external Publisher Payment recording, replay/conflict/immutability checks, and D1 rate limiting at `localhost:8788`. Dormant Connect/Transfer projection tests remain historical evidence. All 26 migrations apply to the persistent local database. |
+| Cloudflare staging | deployed and passed | Worker version `4fa22eb1-1c55-4f5f-992f-e1f46b518204`, isolated APAC D1, private review-package R2, health `200 ready`, and all 26 migrations current. Public Home, Apps, Submit, and Docs surfaces pass; the complete Application → preliminary acceptance → exact ZIP → rejection/resubmission → final approval flow passes in rendered Chromium, including exact package download/digest equality and canonical authority. Real Stripe Checkout/Portal/Event projection, real paid extension activation, real-receipt Allocation, Operator-only Payment route, and simplified Publisher UI also pass. Connect onboarding and Stripe Transfers are disabled. The real `$7` Earning correctly remains accrued with zero Payment rows. |
 | Production | not created or deployed | Production D1 still has a non-routable placeholder UUID; no production secret or Worker deployment exists. |
 | Stripe | configured subscriber-billing sandbox | Exact account `acct_1MwbFJI9EPtyKcIs` (**SERP Pass**) was verified before mutation. One Product, `$10/month` Price, Portal configuration, platform webhook, and unused Connect webhook exist in test mode. Real test Customers/Subscriptions/Invoices/Events and one `$10` Apps Pass Allocation exist. No connected Account, Transfer, live object, real card, or bank account exists. Full inventory: [STRIPE_SANDBOX_STATE.md](./STRIPE_SANDBOX_STATE.md). |
 
@@ -54,21 +54,25 @@ Slices 1–3 are complete. Slice 4 has real Stripe test-mode Checkout, signed Ev
 
 - Public signup grants only the Subscriber role; a claimed email address cannot grant Publisher or Operator authority.
 - The trusted CLI explicitly bootstraps a named existing Operator account and records an audit event.
-- An Operator can create a seven-day invitation for one normalized Publisher email.
-- Only the invited signed-in account can exchange the raw code; D1 stores its SHA-256 hash, not the code.
+- Public signup and a public Publisher Application grant no Publisher or Operator authority.
+- Only an Operator's preliminary acceptance creates a seven-day invitation for the normalized applicant email.
+- Only the accepted signed-in account can exchange the raw code; D1 stores its SHA-256 hash, not the code.
 - Acceptance assigns Publisher authority and consumes the invitation atomically; another Subscriber receives a replay rejection.
-- Anonymous and Subscriber requests cannot create Publisher invitations, and cross-origin mutation is rejected.
+- The former arbitrary invitation endpoint returns `410`; Anonymous and Subscriber users cannot bypass the Application decision gate, and cross-origin mutation is rejected.
 - Better Auth sign-in limits use an atomic D1 counter: three invalid attempts are ordinary credential failures and the fourth receives `429` plus a retry interval.
 - A staging human session remained valid across migrations and a Worker deployment.
 
 ## What Slice 3 proves
 
-- An Operator issues immutable public Publisher and App IDs together with a one-time Publisher invitation.
-- Only the invited Publisher Membership can submit against its App Assignment; an Operator without that membership receives `403`, and a mismatched public identity receives `409`.
+- A developer can submit public listing, ownership, product, permissions, and privacy evidence without choosing internal IDs or receiving authority.
+- An Operator can preliminarily accept or decline that Application; acceptance atomically generates collision-safe public Publisher/App IDs and a one-time invitation, while decline grants nothing.
+- Only the accepted Publisher Membership can submit against its App Assignment; an Operator without that membership receives `403`, and a mismatched public identity receives `409`.
 - The versioned public manifest contract rejects unknown fields and produces one canonical whole-document representation without runtime code generation in Workers.
-- A Submission remains pending until an Operator records an explicit review reason and approves or rejects it.
-- Rejection releases the Distribution claim and restores the App Assignment so the Publisher can correct and resubmit.
-- Approval creates canonical App and Distribution authority records, while the public identity route returns only approved state.
+- Every new Submission requires the exact installable ZIP. Bounded archive validation rejects unsafe paths and invalid/non-V3 root manifests; private R2 stores the bytes while D1 stores digest, ETag, size, manifest facts, and inspection metadata.
+- Only an Operator can download the exact package. The staging journey proves returned bytes and SHA-256 equal the candidate that was uploaded.
+- A Submission remains pending until an Operator reviews its evidence/package and records an explicit approval or rejection reason.
+- Rejection preserves the reviewed package, releases the Distribution claim, and restores the App Assignment so the Publisher can correct and resubmit with a new immutable package.
+- Final approval requires a package and creates canonical App and Distribution authority records; the public identity route returns only approved state.
 - `apps/invited-publisher-extension` is an independently built Manifest V3 source project importing the shared SDK—not the preserved prototype shell.
 - The SDK is a self-contained, compiled, typed `0.1.0` pilot tarball with no runtime/workspace dependency. `pnpm mvp:sdk:test` proves npm installation, module import, public-client behavior, and extension bundling from an empty temporary project. It remains `private: true`, so no package registry publication is implied or possible by accident.
 - Chromium loads that source with stable runtime ID `deigfiokgenocbkifhkognjkhfljcfgi`; staging recognizes it as approved under `app_invited_pilot_real` and `pub_invited_pilot_real`.
@@ -126,6 +130,7 @@ Slices 1–3 are complete. Slice 4 has real Stripe test-mode Checkout, signed Ev
 
 - Cloudflare Worker: `serp-apps-pass-staging`
 - D1 database: `apps-pass-staging` (`54d36df7-062d-4115-aabc-bcf984b9e2c8`)
+- Private R2 bucket: `serp-apps-pass-review-packages-staging` (review candidates only; no public URL)
 - Worker secret names: `BETTER_AUTH_SECRET`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, and `STRIPE_CONNECT_WEBHOOK_SECRET` (values never written to the repository or command output)
 - Stripe test objects and IDs: [STRIPE_SANDBOX_STATE.md](./STRIPE_SANDBOX_STATE.md)
 

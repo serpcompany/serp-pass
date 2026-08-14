@@ -5,6 +5,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
+import { strToU8, zipSync } from "fflate";
 import { chromium, type BrowserContext, type Page } from "playwright";
 
 const appOrigin = process.env.APP_ORIGIN ?? "http://localhost:8788";
@@ -78,14 +79,25 @@ async function ensureRealApp(browserContext: BrowserContext) {
     const operatorPage = await operatorContext.newPage();
     await signUp(operatorPage, "Activation Operator", operatorEmail);
     runPnpm(["mvp:operator:bootstrap", "--", "--local", operatorEmail]);
+    await operatorPage.goto(`${appOrigin}/submit`);
+    await operatorPage.getByLabel("Contact email").fill(publisherEmail);
+    await operatorPage.getByLabel("Publisher or company name").fill(appManifest.publisher_name);
+    await operatorPage.getByLabel("Extension name").fill(appManifest.name);
+    await operatorPage.getByLabel("Public extension listing URL").fill(`https://chromewebstore.google.com/detail/activation-${suffix}`);
+    await operatorPage.getByLabel("Source repository URL").fill("https://github.com/serpcompany/serp-appspass");
+    await operatorPage.getByLabel("What the extension does and why it belongs in the Pass").fill("An independently built reference extension used to verify the real activation and entitlement boundary.");
+    await operatorPage.getByLabel("Permissions, data collection, and privacy explanation").fill("Uses only the documented Apps Pass authority and local extension storage; the reference collects no personal information.");
+    await operatorPage.getByLabel(/I attest that I own or am authorized/).check();
+    await operatorPage.getByRole("button", { name: "Submit Publisher Application" }).click();
+    await operatorPage.getByText("Application received for preliminary SERP review").waitFor();
+
     await operatorPage.goto(`${appOrigin}/operator`);
-    await operatorPage.getByLabel("Publisher email").fill(publisherEmail);
-    await operatorPage.getByLabel("Publisher name").fill(appManifest.publisher_name);
-    await operatorPage.getByLabel("First App name").fill(appManifest.name);
-    await operatorPage.getByRole("button", { name: "Create Publisher invitation" }).click();
-    const generatedPublisherId = await operatorPage.getByTestId("generated-publisher-id").innerText();
-    const generatedAppId = await operatorPage.getByTestId("generated-app-id").innerText();
-    const invitationCode = await operatorPage.getByTestId("invitation-code").innerText();
+    const applicationReview = operatorPage.locator("form").filter({ hasText: appManifest.name });
+    await applicationReview.getByLabel("Preliminary review reason").fill("Reference extension listing, ownership, permissions, privacy, and product case accepted for technical onboarding.");
+    await applicationReview.getByRole("button", { name: "Accept for technical onboarding" }).click();
+    const generatedPublisherId = await applicationReview.getByTestId("generated-publisher-id").innerText();
+    const generatedAppId = await applicationReview.getByTestId("generated-app-id").innerText();
+    const invitationCode = await applicationReview.getByTestId("invitation-code").innerText();
 
     const publisherPage = await publisherContext.newPage();
     await signUp(publisherPage, "Activation Publisher", publisherEmail);
@@ -94,8 +106,13 @@ async function ensureRealApp(browserContext: BrowserContext) {
     await publisherPage.getByRole("button", { name: "Accept Publisher invitation" }).click();
     await publisherPage.getByRole("heading", { name: "Publisher pilot area" }).waitFor();
     const generatedManifest = { ...appManifest, publisher_id: generatedPublisherId, app_id: generatedAppId };
+    const reviewPackage = Buffer.from(zipSync({
+      "manifest.json": strToU8(JSON.stringify({ manifest_version: 3, name: appManifest.name, version: "1.0.0", permissions: ["storage"] })),
+      "popup.html": strToU8("<!doctype html><title>Activation reference</title>"),
+    }));
     await publisherPage.getByLabel("App manifest JSON").fill(JSON.stringify(generatedManifest, null, 2));
     await publisherPage.getByLabel("Ownership evidence").fill("Independently built Publisher extension source and stable Chromium runtime reviewed for the activation slice.");
+    await publisherPage.getByLabel("Exact installable extension ZIP").setInputFiles({ name: "activation-reference.zip", mimeType: "application/zip", buffer: reviewPackage });
     await publisherPage.getByRole("button", { name: "Submit App for review" }).click();
     await publisherPage.getByText(`${generatedAppId} · pending`).waitFor();
 

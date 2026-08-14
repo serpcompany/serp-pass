@@ -25,9 +25,12 @@ export async function POST(request: Request, context: { params: Promise<{ submis
     return Response.json({ message: "A valid decision and review reason of 10–1000 characters are required." }, { status: 400 });
   }
 
-  const submission = await env.DB.prepare("SELECT id, app_id, publisher_id, manifest_json FROM app_submission WHERE id = ? AND status = 'pending'")
+  const submission = await env.DB.prepare(`SELECT submission.id, submission.app_id, submission.publisher_id, submission.manifest_json
+    FROM app_submission submission
+    JOIN app_submission_package package ON package.submission_id = submission.id
+    WHERE submission.id = ? AND submission.status = 'pending'`)
     .bind(submissionId).first<{ id: string; app_id: string; publisher_id: string; manifest_json: string }>();
-  if (!submission) return Response.json({ message: "Pending Submission not found." }, { status: 404 });
+  if (!submission) return Response.json({ message: "Pending Submission with a stored Review Package not found." }, { status: 404 });
 
   const now = Math.floor(Date.now() / 1000);
   const auditId = crypto.randomUUID();

@@ -6,6 +6,7 @@
   "scripts": {
     "prebuild": "pnpm --filter @serp-apps-pass/sdk build",
     "build": "tsx scripts/build.ts",
+    "package:review": "pnpm build && tsx scripts/package-review.ts",
     "preflight": "tsx tests/preflight.ts",
     "test:browser": "tsx tests/browser.ts"
   },
@@ -16,6 +17,7 @@
   "devDependencies": {
     "@types/chrome": "0.1.37",
     "esbuild": "0.28.2",
+    "fflate": "0.8.2",
     "playwright": "1.62.1",
     "tsx": "4.23.12"
   }

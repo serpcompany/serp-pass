@@ -24,19 +24,29 @@ try {
   await page.getByText("Human session active").waitFor();
 
   await page.goto(`${appOrigin}/publisher`);
-  assert.equal(await page.getByRole("heading", { name: "Publisher invitation required" }).isVisible(), true);
+  assert.equal(await page.getByRole("heading", { name: "Publisher onboarding required" }).isVisible(), true);
 
-  const wrongRoleStatus = await page.evaluate(async () => {
-    const response = await fetch("/api/operator/publisher-invitations", {
+  const applicationStatus = await page.evaluate(async () => {
+    const response = await fetch("/api/publisher/applications", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ email: "blocked-publisher@example.test" }),
+      body: JSON.stringify({
+        email: "applicant@example.test",
+        publisherName: "Boundary Applicant",
+        appName: "Boundary Extension",
+        publicListingUrl: "https://chromewebstore.google.com/detail/boundary",
+        productDescription: "A legitimate public Application can be submitted without granting Publisher authority.",
+        permissionsAndPrivacy: "The extension uses storage for preferences and declares no collection of personal information.",
+        ownershipAttested: true,
+      }),
     });
     return response.status;
   });
-  assert.equal(wrongRoleStatus, 403);
+  assert.equal(applicationStatus, 201);
+  await page.goto(`${appOrigin}/publisher`);
+  assert.equal(await page.getByRole("heading", { name: "Publisher onboarding required" }).isVisible(), true, "Application must not self-grant Publisher authority");
 
-  const crossOriginResponse = await fetch(`${appOrigin}/api/operator/publisher-invitations`, {
+  const crossOriginResponse = await fetch(`${appOrigin}/api/publisher/applications`, {
     method: "POST",
     headers: { "content-type": "application/json", origin: "https://attacker.invalid" },
     body: JSON.stringify({ email: "blocked-publisher@example.test" }),

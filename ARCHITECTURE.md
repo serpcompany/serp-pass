@@ -9,7 +9,8 @@ This architecture deliberately keeps one deployable application while separating
 ```mermaid
 flowchart LR
     Subscriber["Subscriber browser"]
-    Publisher["Invited Publisher browser"]
+    Applicant["Publisher Applicant browser"]
+    Publisher["Accepted Publisher browser"]
     Extension["Publisher-owned Chromium extension"]
     Operator["Protected Operator CLI"]
     App["Next.js / OpenNext Worker"]
@@ -19,7 +20,8 @@ flowchart LR
     Logs["Cloudflare Workers Logs"]
 
     Subscriber -->|"human session, Checkout, activation"| App
-    Publisher -->|"human session, manifest, payment status"| App
+    Applicant -->|"public Application"| App
+    Publisher -->|"human session, manifest, package, payment status"| App
     Extension -->|"App session, entitlement"| App
     Operator -->|"review, allocation, payment evidence"| App
     App --> D1
@@ -87,34 +89,41 @@ The following are intentionally not synonyms:
 
 Interface:
 
-- submit a complete versioned manifest;
+- submit a public Publisher Application;
+- preliminarily accept or decline an Application;
+- submit a complete versioned manifest and exact Review Package;
 - approve or reject a Submission;
 - read the approved App and Distribution identity.
 
-The module hides whole-document validation, ID assignment rules, ownership evidence, conflict detection, atomic writes, and audit events.
+The module hides Application state, whole-document validation, ID assignment rules, private package storage, digest/inspection facts, ownership evidence, conflict detection, compensated cross-store writes, and audit events.
 
 Implemented Slice 3 flow:
 
 ```mermaid
 sequenceDiagram
+    participant A as Publisher Applicant
     participant O as SERP Operator
     participant W as Apps Pass Worker
-    participant P as Invited Publisher
+    participant P as Accepted Publisher
     participant D as Staging D1
     participant E as Publisher extension
 
-    O->>W: Create email-bound invitation from supplied Publisher facts
-    W->>D: Generate Publisher/App IDs; store Assignment and hashed invitation
-    P->>W: Accept invitation; submit product/Distribution facts plus evidence
-    W->>D: Validate canonical contract and store pending Submission
-    O->>W: Approve or reject with review reason
+    A->>W: Submit public product Application
+    W->>D: Store pending Application without authority
+    O->>W: Preliminary accept or decline with reason
+    W->>D: On acceptance generate IDs, Assignment, and hashed invitation
+    P->>W: Accept invitation; submit manifest, evidence, and exact ZIP
+    W->>D: Validate contract; store digest and pending Submission
+    O->>W: Inspect package and approve or reject with reason
     W->>D: Create approved App and Distribution only on approval
     E->>W: Present App ID and chrome.runtime.id
     W->>D: Read approved canonical identity
     W-->>E: Approved identity or not found
 ```
 
-The Submission contract lives in `packages/app-pass-contracts`. It contains the JSON Schema, generated Worker-safe validator, canonicalization, and public manifest types. Apps Pass generates Publisher and App IDs when it creates the invitation/Assignment; neither human chooses storage identities. The generated App ID configures the extension client. The browser supplies `chrome.runtime.id` at runtime, while `apppass.json` declares the Distribution identity and facts the Operator reviews. One App may later have several Distributions, so an App ID is never derived from a browser runtime ID. None of these public artifacts contains a secret.
+The Submission contract lives in `packages/app-pass-contracts`. It contains the JSON Schema, generated Worker-safe validator, canonicalization, and public manifest types. Apps Pass generates Publisher and App IDs only after preliminary Application acceptance; neither human chooses storage identities. The generated App ID configures the extension client. The browser supplies `chrome.runtime.id` at runtime, while `apppass.json` declares the Distribution identity and facts the Operator reviews. One App may later have several Distributions, so an App ID is never derived from a browser runtime ID. None of these public artifacts contains a secret.
+
+Review Package bytes live in a private environment-specific R2 bucket. D1 stores the immutable object key, SHA-256 digest, size, media type, extracted extension-manifest facts, and intake result. The Worker accepts a bounded ZIP, rejects unsafe paths and unsupported manifest shapes, and never executes submitted code. Package storage plus D1 recording is a compensated operation: a failed database write deletes the just-uploaded object. Only an authenticated Operator may retrieve a package for human review.
 
 The monorepo reference extension uses a workspace link for live development. That is not the distribution proof. A separate clean-project check packs the SDK, installs the tarball with npm, imports its compiled module, exercises the public client, and bundles an extension entry without monorepo resolution. The SDK remains non-publishable until the Operator chooses and approves a registry; a pilot Publisher receives the exact tarball and checksum privately.
 
@@ -204,13 +213,16 @@ If Connect is reconsidered later, its trust boundary remains valid: a redirect c
 
 The exact route filenames may follow Next.js conventions, but the externally meaningful surfaces are:
 
-- `/`, `/apps`, `/submit`, and `/docs` as public product, catalog, developer-process, and integration-guide surfaces;
+- `/`, `/apps`, `/submit`, and `/docs` as public product, catalog, Publisher Application/developer-process, and integration-guide surfaces;
 - `/account`, `/publisher/invitation`, `/publisher`, and `/operator` as role-aware human workspaces;
 - Better Auth handlers for human sessions;
 - `POST /api/billing/checkout`;
 - `POST /api/billing/portal`;
 - `POST /api/stripe/webhook` using the raw body;
 - `POST /api/publisher/submissions`;
+- `POST /api/publisher/applications`;
+- `POST /api/operator/publisher-applications/:id/review`;
+- `GET /api/operator/submissions/:id/package`;
 - `POST /api/app-pass/link-requests`;
 - `POST /api/app-pass/link-requests/:id/exchange`;
 - authenticated `/activate/:id` approval and denial;

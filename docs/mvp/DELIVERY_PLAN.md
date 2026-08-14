@@ -44,22 +44,25 @@ Status: **completed on Cloudflare staging 2026-08-13**
 
 Browser evidence: one account per role sees only its permitted surface; anonymous and wrong-role mutations fail.
 
-Evidence: [STATUS.md](./STATUS.md). The initial Operator is explicitly bootstrapped through the trusted local/Cloudflare CLI; all later Publisher role grants require an Operator-created, hashed, expiring, email-bound, single-use invitation. Email verification and recovery remain required before the controlled live gate.
+Evidence: [STATUS.md](./STATUS.md). The initial Operator is explicitly bootstrapped through the trusted local/Cloudflare CLI. An accepted Application still uses a hashed, expiring, email-bound, single-use invitation to grant Publisher membership; the corrected flow changes who may cause that invitation to be issued, not its credential boundary. Email verification and recovery remain required before the controlled live gate.
 
 ## 3. Publisher inclusion slice
 
-Status: **completed on Cloudflare staging 2026-08-13**
+Status: **corrected admission and exact-package review pass locally and on deployed staging; independent Publisher evaluation remains**
 
-- Operator invitation with Apps Pass-generated immutable Publisher and App IDs.
-- authenticated Publisher manifest submission.
+- public Publisher Application with no authority grant;
+- reasoned preliminary Operator acceptance or decline;
+- acceptance-generated immutable Publisher/App IDs and email-bound onboarding invitation;
+- authenticated Publisher manifest plus exact installable Review Package submission;
 - versioned validation and pending Submission record.
-- ownership-evidence field and Operator approval/rejection CLI.
+- private package storage, digest, bounded archive/manifest intake, and Operator-only retrieval;
+- ownership evidence plus meaningful Operator package/behavior approval or rejection;
 - approved App/Distribution query used by the authority.
 - one real extension repository integrates the SDK in its own source.
 
-Browser evidence: Publisher submits; Operator approves; the real unpacked extension identifies itself through the approved Distribution without any fixture enumeration.
+Browser evidence: developer applies; Operator preliminarily accepts; Publisher onboards and submits the exact package; Operator inspects and approves; the real unpacked extension identifies itself through the approved Distribution without any fixture enumeration.
 
-Evidence: [STATUS.md](./STATUS.md). The public manifest contract is isolated in `packages/app-pass-contracts`; the independently built extension source is `apps/invited-publisher-extension`. The deployed journey also proves wrong-role and mismatched-identity rejection, Operator rejection, corrected resubmission, and approval. The versioned private-pilot SDK now packs as compiled JavaScript plus declarations with no runtime/workspace dependency; `pnpm mvp:sdk:test` installs that tarball in a clean temporary project and bundles a clean extension entry. Registry publication and an actual invited-Publisher handoff remain open.
+Earlier evidence: [STATUS.md](./STATUS.md). The public manifest contract, independent extension, wrong-role checks, technical rejection/resubmission, authority approval, and packaged SDK remain valid. They do not prove developer-initiated Application screening or exact-package review; this slice returns to incomplete until those corrected boundaries pass staging.
 
 ## 4. Subscriber billing slice
 
@@ -124,7 +127,7 @@ Before the release gate, the deployed pilot must be understandable without readi
 
 - `/` explains the Pass and provides obvious Subscriber and Publisher entry points;
 - `/apps` lists only real approved D1 Apps and truthful availability;
-- `/submit` explains the invited-Publisher inclusion process;
+- `/submit` accepts a Publisher Application and explains preliminary screening, technical onboarding, package review, and final approval;
 - `/docs` explains the SDK, public IDs, manifest, rebuild, Submission, review, and activation boundaries;
 - signed-in role surfaces remain reachable from the shared site navigation.
 

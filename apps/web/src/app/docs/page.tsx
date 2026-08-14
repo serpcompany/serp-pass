@@ -58,7 +58,7 @@ export default function DocsPage() {
           <section id="overview">
             <span className="eyebrow">Private-pilot docs · version 1</span>
             <h1>Add Apps Pass to an extension</h1>
-            <p>This guide shows what an invited extension developer changes, what SERP provides, and what happens after submission. The short version: add one small SDK client at your premium-feature boundary, rebuild normally, then submit a public JSON description for review.</p>
+            <p>This guide starts after SERP preliminarily accepts your public Publisher Application. Acceptance gives you technical-onboarding access; it does not approve the App. Add the SDK at your premium-feature boundary, rebuild normally, then submit the public JSON description and the exact installable extension ZIP for final review.</p>
             <div className="actions">
               <Link className="primary-button" href="/publisher">Open Publisher workspace</Link>
               <Link className="secondary-button" href="/submit">See the whole process</Link>
@@ -66,8 +66,8 @@ export default function DocsPage() {
           </section>
 
           <section id="ids">
-            <h2>1. Receive two public IDs</h2>
-            <p>SERP assigns your <code>publisher_id</code> and <code>app_id</code> when it invites you. They are stable public labels—similar to a username—not passwords. They can appear in source control, your JSON Submission, and compiled extension code.</p>
+            <h2>1. Apply, then receive two public IDs</h2>
+            <p>Start with the <Link href="/submit">public Publisher Application</Link>. A SERP Operator reviews your product, public listing, ownership statement, permissions, privacy explanation, and catalog fit. Only preliminary acceptance generates your <code>publisher_id</code>, <code>app_id</code>, and email-bound onboarding invitation. The IDs are stable public labels—similar to a username—not passwords.</p>
             <div className="info-panel">
               <strong>Nothing here is a payment credential.</strong>
               <p>Never put a Stripe key, Apps Pass platform secret, Publisher payment credential, or Subscriber browser cookie in an extension.</p>
@@ -94,14 +94,19 @@ export default function DocsPage() {
           </section>
 
           <section id="review">
-            <h2>4. Submit it for review</h2>
+            <h2>4. Submit the exact extension for review</h2>
             <ol>
-              <li>Sign in using the email tied to the Publisher invitation.</li>
+              <li>After preliminary Application acceptance, sign in using the email tied to the onboarding invitation.</li>
               <li>Accept the invitation once at <Link href="/publisher/invitation">the invitation page</Link>.</li>
-              <li>Paste the complete JSON and ownership evidence into the <Link href="/publisher">Publisher workspace</Link>.</li>
-              <li>SERP validates it and stores a pending Submission.</li>
-              <li>An Operator reviews the extension and evidence. Only approval creates the App identity used by the entitlement authority.</li>
+              <li>Paste the complete JSON and ownership evidence into the <Link href="/publisher">Publisher workspace</Link>, then attach the exact installable ZIP intended for release.</li>
+              <li>SERP bounds and validates the ZIP, requires one root Manifest V3 <code>manifest.json</code>, rejects unsafe archive paths, stores the package privately, and records its SHA-256 digest and declared permissions.</li>
+              <li>An Operator downloads and tests that exact package, then reviews ownership, functionality, permissions, privacy, quality, and the SDK integration.</li>
+              <li>Only explicit final approval makes that reviewed App/runtime eligible for the catalog and entitlement authority. Material updates require a new immutable Submission.</li>
             </ol>
+            <div className="info-panel">
+              <strong>Package review is not automatically a source-code audit.</strong>
+              <p>The private-pilot requirement is the exact installable extension ZIP. SERP may separately request source and build instructions when ownership, permissions, redistribution, or risk requires them.</p>
+            </div>
           </section>
 
           <section id="activation">
@@ -110,7 +115,7 @@ export default function DocsPage() {
             <p>The extension receives its own revocable App-session token. It never receives the Subscriber&apos;s human session cookie or Stripe information. Later SDK checks return <code>active</code> only while the Subscription, App, Distribution, and App session all permit access.</p>
             <div className="accent-panel">
               <h2>Ready to test an extension?</h2>
-              <p>The private pilot is invitation-only. Start with the process overview, then use the assigned identities in a real Chromium extension build.</p>
+              <p>Applications are public; technical onboarding is gated. Start with the Application, then use the generated identities only after preliminary acceptance.</p>
               <div className="actions">
                 <Link className="primary-button" href="/submit">Developer process</Link>
                 <Link className="secondary-button" href="/publisher">Publisher workspace</Link>

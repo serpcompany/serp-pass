@@ -174,6 +174,25 @@ export const appSubmissions = sqliteTable(
   (table) => [index("app_submission_publisher_status_idx").on(table.publisherId, table.status), index("app_submission_app_idx").on(table.appId)],
 );
 
+export const appSubmissionPackages = sqliteTable(
+  "app_submission_package",
+  {
+    submissionId: text("submission_id")
+      .primaryKey()
+      .references(() => appSubmissions.id, { onDelete: "cascade" }),
+    objectKey: text("object_key").notNull(),
+    originalFilename: text("original_filename").notNull(),
+    mediaType: text("media_type").notNull(),
+    sizeBytes: integer("size_bytes").notNull(),
+    sha256: text("sha256").notNull(),
+    objectEtag: text("object_etag").notNull(),
+    extensionManifestJson: text("extension_manifest_json").notNull(),
+    inspectionJson: text("inspection_json").notNull(),
+    uploadedAt: integer("uploaded_at", { mode: "timestamp" }).notNull(),
+  },
+  (table) => [uniqueIndex("app_submission_package_object_key_unique").on(table.objectKey), index("app_submission_package_sha256_idx").on(table.sha256)],
+);
+
 export const submissionDistributionClaims = sqliteTable(
   "submission_distribution_claim",
   {
@@ -253,6 +272,30 @@ export const publisherInvitationAssignments = sqliteTable("publisher_invitation_
     .notNull()
     .references(() => appAssignments.appId, { onDelete: "cascade" }),
 });
+
+export const publisherApplications = sqliteTable(
+  "publisher_application",
+  {
+    id: text("id").primaryKey(),
+    email: text("email").notNull(),
+    publisherName: text("publisher_name").notNull(),
+    appName: text("app_name").notNull(),
+    publicListingUrl: text("public_listing_url").notNull(),
+    sourceUrl: text("source_url"),
+    productDescription: text("product_description").notNull(),
+    permissionsAndPrivacy: text("permissions_and_privacy").notNull(),
+    ownershipAttested: integer("ownership_attested", { mode: "boolean" }).notNull(),
+    status: text("status", { enum: ["pending", "accepted", "rejected"] }).notNull(),
+    submittedAt: integer("submitted_at", { mode: "timestamp" }).notNull(),
+    reviewedByUserId: text("reviewed_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    reviewedAt: integer("reviewed_at", { mode: "timestamp" }),
+    reviewReason: text("review_reason"),
+    invitationId: text("invitation_id").references(() => publisherInvitations.id, { onDelete: "restrict" }),
+    publisherId: text("publisher_id").references(() => publishers.id, { onDelete: "restrict" }),
+    appId: text("app_id").references(() => appAssignments.appId, { onDelete: "restrict" }),
+  },
+  (table) => [index("publisher_application_status_submitted_idx").on(table.status, table.submittedAt), index("publisher_application_email_idx").on(table.email)],
+);
 
 export const rateLimit = sqliteTable(
   "rate_limit",

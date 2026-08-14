@@ -20,7 +20,7 @@ export default async function PublisherPage() {
         <section className="account-card">
           <span className="status">Anonymous</span>
           <h1>Publisher sign-in required</h1>
-          <p className="muted">Sign in first. Publisher access also requires a one-time invitation issued by a SERP Operator.</p>
+          <p className="muted">Sign in first. Publisher access also requires a one-time onboarding invitation issued only after preliminary Application acceptance.</p>
           <Link className="health" href="/account">Sign in</Link>
         </section>
       </main>
@@ -33,8 +33,8 @@ export default async function PublisherPage() {
         <Link className="back-link" href="/">← Apps Pass</Link>
         <section className="account-card">
           <span className="status">Subscriber only</span>
-          <h1>Publisher invitation required</h1>
-          <p className="muted">You are signed in, but this account has not accepted an active Publisher invitation. Typing a Publisher email address does not grant this role.</p>
+          <h1>Publisher onboarding required</h1>
+          <p className="muted">You are signed in, but this account has not accepted onboarding from an approved Publisher Application. Applying or typing a Publisher email address does not grant this role.</p>
         </section>
       </main>
     );
@@ -79,7 +79,7 @@ export default async function PublisherPage() {
       <section className="account-card">
         <span className="status active">Publisher role active</span>
         <h1>Publisher pilot area</h1>
-        <p className="muted">Apps Pass generated your immutable public identifiers. Configure the SDK with the App ID, and submit your extension&apos;s real runtime identity and ownership evidence for Operator review.</p>
+        <p className="muted">Your Application passed preliminary review and Apps Pass generated your immutable public identifiers. Configure the SDK with the App ID, then submit the real runtime identity, ownership evidence, and exact installable ZIP for separate final review.</p>
         <h2>Pilot payments</h2>
         <p className="muted">Stripe bills Subscribers only. During the private pilot, SERP pays Publishers outside Apps Pass and records the completed payment here. Apps Pass never asks for or stores your bank or payment-account credentials.</p>
         <h2>Publisher Earnings</h2>

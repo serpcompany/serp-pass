@@ -5,9 +5,9 @@ import { and, eq, isNull } from "drizzle-orm";
 import { getHumanIdentity } from "@/auth/identity";
 import { billingModeForEnvironment } from "@/billing/read";
 import { getDb } from "@/db/get-db";
-import { allocationRuns, appSubmissions, publisherEarnings, publisherPayments, publishers } from "@/db/schema";
+import { allocationRuns, appSubmissionPackages, appSubmissions, publisherApplications, publisherEarnings, publisherPayments, publishers } from "@/db/schema";
 import { AllocationForm } from "./allocation-form";
-import { PublisherInvitationForm } from "./publisher-invitation-form";
+import { PublisherApplicationReviewForm } from "./publisher-application-review-form";
 import { PublisherPaymentForm } from "./publisher-payment-form";
 import { SubmissionReviewForm } from "./submission-review-form";
 
@@ -41,28 +41,36 @@ export default async function OperatorPage() {
       </main>
     );
   }
-  const pendingSubmissions = await getDb()
-    .select({
-      id: appSubmissions.id,
-      appId: appSubmissions.appId,
-      manifestJson: appSubmissions.manifestJson,
-      ownershipEvidence: appSubmissions.ownershipEvidence,
-    })
-    .from(appSubmissions)
-    .where(eq(appSubmissions.status, "pending"));
   const { env } = getCloudflareContext();
   const mode = billingModeForEnvironment(env.APP_ENV);
-  const earningRows = await getDb().select({
-    id: publisherEarnings.id,
-    publisherName: publishers.name,
-    amount: publisherEarnings.amount,
-    currency: publisherEarnings.currency,
-    availableAt: publisherEarnings.availableAt,
-  }).from(publisherEarnings)
-    .innerJoin(allocationRuns, eq(allocationRuns.id, publisherEarnings.allocationRunId))
-    .innerJoin(publishers, eq(publishers.id, publisherEarnings.publisherId))
-    .leftJoin(publisherPayments, eq(publisherPayments.publisherEarningId, publisherEarnings.id))
-    .where(and(eq(publisherEarnings.status, "accrued"), eq(allocationRuns.mode, mode), isNull(publisherPayments.id)));
+  const [pendingApplications, pendingSubmissions, earningRows] = await Promise.all([
+    getDb().select().from(publisherApplications).where(eq(publisherApplications.status, "pending")),
+    getDb()
+      .select({
+        id: appSubmissions.id,
+        appId: appSubmissions.appId,
+        manifestJson: appSubmissions.manifestJson,
+        ownershipEvidence: appSubmissions.ownershipEvidence,
+        packageFilename: appSubmissionPackages.originalFilename,
+        packageSizeBytes: appSubmissionPackages.sizeBytes,
+        packageSha256: appSubmissionPackages.sha256,
+        packageInspectionJson: appSubmissionPackages.inspectionJson,
+      })
+      .from(appSubmissions)
+      .leftJoin(appSubmissionPackages, eq(appSubmissionPackages.submissionId, appSubmissions.id))
+      .where(eq(appSubmissions.status, "pending")),
+    getDb().select({
+      id: publisherEarnings.id,
+      publisherName: publishers.name,
+      amount: publisherEarnings.amount,
+      currency: publisherEarnings.currency,
+      availableAt: publisherEarnings.availableAt,
+    }).from(publisherEarnings)
+      .innerJoin(allocationRuns, eq(allocationRuns.id, publisherEarnings.allocationRunId))
+      .innerJoin(publishers, eq(publishers.id, publisherEarnings.publisherId))
+      .leftJoin(publisherPayments, eq(publisherPayments.publisherEarningId, publisherEarnings.id))
+      .where(and(eq(publisherEarnings.status, "accrued"), eq(allocationRuns.mode, mode), isNull(publisherPayments.id))),
+  ]);
 
   return (
     <main>
@@ -70,8 +78,23 @@ export default async function OperatorPage() {
       <section className="account-card">
         <span className="status active">Operator role active</span>
         <h1>Operator controls</h1>
-        <p className="muted">Create a one-time, email-bound invitation. Apps Pass generates the internal Publisher and App identities; the Publisher later supplies extension facts and ownership evidence for your approval or rejection.</p>
-        <PublisherInvitationForm />
+        <p className="muted">Applicants ask to join from the public site. Preliminary acceptance generates the Publisher/App identities and one-time onboarding invitation; final App approval requires a separate technical Submission and exact Review Package.</p>
+        {pendingApplications.length === 0 ? <p className="muted">No pending Publisher Applications.</p> : (
+          <div className="review-list">
+            <h2>Pending Publisher Applications</h2>
+            {pendingApplications.map((application) => <PublisherApplicationReviewForm
+              key={application.id}
+              applicationId={application.id}
+              email={application.email}
+              publisherName={application.publisherName}
+              appName={application.appName}
+              publicListingUrl={application.publicListingUrl}
+              sourceUrl={application.sourceUrl}
+              productDescription={application.productDescription}
+              permissionsAndPrivacy={application.permissionsAndPrivacy}
+            />)}
+          </div>
+        )}
         <div className="review-list">
           <h2>Post Publisher Allocation</h2>
           <AllocationForm />

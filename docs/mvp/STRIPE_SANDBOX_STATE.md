@@ -1,6 +1,6 @@
 # Stripe sandbox state
 
-Updated: **2026-08-14**
+Updated: **2026-08-15**
 
 This is the durable inventory and evidence record for the explicitly approved test-mode integration. It is not a live-mode or production authorization.
 
@@ -22,6 +22,14 @@ This is the durable inventory and evidence record for the explicitly approved te
 | Platform webhook | `we_1U3zS9I9EPtyKcIsVOaQ6ycM` | Checkout, Invoice, Subscription, and Transfer Events only |
 | Connect webhook | `we_1U3zSBI9EPtyKcIs9SxpuyrY` | connected Account and Payout Events only |
 
+Additional linked-Subscriber API acceptance objects:
+
+| Purpose | Stripe ID | Exact configuration |
+| --- | --- | --- |
+| John Doe linked Subscriber Customer | `cus_V4XBGBjZkW9mc8` | test mode; Apps Pass Subscriber metadata; public `pm_card_visa` test PaymentMethod |
+| John Doe linked Subscriber Subscription | `sub_1U4O88I9EPtyKcIs7zzm0R2T` | active; configured `$10/month` Price; Subscriber metadata |
+| John Doe linked Subscriber Invoice | `in_1U4O88I9EPtyKcIsF1n0X3N9` | paid in test mode; projected as one D1 Cash Receipt |
+
 The pre-mutation inventory contained zero Products, Prices, Portal configurations, webhook endpoints, and connected Accounts, so no unrelated object was reused or overwritten.
 
 ## Real staging evidence
@@ -40,6 +48,8 @@ The pre-mutation inventory contained zero Products, Prices, Portal configuration
 
 `pnpm mvp:stripe-checkout:test-redirect-boundary` additionally disables only the newly created platform webhook, completes a fresh test Checkout, proves the browser return remains inactive, re-enables the endpoint, resends the exact recorded provider Events, and proves duplicate Invoice delivery leaves one Event and one Cash Receipt.
 
+On 2026-08-15 the user separately authorized API-driven test-mode mutation in this dedicated account. After re-verifying the exact Account and configured test Price, the acceptance run created a disposable Customer and Subscription for the already-linked John Doe Subscriber using Stripe's public `pm_card_visa` test PaymentMethod. The Subscription API response did not directly change Apps Pass state. The platform webhook delivered applied `invoice.paid` and `customer.subscription.created` evidence, D1 projected one normalized active Subscription and Cash Receipt `receipt:test:in_1U4O88I9EPtyKcIsF1n0X3N9`, and the same existing App session changed from `inactive` to `active`. This API path supplements the hosted-Checkout journey above; it does not claim to test Checkout UI.
+
 ## Provider-shape findings
 
 The first real purchase exposed that Dahlia Invoice top-level `period_end` is the Invoice-generation window, while the configured Price line contains the recurring service period. That first test Subscription/Invoice is preserved as failed acceptance evidence (`sub_1U3zYqI9EPtyKcIs7Nq4262v`, `in_1U3zYoI9EPtyKcIseI0KUg2H`) and is not used for allocation. The adapter now derives paid-through time from configured-Price line periods, and a fresh real purchase passed.
@@ -53,6 +63,9 @@ The real Customer Portal represented scheduled cancellation with `cancel_at` whi
 - Allocation Run: `alloc_staging_real_10usd_20260814`.
 - Immutable split: `$7.00` Publisher Earning (`earning_staging_pub_real_700_20260814`), `$2.00` platform, and `$1.00` reserve.
 - The first posting returned `posted`; replaying the exact request returned `duplicate` and created no second allocation.
+- John Doe API Cash Receipt: `receipt:test:in_1U4O88I9EPtyKcIsF1n0X3N9`.
+- John Doe Allocation Run: `alloc_john_api_1U4O88_20260815`.
+- John Doe immutable split: `$7.00` Publisher Earning (`earning_john_api_1U4O88_20260815`), `$2.00` platform, and `$1.00` reserve. Its ledger balances to zero and no Publisher Payment is recorded.
 - The first Connect Account-creation experiment was rejected because this platform Account has not completed Connect signup. Product direction then changed: Connect is no longer an MVP dependency. The historical D1 `creating` row contains no connected Account ID and is retained as evidence.
 - Connect onboarding and Stripe test Transfer execution are disabled by active staging configuration. No Transfer or Payout exists.
 

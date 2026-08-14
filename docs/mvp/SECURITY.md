@@ -10,7 +10,7 @@ Status: **binding MVP security boundary; not a completed security audit**
 - Authenticated accepted-Publisher browser.
 - Publisher-owned extension code and local extension storage.
 - Trusted Operator CLI/session.
-- Apps Pass Worker, D1, and private review-package R2 bucket.
+- Apps Pass Worker and D1. The private review-package R2 bucket belongs to a dormant historical experiment, not the active admission path.
 - Stripe webhook and server API traffic.
 
 An extension is not a trusted server, even when its runtime ID is approved. A runtime ID is public identity metadata, not a secret.
@@ -22,9 +22,9 @@ An extension is not a trusted server, even when its runtime ID is approved. A ru
 | Forged Stripe webhook | Raw-body signature verification with pinned endpoint secret | Invalid signature rejected; valid fixture accepted |
 | Duplicate/out-of-order Stripe delivery | Unique Event IDs plus state reconciliation against event/object chronology | Replay and reorder tests |
 | Checkout redirect granting access | Entitlement trusts normalized webhook projection only | Redirect-before-webhook remains inactive |
-| Publisher claiming another extension | Apps Pass-generated IDs, recorded ownership evidence, globally unique browser-family/runtime identity regardless of distribution channel, manual approval | Rejected conflicting Submission and audit event |
+| Publisher claiming another extension | Apps Pass-generated IDs, ownership evidence reviewed during Product Acceptance, globally unique browser-family/runtime identity regardless of channel, and connection verification from the declared extension origin | Conflicting Integration Declaration/connection rejects and the Product Acceptance is audited |
 | Applicant self-granting Publisher/App authority | Public Application is pending evidence only; Operator preliminary acceptance atomically generates IDs and invitation | Applicant remains unauthorized; retired arbitrary-invitation route rejects; generated identities cannot be applicant-supplied |
-| Malicious or substituted review package | Private R2 storage, bounded ZIP validation, root Manifest V3 inspection, SHA-256 binding, Operator-only exact download, and no execution in the Worker | Unsafe paths/oversize/invalid manifest reject; downloaded bytes and digest equal submitted candidate; approval requires a package |
+| Malicious or low-quality Publisher extension | Curated Product Acceptance, canonical identity during Subscriber activation, Operator suspension, and an explicit statement that connection verification is not a code/security certification | Rejected Product Application or suspended App; no claim that Apps Pass inspected source, packages, dependencies, or local feature enforcement |
 | Extension impersonating another App | Approved Distribution check plus App-scoped session token | Cross-App token/runtime tests |
 | Untrusted client fabricating an extension request | Treat runtime ID and Origin as public browser/CORS metadata, not authentication; show canonical identity, require human approval, require proof possession, and rate-limit public link/exchange calls | Wrong browser origins reject, abuse is bounded, and only the proof holder can exchange an approved request |
 | Stolen/replayed link proof | High entropy, short expiry, proof challenge, single exchange | Wrong, expired, and replayed proof tests |
@@ -46,7 +46,7 @@ An extension is not a trusted server, even when its runtime ID is approved. A ru
 
 - Stripe secrets, webhook secrets, Better Auth secrets, email credentials, and Operator credentials live in environment secrets.
 - No `NEXT_PUBLIC_` or extension bundle may contain a privileged secret.
-- Review packages remain private R2 objects; only an authenticated Operator route returns the exact candidate with its digest and no-store headers.
+- Dormant historical review-package objects remain private R2 objects; only the authenticated historical Operator route can return an exact candidate. They are not required or presented as active MVP admission evidence.
 - Dormant Connect Account Link URLs remain short-lived secrets and are neither persisted unnecessarily nor logged.
 - App-session tokens are stored only in the linked extension installation and as hashes in D1.
 - Logs may contain opaque record IDs and correlation IDs, but not tokens, proof keys, cookies, raw webhook bodies, payment methods, or identity-verification payloads.
@@ -58,7 +58,7 @@ An extension is not a trusted server, even when its runtime ID is approved. A ru
 | --- | ---: | ---: | ---: |
 | View own Subscription | Yes | No | Support-only |
 | Approve own App Link | Yes | No | No |
-| Submit App for owned Publisher | No | Yes | Assisted fallback |
+| Register Integration Declaration for owned Publisher | No | Yes | Assisted fallback |
 | View own Publisher earnings | No | Yes | Yes |
 | Approve or suspend App | No | No | Yes |
 | Post Allocation Run | No | No | Yes |

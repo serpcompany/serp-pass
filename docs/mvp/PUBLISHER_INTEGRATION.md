@@ -2,7 +2,7 @@
 
 Status: **private-pilot version 1**
 
-This is the concrete handoff between SERP Apps Pass and an accepted Chromium-extension Publisher. It does not transfer source-code ownership to SERP and does not require a platform secret inside the extension.
+This is the concrete handoff between SERP Apps Pass and an accepted Chromium-extension Publisher. It does not transfer source-code ownership to SERP, require a source/ZIP upload, or put a platform secret inside the extension.
 
 ## Before technical integration
 
@@ -25,7 +25,7 @@ These IDs are names assigned by SERP, not passwords. The Publisher may put them 
 1. Install the exact SDK pilot tarball supplied by SERP. For example, `npm install ./serp-apps-pass-sdk-0.1.0.tgz`. The package contains compiled JavaScript and TypeScript declarations and has no workspace or runtime package dependency.
 2. Create the SDK client with the Apps Pass-generated App ID and authority URL. Read the Distribution identity from `chrome.runtime.id`; do not ask a human to type it into SDK calls.
 3. Add the authority hostname to the extension's Manifest V3 `host_permissions`.
-4. Call the SDK from the extension's existing premium-access boundary. Slice 3 can check approved identity; Subscriber activation and real entitlement unlock arrive in Slice 5.
+4. Call `verifyConnection()` from the built extension so Apps Pass can observe the accepted App/runtime pair. Call `check()` wherever the extension wants the current Subscriber entitlement decision. Apps Pass does not certify how local features use that decision.
 5. Rebuild the extension normally. The SDK becomes part of its JavaScript bundle; no Stripe, SERP, or Publisher secret is bundled.
 
 Minimal source shape:
@@ -39,6 +39,7 @@ const appPass = createAppPass({
   authorityBaseUrl: "https://serp-apps-pass-staging.serpcompany.workers.dev",
 });
 
+await appPass.verifyConnection();
 const decision = await appPass.check();
 ```
 
@@ -61,29 +62,29 @@ SERP sends the Publisher the tarball and checksum through the agreed private cha
 
 ## What `apppass.json` is
 
-`apppass.json` is the complete versioned Submission document sent to Apps Pass. It is not a secret and it does not have to ship inside the extension bundle.
+`apppass.json` is the complete versioned Integration Declaration sent to Apps Pass. It is not a secret and it does not have to ship inside the extension bundle.
 
 It says:
 
-- which Apps Pass-generated Publisher and App IDs bind this Submission;
-- the human-readable names shown during review and activation;
+- which Apps Pass-generated Publisher and App IDs bind this declaration;
+- the human-readable names shown during Product Acceptance and activation;
 - which premium feature names the App requests;
 - which Chromium runtime ID belongs to the built extension;
-- whether that identity is being reviewed as an unpacked pilot or Chrome Web Store Distribution.
+- whether that identity is registered as an unpacked pilot or Chrome Web Store Distribution.
 
-The Publisher copies the JSON into the authenticated `/publisher` Submission form, adds ownership evidence, and uploads the exact installable ZIP proposed for the pilot. Apps Pass validates the whole document and binds it to the Publisher's generated App Assignment. Unknown fields, substituted Publisher/App IDs, or an already claimed runtime identity are rejected.
+The Publisher copies the JSON and built/published version into the authenticated `/publisher` integration form. Apps Pass validates the whole document and binds it to the Publisher's generated App Assignment. Unknown fields, substituted Publisher/App IDs, or an already claimed runtime identity are rejected.
 
-The ZIP is a technical release candidate, not a source-code repository. For the pilot it must be a bounded Manifest V3 archive with one root `manifest.json`. Apps Pass records its SHA-256 digest, size, file count, declared permissions, and host permissions in D1 while keeping the bytes in a private R2 bucket. SERP may request source or repository access when risk or ownership review requires it, but source submission is not a universal automated requirement in this MVP.
+The active MVP does not upload or inspect a package. A private-R2 exact-package experiment remains in the repository as historical/risk-based evidence only. SERP may introduce source, package, dependency, or malware review later under an approved risk policy; connection verification must not be described as any of those checks.
 
-## What SERP does after submission
+## What SERP does after registration
 
-1. Store the validated Submission and exact package as `pending`; this does not grant access.
-2. Download the same private package by Submission ID and verify its digest, manifest facts, behavior, permissions, ownership evidence, and actual extension/runtime identity.
-3. Reject with a reason so the same App Assignment can be corrected and resubmitted with a new immutable package, or approve it.
-4. On final approval only, create the canonical Publisher/App/Distribution authority records.
-5. Let the extension identify itself with its public App ID and actual `chrome.runtime.id`.
+1. Store the validated declaration and accepted Distribution as disconnected; registration alone does not grant linking eligibility.
+2. Require the built/published extension to call the SDK connection endpoint from the exact declared `chrome-extension://<runtime-id>` origin using the generated App ID.
+3. Record first/latest connection time and successful-call count for that accepted App/runtime pair.
+4. Mark the accepted App and Distribution connected, catalog-visible, and linking-eligible without a second human approval.
+5. Keep Operator suspension available if the App should no longer participate.
 
-The extension does not decide that it is approved. The Apps Pass authority checks D1 and returns the canonical result.
+The Publisher does not self-assign identities or bypass Product Acceptance. Apps Pass validates the connection against D1 and returns the canonical result. This proves protocol identity/connectivity only, not package safety or local feature enforcement.
 
 ## Stable Chromium identity
 
@@ -91,6 +92,6 @@ The extension does not decide that it is approved. The Apps Pass authority check
 
 ## Executable reference
 
-[`apps/invited-publisher-extension`](../../apps/invited-publisher-extension/) is the private-pilot reference source project. Its `src/manifest.json`, `apppass.json`, SDK usage, build, isolated Chromium check, and repeatable staging-approval check can be inspected independently. Inside this development monorepo it uses the workspace link so SDK edits reload in the project-owned browser; `pnpm mvp:sdk:test` is the separate evidence that the packed artifact works without that link.
+[`apps/invited-publisher-extension`](../../apps/invited-publisher-extension/) is the private-pilot reference source project. Its `src/manifest.json`, `apppass.json`, SDK usage, build, isolated Chromium check, and repeatable staging-connection check can be inspected independently. Inside this development monorepo it uses the workspace link so SDK edits reload in the project-owned browser; `pnpm mvp:sdk:test` is the separate evidence that the packed artifact works without that link.
 
-Together, the reference browser journey and clean-package test prove the technical integration handoff, activation, and entitlement client behavior. They do not prove a real Stripe purchase, external Publisher review, registry release, Publisher settlement, or bank Payout.
+Together, the reference browser journey and clean-package test prove the technical integration handoff, connection verification, activation, and entitlement client behavior. The separate John Doe staging run adds a real Stripe test Subscription and accrued Earning. None of this proves an independently operated external Publisher relationship, registry release, completed external Publisher payment, or bank Payout.

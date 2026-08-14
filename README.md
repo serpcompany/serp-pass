@@ -6,7 +6,7 @@ The target and acceptance boundary are in [PRD.md](./PRD.md). The architecture i
 
 The completed proof remains executable local software, not a visual mockup, but it is not the launchable subscription product. Its PRD, architecture, freeze, evaluation, and plan are preserved under [docs/prototype/](./docs/prototype/).
 
-Implementation is integrated on `main`. Invited Publisher submission, approved App identity, deployed Subscriber billing, real extension activation, paid-through entitlement, and one real-receipt `$7/$2/$1` Allocation work on [serp-apps-pass-staging.serpcompany.workers.dev](https://serp-apps-pass-staging.serpcompany.workers.dev). Stripe test account `acct_1MwbFJI9EPtyKcIs` (**SERP Pass**) handles Subscriber billing only. The local Operator/Publisher journey proves immutable external Publisher Payment evidence; staging correctly awaits a payment actually completed elsewhere. Connect is dormant post-MVP evidence. Production has not been created or deployed.
+Implementation is integrated on `main`. Curated Publisher Application/Product Acceptance, generated App identity, runtime connection verification, deployed Subscriber billing, real extension activation, paid-through entitlement, and two real-receipt `$7/$2/$1` test Allocations work on [serp-apps-pass-staging.serpcompany.workers.dev](https://serp-apps-pass-staging.serpcompany.workers.dev). The already-linked John Doe extension now receives `active` from a signed-event-derived Stripe test Subscription and has one accrued `$7` Publisher Earning. Stripe test account `acct_1MwbFJI9EPtyKcIs` (**SERP Pass**) handles Subscriber billing only. The local Operator/Publisher journey proves immutable external Publisher Payment evidence; staging correctly awaits a payment actually completed elsewhere. Connect is dormant post-MVP evidence. Production has not been created or deployed.
 
 ## Product surfaces
 
@@ -15,8 +15,8 @@ Implementation is integrated on `main`. Invited Publisher submission, approved A
 - `/submit` — public Publisher Application and curated admission process
 - `/docs` — beginner-oriented extension integration guide
 - `/account` — Subscriber sign-in, Subscription, and billing
-- `/publisher` — authenticated Submission, Earning, and Payment workspace
-- `/operator` — protected preliminary Application review, technical review, allocation, and payment controls
+- `/publisher` — authenticated integration, connection, Earning, and Payment workspace
+- `/operator` — protected Product Acceptance, connection inspection, allocation, and payment controls
 
 ## MVP stack walkthrough
 
@@ -52,7 +52,7 @@ pnpm mvp:operator:bootstrap -- --staging operator@example.com
 
 The command requires the trusted local shell or authenticated SERP Cloudflare CLI; there is no public bootstrap endpoint. A developer first applies at `/submit` with their contact, public listing, ownership attestation, product case, and permissions/privacy explanation. That Application grants no role or App authority. The Operator inspects it at `/operator` and either declines it or preliminarily accepts it. Acceptance—not the applicant—generates immutable Publisher and App IDs plus a one-time invitation code. The signed-in accepted Publisher enters that code at `/publisher/invitation`. Codes expire after seven days, are bound to the accepted email, are consumed once, and are stored only as hashes.
 
-The Publisher then submits the complete `apppass.json`, ownership evidence, and the exact installable extension ZIP from `/publisher`. Apps Pass validates bounded Manifest V3 facts, stores the package privately in R2, and stores its digest and inspection metadata in D1. The Operator downloads and inspects that exact package, records a reason, and approves or rejects it from `/operator`. Final approval—not Application acceptance or package upload—creates the canonical App and Distribution used by the authority. Source access is optional/risk-based for this pilot; the exact candidate package is mandatory.
+The Publisher then installs the supplied SDK, configures it with the generated App ID, rebuilds or publishes the extension, and registers its versioned `apppass.json`, public version, and Chromium Distribution identity from `/publisher`. The SDK reads the actual identity from `chrome.runtime.id`. Registration remains disconnected and catalog-ineligible until that exact extension origin calls `verifyConnection()`. A successful call creates durable connection evidence and makes the accepted App eligible for the catalog and Subscriber linking; no source/ZIP upload or second human technical approval is required or claimed by this MVP.
 
 The real invited-Publisher source project is [`apps/invited-publisher-extension`](./apps/invited-publisher-extension/). Build and verify its actual unpacked Chromium package with:
 
@@ -64,7 +64,7 @@ pnpm mvp:extension:test
 pnpm mvp:extension:test-staging
 ```
 
-The staging inclusion command performs the one-time real Publisher journey when needed and is read-only/repeatable after approval. It never contacts Stripe.
+The staging inclusion command performs the real Publisher integration/connection journey when needed and is read-only/repeatable after connection. It never contacts Stripe.
 
 The exact Publisher handoff, including what the IDs and JSON file mean, is in [docs/mvp/PUBLISHER_INTEGRATION.md](./docs/mvp/PUBLISHER_INTEGRATION.md).
 

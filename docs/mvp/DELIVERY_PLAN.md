@@ -64,7 +64,7 @@ Evidence: [STATUS.md](./STATUS.md). The accepted John Doe extension registered i
 
 ## 4. Subscriber billing slice
 
-Status: **normalized foundation is safely deployed; account-independent Stripe signature/Event and hosted-route code passes locally; the selected sandbox remains untouched pending explicit approval**
+Status: **completed on Cloudflare staging 2026-08-14; exact-account API activation additionally verified 2026-08-15**
 
 - one configured Stripe test Price;
 - authenticated hosted Checkout and Customer Portal;
@@ -75,9 +75,11 @@ Status: **normalized foundation is safely deployed; account-independent Stripe s
 
 Browser evidence: test purchase changes the Subscriber UI only after the webhook projection. Duplicate, delayed, failed-renewal, cancellation, and paid-through-expiry scenarios pass.
 
+Evidence: [STATUS.md](./STATUS.md). The rendered hosted-Checkout journey proves the actual Subscriber payment surface, durable Checkout-attempt reuse, signed Event projection, Portal cancellation, and paid extension access. A separate authorized Stripe API test on the exact project account created a test Customer and Subscription for the already-linked John Doe Subscriber; the extension remained dependent on the signed webhook projection and changed from `inactive` to `active` only after D1 recorded the paid Invoice and Cash Receipt. The API path supplements rather than replaces hosted-Checkout acceptance.
+
 ## 5. Real activation and entitlement slice
 
-Status: **implemented and browser-verified locally and on Cloudflare staging; real paid activation awaits the Slice 4 Stripe test purchase**
+Status: **completed locally and on deployed Cloudflare staging 2026-08-15**
 
 - port the proven link/App-session behavior behind authenticated activation UX;
 - SDK returns/opens an activation URL;
@@ -88,7 +90,7 @@ Status: **implemented and browser-verified locally and on Cloudflare staging; re
 
 Browser evidence: the real extension links and receives the correct entitlement decision after purchase; another App cannot reuse its session; expiry and failure states are truthful. The example may demonstrate feature gating, but Publisher admission does not certify local enforcement.
 
-Local evidence uses the signed billing-fixture boundary only to establish paid-through authority without accessing Stripe. The independently built Publisher extension performs the request and exchange from its real `chrome-extension://` origin, the Subscriber approves through Better Auth, and D1 stores only the App-session token hash. Approve, deny, already-used, expiry, unpaid, paid-through active, cross-App rejection, scoped revocation, App suspension/reapproval, relinking, public-call rate limiting, and temporary authority failure all pass in Chromium. Staging proves the persistent hash-only App-session path across a Worker deployment and correctly remains `inactive`; it cannot prove real paid `active` until the approved Stripe test purchase exists.
+Local evidence uses the signed billing-fixture boundary only to establish paid-through authority without accessing Stripe. The independently built Publisher extension performs the request and exchange from its real `chrome-extension://` origin, the Subscriber approves through Better Auth, and D1 stores only the App-session token hash. Approve, deny, already-used, expiry, unpaid, paid-through active, cross-App rejection, scoped revocation, App suspension/reapproval, relinking, public-call rate limiting, and temporary authority failure all pass in Chromium. On staging, the John Doe extension first returned truthful `inactive` for the linked unpaid Subscriber. After an authorized test-mode Stripe API Subscription produced signed provider Events and a normalized D1 paid-through projection, the same App session returned `active` without relinking or manual D1 changes.
 
 ## 6. Publisher payment-boundary slice
 

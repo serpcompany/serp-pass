@@ -1,12 +1,12 @@
 # SERP Apps Pass private-pilot MVP
 
-This branch converts the completed extension-inclusion proof into a minimal, trustworthy private-pilot product: curated Publisher application and review, real Subscriber purchase, authenticated App activation, entitlement, auditable Publisher Earning, and Operator-recorded evidence of Publisher payments completed outside Apps Pass.
+This branch converts the completed extension-inclusion proof into a minimal, trustworthy private-pilot product: curated Publisher application and review, real Subscriber purchase, authenticated App activation, entitlement, and an auditable Publisher Earning. Paying a real Publisher is a controlled pilot operation after the staging MVP is confirmed.
 
 The target and acceptance boundary are in [PRD.md](./PRD.md). The architecture is in [ARCHITECTURE.md](./ARCHITECTURE.md), delivery order in [docs/mvp/DELIVERY_PLAN.md](./docs/mvp/DELIVERY_PLAN.md), current criterion-by-criterion evidence in [docs/mvp/ACCEPTANCE_MATRIX.md](./docs/mvp/ACCEPTANCE_MATRIX.md), money invariants in [docs/mvp/MONEY_MODEL.md](./docs/mvp/MONEY_MODEL.md), and threats in [docs/mvp/SECURITY.md](./docs/mvp/SECURITY.md).
 
 The completed proof remains executable local software, not a visual mockup, but it is not the launchable subscription product. Its PRD, architecture, freeze, evaluation, and plan are preserved under [docs/prototype/](./docs/prototype/).
 
-Implementation is integrated on `main`. Curated Publisher Application/Product Acceptance, generated App identity, runtime connection verification, deployed Subscriber billing, real extension activation, paid-through entitlement, and two real-receipt `$7/$2/$1` test Allocations work on [serp-apps-pass-staging.serpcompany.workers.dev](https://serp-apps-pass-staging.serpcompany.workers.dev). The already-linked John Doe extension now receives `active` from a signed-event-derived Stripe test Subscription and has one accrued `$7` Publisher Earning. Stripe test account `acct_1MwbFJI9EPtyKcIs` (**SERP Pass**) handles Subscriber billing only. The local Operator/Publisher journey proves immutable external Publisher Payment evidence; staging correctly awaits a payment actually completed elsewhere. Connect is dormant post-MVP evidence. Production has not been created or deployed.
+Implementation is integrated on `main`. Curated Publisher Application/Product Acceptance, generated App identity, runtime connection verification, deployed Subscriber billing, real extension activation, paid-through entitlement, and two real-receipt `$7/$2/$1` test Allocations work on [serp-apps-pass-staging.serpcompany.workers.dev](https://serp-apps-pass-staging.serpcompany.workers.dev). The already-linked John Doe extension now receives `active` from a signed-event-derived Stripe test Subscription and has one accrued `$7` Publisher Earning. Stripe test account `acct_1MwbFJI9EPtyKcIs` (**SERP Pass**) handles Subscriber billing only. The local Operator/Publisher journey tests the optional immutable payment-recording boundary, but paying a fictional Publisher is not a staging gate. Connect is dormant post-MVP evidence. Production has not been created or deployed.
 
 ## Product surfaces
 
@@ -88,7 +88,7 @@ pnpm postmvp:connect:test
 pnpm mvp:earnings:test
 ```
 
-The first command uses the local normalized fixture boundary. The second uses Stripe's official SDK to generate and verify real Stripe-format signatures and current Event shapes without accessing an account. `postmvp:connect:test` preserves the dormant Connect projection experiment at its API and database boundaries; it is not an MVP dependency or active Publisher UI. `mvp:earnings:test` proves Allocation and completed external Publisher Payment evidence. None performs a Stripe API request.
+The first command uses the local normalized fixture boundary. The second uses Stripe's official SDK to generate and verify real Stripe-format signatures and current Event shapes without accessing an account. `postmvp:connect:test` preserves the dormant Connect projection experiment at its API and database boundaries; it is not an MVP dependency or active Publisher UI. `mvp:earnings:test` proves Allocation plus the optional local Publisher Payment recording boundary; only Allocation and accrued Earning are required for staging acceptance. None performs a Stripe API request.
 
 The approved real-provider staging journey is deliberately separate:
 

@@ -107,19 +107,18 @@ Historical evidence includes an account-independent Connect onboarding and readi
 
 ## 7. Earnings and settlement slice
 
-Status: **allocation, Earning, and external Publisher Payment recording are browser-verified locally; staging payment evidence awaits a payment actually completed outside Apps Pass**
+Status: **staging Cash Receipt allocation and Publisher Earning attribution pass; real-Publisher payment is a controlled live-pilot gate**
 
 - immutable Cash Receipt and ledger model;
 - Operator-created balanced Allocation Run;
 - Publisher Earning and hold state;
-- Operator recording of one already-completed external payment;
-- idempotent Payment evidence with immutable method/reference/time;
-- explicit correction and failed-payment operating policy before live money;
 - Publisher-readable history.
 
-Browser/Operator evidence: one paid test Invoice becomes one allocated Earning and one recorded external Publisher Payment without duplication or stored credentials.
+Browser/Operator evidence: one paid test Invoice becomes one balanced, auditable Publisher Earning without duplication, and the Publisher can see that the Earning is accrued rather than paid.
 
-Current evidence starts with one signed local paid Invoice and exercises the visible protected Operator controls and Publisher page. The Operator supplies every receipt amount, reserve, platform amount, Publisher amount, agreement reference, reason, and hold time. D1 atomically posts the immutable balanced ledger and Earning. After the hold, only an Operator can record a completed external Payment. D1 derives the exact Publisher, amount, currency, and mode from the Earning; exact retry is a no-op, changed reuse conflicts, and mutation rejects. The Publisher sees **paid externally** plus an opaque reference. Apps Pass never initiates the payment or stores payment credentials.
+Current evidence starts with paid Stripe test Invoices and exercises the visible protected Operator controls and Publisher page. The Operator supplies every receipt amount, reserve, platform amount, Publisher amount, agreement reference, reason, and hold time. D1 atomically posts the immutable balanced ledger and Earning. Staging truthfully leaves those Earnings accrued with zero Publisher Payment rows.
+
+The existing provider-neutral Publisher Payment boundary remains locally tested supporting code. It is not a staging MVP acceptance requirement. Its real use, correction policy, and reconciliation are required only when SERP performs the first controlled settlement with an actual Publisher.
 
 ## 8. Staging release gate
 
@@ -135,7 +134,7 @@ Before the release gate, the deployed pilot must be understandable without readi
 - one SERP-owned and one invited-Publisher App are independently integrated;
 - browser E2E, contract/integration checks, and manual journey evidence are separate;
 - structured logs trace each journey without secret leakage;
-- migration, rollback, D1 recovery, webhook reconciliation, App suspension, and Publisher Payment correction runbooks are rehearsed;
+- migration, rollback, D1 recovery, webhook reconciliation, and App suspension runbooks are rehearsed;
 - limitations, residual risks, and production inputs are recorded.
 
 Staging completion does not authorize live mode.

@@ -12,7 +12,7 @@ SERP Apps Pass is one subscription that grants a Subscriber access to every appr
 
 The private-pilot MVP is complete only when this loop works on deployed Cloudflare staging:
 
-> A developer applies, SERP accepts the product, Apps Pass generates onboarding identities, the Publisher integrates the SDK, and the built or published extension proves that it can connect using the accepted App and runtime identities. A Subscriber then buys the Pass through Stripe Checkout, links the extension, and receives the authoritative Apps Pass status; the payment creates an auditable Publisher Earning, and an Operator records evidence that SERP paid that Earning through an approved external payment method.
+> A developer applies, SERP accepts the product, Apps Pass generates onboarding identities, the Publisher integrates the SDK, and the built or published extension proves that it can connect using the accepted App and runtime identities. A Subscriber then buys the Pass through Stripe Checkout, links the extension, and receives the authoritative Apps Pass status; the payment creates an auditable Publisher Earning. Paying a real Publisher and recording that payment belong to the first controlled Publisher settlement, not staging MVP acceptance.
 
 The local extension-inclusion proof is preserved under [`docs/prototype/`](./docs/prototype/). It established useful interfaces but is not the MVP implementation.
 
@@ -83,9 +83,10 @@ The private-pilot admission path does not require source code, an extension ZIP,
 3. The run explicitly records the distributable amount, reserve, platform amount, and Publisher Earning amounts; no hidden usage formula exists.
 4. Posted ledger entries are immutable. Corrections use compensating entries.
 5. A Publisher Earning becomes payable only after its configured hold passes.
-6. SERP completes payment outside Apps Pass using the separately agreed Publisher payment method.
-7. The Operator records one immutable, idempotent Publisher Payment containing the exact Earning amount, method, completion time, and opaque provider confirmation reference.
-8. Apps Pass never stores bank credentials, payment-account credentials, or a Publisher email address as the payment reference. Recording evidence never initiates money movement.
+
+The staging MVP ends at the correctly attributed Publisher Earning. It must show that no Publisher Payment has been recorded and must not claim that money reached the Publisher.
+
+During the first controlled real-Publisher settlement, SERP completes payment outside Apps Pass using the separately agreed Publisher payment method. The Operator may then record one immutable, idempotent Publisher Payment containing the exact Earning amount, method, completion time, and opaque provider confirmation reference. Apps Pass never stores bank credentials, payment-account credentials, or a Publisher email address as the payment reference. Recording evidence never initiates money movement.
 
 ## 4. Product surfaces
 
@@ -170,11 +171,10 @@ The MVP is staging-complete only when all of the following have durable evidence
 9. Cancellation and failed renewal stop extending access; paid-through expiry produces `inactive`.
 10. Cross-App token use, link replay, expired links, session revocation, and App suspension behave correctly.
 11. The paid Invoice produces one Cash Receipt and a balanced, auditable Allocation Run.
-12. One completed external Publisher payment is deliberately recorded once against the exact eligible Earning; exact retry is a no-op and conflicting evidence rejects.
-13. The Publisher can distinguish an accrued Earning from a recorded Publisher Payment, while Apps Pass makes no claim that an unobserved bank deposit succeeded.
-14. Structured staging logs allow an Operator to trace the Application, reviews, Checkout, webhook, link, entitlement, allocation, and Publisher Payment using identifiers without exposing secrets or private packages.
-15. D1 state persists across deployments and a documented backup/recovery rehearsal succeeds in staging.
-16. Automated contract/integration checks and real Chromium browser checks are reported separately and pass.
+12. The Publisher sees the correctly attributed accrued Earning separately from settlement state, while staging contains no fabricated Publisher Payment or claim that money reached the Publisher.
+13. Structured staging logs allow an Operator to trace the Application, reviews, Checkout, webhook, link, entitlement, allocation, and Earning using identifiers without exposing secrets or private packages.
+14. D1 state persists across deployments and a documented backup/recovery rehearsal succeeds in staging.
+15. Automated contract/integration checks and real Chromium browser checks are reported separately and pass.
 
 ## 9. Live-money gate
 

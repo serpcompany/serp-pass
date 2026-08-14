@@ -17,12 +17,11 @@ This matrix maps the binding PRD criteria to current evidence. `Passed` means th
 | 9 | Cancellation, failed renewal, and paid-through expiry | Partial | Real rendered Portal cancellation and signed scheduled-cancellation projection pass while paid access remains active. Failed renewal and natural expiry remain local provider-format checks. |
 | 10 | Cross-App use, link replay/expiry, session revocation, and App suspension | Passed | Real Chromium and authority checks pass with distinct terminal and failure states. |
 | 11 | Paid Invoice creates one Cash Receipt and balanced Allocation | Passed | John Cash Receipt `in_1U4O88…` is allocated exactly once as `$7/$2/$1`; the immutable ledger balances to zero. |
-| 12 | One completed external Publisher Payment is recorded idempotently | Partial | Local Operator/Publisher browser boundary passes, including role denial, exact replay, conflicting reuse, immutability, and credential-free display. Staging awaits a payment actually completed outside Apps Pass. |
-| 13 | Publisher distinguishes accrued Earning from recorded Payment | Passed locally; accrued passes staging | Publisher UI shows the staged John `$7` Earning as awaiting payment. The local journey proves the separate **paid externally** state without exposing credentials. |
-| 14 | Secret-safe structured staging trace across the complete journey | Partial | The protected trace reconciles Checkout/API billing, Cash Receipt, App session, Allocation, and Earning IDs. Final staging Payment evidence awaits a completed external payment. |
-| 15 | D1 persistence and backup/recovery rehearsal | Passed | Deploy persistence and disposable remote D1 Time Travel rehearsal are documented separately. |
-| 16 | Automated checks and real Chromium evidence reported separately | Passed for implemented staging flow | Contract checks, hosted browser Checkout, the project-owned extension browser, and direct D1 reconciliation are reported as distinct evidence. |
+| 12 | Publisher sees the accrued Earning without a fabricated payment claim | Passed | Publisher UI shows the staged John `$7` Earning as awaiting payment, and staging contains zero Publisher Payment rows. The locally tested payment-recording boundary is supporting evidence, not a staging gate. |
+| 13 | Secret-safe structured staging trace across the complete journey | Partial | The protected trace reconciles Checkout/API billing, Cash Receipt, App session, Allocation, and Earning IDs. |
+| 14 | D1 persistence and backup/recovery rehearsal | Passed | Deploy persistence and disposable remote D1 Time Travel rehearsal are documented separately. |
+| 15 | Automated checks and real Chromium evidence reported separately | Passed for implemented staging flow | Contract checks, hosted browser Checkout, the project-owned extension browser, and direct D1 reconciliation are reported as distinct evidence. |
 
-## Current external inputs
+## Deferred live-pilot input
 
-Before recording a staging Publisher Payment, SERP must actually complete a test or deliberately small real payment through an approved external method and retain its opaque confirmation reference. Apps Pass must not fabricate completion evidence.
+The first controlled settlement with an actual Publisher requires an approved external payment method and an opaque confirmation reference. That rehearsal is intentionally not required to confirm the staging MVP.

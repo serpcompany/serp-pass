@@ -22,4 +22,15 @@ When the popup opens, `verifyConnection()` sends the generated App ID and `chrom
 
 The browser test uses a disposable headless Chromium profile and removes it afterward. It does not replace or stop the project-owned extension development browser.
 
+For the resumable staging Subscriber journey, first run `pnpm dev:browser:status`, then:
+
+```sh
+pnpm walkthrough:john-doe:activation -- prepare
+# Open the returned activationUrl in the signed-in Subscriber browser and approve John Doe Focus Timer.
+pnpm walkthrough:john-doe:activation -- finish
+pnpm walkthrough:john-doe:activation -- check
+```
+
+The helper attaches to the existing project-owned browser and deliberately leaves it running. `finish` proves the link exchange and returns the current authoritative entitlement; `check` is safely repeatable after the Subscriber billing state changes.
+
 For the real human-in-the-loop staging journey, invoke `$apps-pass-publisher-walkthrough` or paste the prompt in [`docs/walkthroughs/JOHN_DOE_FRESH_AGENT_PROMPT.md`](../../docs/walkthroughs/JOHN_DOE_FRESH_AGENT_PROMPT.md).

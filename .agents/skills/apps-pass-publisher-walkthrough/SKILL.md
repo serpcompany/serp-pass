@@ -116,6 +116,15 @@ Ask whether to stop after inclusion or continue. If continuing:
 6. Have the Subscriber inspect and approve the exact App, complete the one-time exchange, and check entitlement.
 7. Confirm the extension receives `active`; local premium unlocking is demonstration-only and not an admission requirement.
 
+Use the repo-owned resumable commands for steps 5–7:
+
+```sh
+pnpm dev:browser:status
+pnpm walkthrough:john-doe:activation -- prepare
+pnpm walkthrough:john-doe:activation -- finish
+pnpm walkthrough:john-doe:activation -- check
+```
+
 ## Evidence report
 
 End with PASS/FAIL/BLOCKED evidence for Application, Product Acceptance, generated identities/onboarding, connection verification, authority/catalog, optional Stripe purchase, optional activation decision, local, staging, and production (`not deployed`). List every UX ambiguity and manual workaround.

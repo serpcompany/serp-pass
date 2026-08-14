@@ -91,7 +91,8 @@ Slices 1–3 are complete with the simplified curated-admission boundary: public
 
 ## Deployed Slice 5 evidence
 
-- Migration `0015_app_activation.sql` is applied to staging and all 15 migrations report no pending work.
+- John Doe Focus Timer now has its own staging App Link and hash-only App session for the signed-in staging Subscriber. The real extension returned `inactive`, matching the absence of normalized paid-through state for that account. D1 stores a 64-character token hash and no raw App-session token. The resumable `walkthrough:john-doe:activation` helper preserves the project browser across prepare, human approval, finish, and repeatable checks.
+- Migration `0015_app_activation.sql` is applied to staging and all 27 current migrations report no pending work.
 - The real extension creates an activation request from its stable runtime origin, a staging Better Auth Subscriber approves it, and proof exchange creates a D1-backed App Link and hash-only App session.
 - The unpaid staging check still receives `inactive`, while the real Stripe-paid Subscriber now links the same extension and receives `active` directly from the shared authority.
 - A fresh real App session was created before the Worker-only redeploy. The exact stored App-session token hash remained present and its entitlement remained `inactive` after deployment of Worker version `c4edf729-284f-4d99-bbdc-6ff20c002044`.

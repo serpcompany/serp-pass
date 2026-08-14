@@ -37,6 +37,7 @@
     "historical:john-doe:package": "pnpm --filter @serp-apps-pass/john-doe-focus-timer-extension historical:package-review",
     "walkthrough:john-doe:test": "pnpm --filter @serp-apps-pass/john-doe-focus-timer-extension test:browser",
     "walkthrough:john-doe:preflight": "pnpm --filter @serp-apps-pass/john-doe-focus-timer-extension preflight",
+    "walkthrough:john-doe:activation": "pnpm --filter @serp-apps-pass/john-doe-focus-timer-extension exec tsx tests/staging-activation.ts",
     "db:reset": "tsx scripts/db/reset.ts",
     "db:migrate": "wrangler d1 migrations apply apps-pass-integration-proof --local --persist-to .wrangler/state",
     "extensions:build": "tsx scripts/extensions/build.ts",

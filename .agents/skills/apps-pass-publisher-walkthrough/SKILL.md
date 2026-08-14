@@ -1,6 +1,6 @@
 ---
 name: apps-pass-publisher-walkthrough
-description: Run the John Doe example through Publisher Application, preliminary review, onboarding, exact-package Submission, final review, catalog, and optional Subscriber activation with human checkpoints.
+description: Run the John Doe example through Publisher Application, product review, onboarding, SDK connection verification, catalog, and optional Subscriber activation with human checkpoints.
 disable-model-invocation: true
 ---
 
@@ -14,11 +14,12 @@ Run a human-in-the-loop staging acceptance session. You play **John Doe**, first
 - Read `AGENTS.md`, `PRD.md`, `ARCHITECTURE.md`, `CONTEXT.md`, and `docs/mvp/DELIVERY_PLAN.md` before acting.
 - Use `https://serp-apps-pass-staging.serpcompany.workers.dev`. Report local, staging, and production separately.
 - Use Stripe test mode only. Pause before Checkout. Production and live money remain untouched.
-- John may apply, accept onboarding, integrate, package, and submit. John cannot preliminarily accept his own Application or finally approve his own Submission.
+- John may apply, accept onboarding, integrate, publish, and register a Distribution. John cannot accept his own Application.
 - Never claim a human step happened until the user confirms it or direct UI/state evidence proves it.
 - Keep Applicant, Publisher, Operator, Subscriber, and extension App-session authority distinct.
 - Treat the invitation code and generated test password as transient. Never commit or log them.
-- Use `apps/john-doe-focus-timer-extension/apppass.json`, runtime `bpjnchabpcjomgncmbgphbdggkgkobdb`, and the ZIP produced by `pnpm walkthrough:john-doe:package`.
+- Use `apps/john-doe-focus-timer-extension/apppass.json` and runtime `bpjnchabpcjomgncmbgphbdggkgkobdb`.
+- Treat the deployed exact-ZIP Submission screen as historical evidence from the superseded flow. A fresh walkthrough must exercise connection verification without package upload or a second human approval.
 
 ## 1. Preflight the candidate
 
@@ -29,13 +30,12 @@ git status --short
 git branch --show-current
 git rev-parse --short HEAD
 pnpm walkthrough:john-doe:test
-pnpm walkthrough:john-doe:package
-pnpm walkthrough:john-doe:preflight
+pnpm walkthrough:john-doe:build
 ```
 
-Verify the free timer works, premium remains gated, the package contains one root Manifest V3 manifest, and no platform secret or App-session token is embedded. If the fixed identity is already approved, stop and offer to review the existing run.
+Verify the extension loads with its stable runtime identity and contains no platform secret or App-session token. If the fixed identity is already connected, stop and offer to review the existing run.
 
-Completion: report repository, branch, HEAD, package/browser result, staging health, identity state, and one next action.
+Completion: report repository, branch, HEAD, browser result, staging health, identity state, and one next action.
 
 ## 2. Apply as John
 
@@ -66,7 +66,7 @@ Ask them to refresh `/operator` and confirm **Operator role active**.
 
 Completion: the user has the explicit staging Operator role.
 
-## 4. Preliminary human decision
+## 4. Product decision
 
 Ask the user to expand John’s Application and inspect the listing/source, product case, permissions/privacy answer, and ownership statement. They must enter a real reason and choose **Accept for technical onboarding** or **Decline Application**.
 
@@ -75,7 +75,7 @@ Ask the user to expand John’s Application and inspect the listing/source, prod
 
 Completion: a human decision exists. Only acceptance creates IDs and onboarding access; it is not App approval.
 
-## 5. Onboard and submit the exact package
+## 5. Onboard and verify the connection
 
 Using an isolated browser separate from the Operator session:
 
@@ -83,25 +83,26 @@ Using an isolated browser separate from the Operator session:
 2. Accept the code at `/publisher/invitation`.
 3. Confirm `/publisher` shows the generated Publisher/App identities.
 4. Replace only `publisher_id` and `app_id` in the template with generated values.
-5. Upload the complete JSON, truthful ownership/build evidence including the verified HEAD, and `apps/john-doe-focus-timer-extension/review-package/john-doe-focus-timer.zip`.
-6. Confirm the Submission is `pending` and record the returned SHA-256 digest.
+5. Build the extension with the generated App ID, publish or stage the resulting extension at its declared public Distribution, and register the versioned `apppass.json` plus store version.
+6. Load the extension and require Apps Pass to observe a successful SDK request from the accepted App/runtime pair.
+7. Confirm the Publisher and Operator surfaces show **Connected** and the App is catalog-visible.
 
 Tell the user:
 
-> Publisher John Doe submitted the exact installable **John Doe Focus Timer** ZIP. It is pending—not approved. Open `/operator`, inspect the manifest, ownership evidence, digest, extension manifest, permissions, and automated intake results. Download and test that exact ZIP, then enter a reason and choose Approve or Reject. Tell me your decision and say `done`.
+> Publisher John Doe integrated **John Doe Focus Timer**. Apps Pass observed the accepted App ID and browser runtime identity, so the dashboard now shows **Connected**. No package or source review was performed or claimed.
 
-Completion: a versioned pending Submission has a private Review Package and digest; the user makes the final technical decision.
+Completion: the accepted Publisher's real extension produced durable connection evidence and became catalog-visible without a second human decision.
 
-## 6. Verify approval
+## 6. Verify inclusion
 
-After approval, rebuild with `APP_PASS_APP_ID=<generated-app-id>` and verify:
+Verify that:
 
 - the exact App/runtime authority endpoint returns 200;
 - `/apps` lists **John Doe Focus Timer**;
-- a fresh extension build shows **Approved by Apps Pass**;
-- premium remains gated without a Subscriber App session and paid entitlement.
+- the integrated extension shows **Connected to Apps Pass**;
+- an unpaid Subscriber receives the correct `inactive` decision.
 
-Explain that Application acceptance authorized onboarding, while final approval promoted the specifically reviewed package identity. Neither step required authority source changes, migrations, or seed edits during the run.
+Explain that Product Acceptance admitted the Publisher and generated identities, while connection verification proved only protocol connectivity. Neither step certifies source code, package safety, or local feature enforcement.
 
 ## 7. Optional Subscriber journey
 
@@ -113,8 +114,8 @@ Ask whether to stop after inclusion or continue. If continuing:
 4. Verify normalized D1 Subscription state; never infer access from the redirect.
 5. Load the extension in an isolated Chromium profile without replacing the repo-owned browser.
 6. Have the Subscriber inspect and approve the exact App, complete the one-time exchange, and check entitlement.
-7. Confirm the premium timer unlocks only after `active`.
+7. Confirm the extension receives `active`; local premium unlocking is demonstration-only and not an admission requirement.
 
 ## Evidence report
 
-End with PASS/FAIL/BLOCKED evidence for Application, preliminary review, generated identities/onboarding, exact package and digest, final review, authority/catalog, optional Stripe purchase, optional activation/unlock, local, staging, and production (`not deployed`). List every UX ambiguity and manual workaround.
+End with PASS/FAIL/BLOCKED evidence for Application, Product Acceptance, generated identities/onboarding, connection verification, authority/catalog, optional Stripe purchase, optional activation decision, local, staging, and production (`not deployed`). List every UX ambiguity and manual workaround.

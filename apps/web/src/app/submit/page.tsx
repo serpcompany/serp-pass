@@ -21,21 +21,15 @@ const steps = [
   },
   {
     number: "03",
-    title: "Integrate and package",
+    title: "Integrate and register",
     description:
-      "Add the SDK, rebuild and test the extension, then prepare the exact installable ZIP that you want SERP to review.",
+      "Add the SDK using your generated App ID, rebuild normally, and register apppass.json plus the real Chrome runtime ID.",
   },
   {
     number: "04",
-    title: "Submit for review",
+    title: "Connect",
     description:
-      "In the authenticated Publisher area, submit apppass.json, ownership evidence, and the exact installable extension ZIP.",
-  },
-  {
-    number: "05",
-    title: "Become eligible",
-    description:
-      "SERP inspects the package, permissions, behavior, ownership evidence, and integration. Only explicit final approval makes the reviewed version eligible.",
+      "Open the integrated extension. Apps Pass verifies the accepted App ID and actual extension origin; a successful connection makes it eligible for the catalog and linking.",
   },
 ];
 
@@ -46,7 +40,7 @@ export default function SubmitPage() {
         <span className="eyebrow">Applications open for the private pilot</span>
         <h1>Bring your extension into one subscription.</h1>
         <p>
-          Apps Pass gives Subscribers access to approved, independently published extensions through one Pass. You can apply below; applying does not grant Publisher access or place an extension in the catalog. SERP screens the product first and reviews the exact integrated package before final approval.
+          Apps Pass gives Subscribers access to accepted, independently published extensions through one Pass. You can apply below; applying does not grant Publisher access or place an extension in the catalog. SERP screens the product first, then verifies that the integrated extension can connect using its registered identity.
         </p>
         <div className="actions">
           <Link className="primary-button" href="/docs">
@@ -59,8 +53,8 @@ export default function SubmitPage() {
       <section className="section" aria-labelledby="integration-steps">
         <div className="section-heading">
           <span className="eyebrow">How the private pilot works</span>
-          <h2 id="integration-steps">From Application to an approved App</h2>
-          <p>Five gated steps separate asking to join, technical onboarding, and approval of the version Subscribers will run.</p>
+          <h2 id="integration-steps">From Application to a connected App</h2>
+          <p>Four steps separate asking to join, product acceptance, integration, and a verified connection.</p>
         </div>
         <div className="step-grid">
           {steps.map((step) => (
@@ -77,7 +71,7 @@ export default function SubmitPage() {
         <div className="section-heading">
           <span className="eyebrow">Step 1 · Preliminary review</span>
           <h2 id="application-heading">Apply to publish an extension</h2>
-          <p>SERP reviews this information internally. If accepted, we issue private technical-onboarding access. A final App approval still requires the integrated extension package.</p>
+          <p>SERP reviews this information internally. If accepted, we issue private technical-onboarding access and generated IDs. The App remains unavailable until the registered extension connects successfully.</p>
         </div>
         <div className="info-panel"><PublisherApplicationForm /></div>
       </section>
@@ -95,7 +89,7 @@ export default function SubmitPage() {
               <li>After acceptance, an email-bound invitation and generated public IDs</li>
               <li>The SDK and versioned apppass.json contract</li>
               <li>Subscriber linking and entitlement authority</li>
-              <li>A review trail for the exact package, evidence, and final decision</li>
+              <li>Runtime-bound connection status visible to you and SERP</li>
             </ul>
           </article>
           <article className="info-panel">
@@ -105,7 +99,7 @@ export default function SubmitPage() {
               <li>Declare the Apps Pass host permission</li>
               <li>Use the generated App ID in the SDK; submit the real runtime identity in apppass.json</li>
               <li>Rebuild and test the real extension</li>
-              <li>Submit the manifest, ownership evidence, and exact installable ZIP for review</li>
+              <li>Register the manifest/version, then open the extension to verify the connection</li>
             </ul>
           </article>
         </div>

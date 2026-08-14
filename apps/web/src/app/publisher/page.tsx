@@ -5,7 +5,7 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { getHumanIdentity } from "@/auth/identity";
 import { billingModeForEnvironment } from "@/billing/read";
 import { getDb } from "@/db/get-db";
-import { allocationRuns, appAssignments, appSubmissions, publisherEarnings, publisherMemberships, publisherPayments, publishers } from "@/db/schema";
+import { allocationRuns, appAssignments, appConnectionVerifications, appSubmissions, publisherEarnings, publisherMemberships, publisherPayments, publishers, submissionDistributionClaims } from "@/db/schema";
 import { SubmissionForm } from "./submission-form";
 
 export const dynamic = "force-dynamic";
@@ -47,9 +47,23 @@ export default async function PublisherPage() {
     .innerJoin(appAssignments, eq(appAssignments.publisherId, publishers.id))
     .where(eq(publisherMemberships.userId, identity.session.user.id));
   const submissions = await getDb()
-    .select({ id: appSubmissions.id, appId: appSubmissions.appId, status: appSubmissions.status })
+    .select({
+      id: appSubmissions.id,
+      appId: appSubmissions.appId,
+      status: appSubmissions.status,
+      storeVersion: appSubmissions.storeVersion,
+      runtimeId: submissionDistributionClaims.runtimeId,
+      channel: submissionDistributionClaims.channel,
+      lastConnectedAt: appConnectionVerifications.lastConnectedAt,
+      connectionCount: appConnectionVerifications.connectionCount,
+    })
     .from(appSubmissions)
     .innerJoin(publisherMemberships, eq(publisherMemberships.publisherId, appSubmissions.publisherId))
+    .leftJoin(submissionDistributionClaims, eq(submissionDistributionClaims.submissionId, appSubmissions.id))
+    .leftJoin(appConnectionVerifications, and(
+      eq(appConnectionVerifications.appId, appSubmissions.appId),
+      eq(appConnectionVerifications.runtimeId, submissionDistributionClaims.runtimeId),
+    ))
     .where(eq(publisherMemberships.userId, identity.session.user.id));
   const { env } = getCloudflareContext();
   const mode = billingModeForEnvironment(env.APP_ENV);
@@ -79,7 +93,7 @@ export default async function PublisherPage() {
       <section className="account-card">
         <span className="status active">Publisher role active</span>
         <h1>Publisher pilot area</h1>
-        <p className="muted">Your Application passed preliminary review and Apps Pass generated your immutable public identifiers. Configure the SDK with the App ID, then submit the real runtime identity, ownership evidence, and exact installable ZIP for separate final review.</p>
+        <p className="muted">Your product passed SERP review and Apps Pass generated your immutable public identifiers. Configure the SDK with the App ID, register the manifest and actual runtime identity, then open the integrated extension once. A successful runtime-bound connection makes the App eligible for the catalog and Subscriber linking.</p>
         <h2>Pilot payments</h2>
         <p className="muted">Stripe bills Subscribers only. During the private pilot, SERP pays Publishers outside Apps Pass and records the completed payment here. Apps Pass never asks for or stores your bank or payment-account credentials.</p>
         <h2>Publisher Earnings</h2>
@@ -111,7 +125,15 @@ export default async function PublisherPage() {
             <li key={assignment.appId}><strong>{assignment.publisherName}</strong> · {assignment.publisherId} · <code>{assignment.appId}</code> · {assignment.appStatus}</li>
           ))}
         </ul>
-        {submissions.length > 0 && <ul>{submissions.map((submission) => <li key={submission.id}>{submission.appId} · {submission.status}</li>)}</ul>}
+        {submissions.length > 0 && <>
+          <h2>Integration status</h2>
+          <ul>{submissions.map((submission) => <li key={`${submission.id}:${submission.runtimeId ?? "none"}`}>
+            <strong>{submission.appId}</strong> · version {submission.storeVersion ?? "not recorded"} · {submission.channel ?? "no channel"}<br />
+            <code>{submission.runtimeId ?? "no runtime registered"}</code> · {submission.lastConnectedAt
+              ? `Connected ${submission.connectionCount ?? 1} time${submission.connectionCount === 1 ? "" : "s"}; last verified ${submission.lastConnectedAt.toISOString()}`
+              : "Not connected yet — open the integrated extension to verify"}
+          </li>)}</ul>
+        </>}
         {assignments.some((assignment) => assignment.appStatus === "assigned") && <SubmissionForm />}
       </section>
     </main>

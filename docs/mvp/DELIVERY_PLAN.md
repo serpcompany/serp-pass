@@ -48,21 +48,19 @@ Evidence: [STATUS.md](./STATUS.md). The initial Operator is explicitly bootstrap
 
 ## 3. Publisher inclusion slice
 
-Status: **corrected admission and exact-package review pass locally and on deployed staging; independent Publisher evaluation remains**
+Status: **simplified admission and runtime connection verification pass locally and on deployed staging 2026-08-15**
 
 - public Publisher Application with no authority grant;
-- reasoned preliminary Operator acceptance or decline;
+- reasoned Operator product acceptance or decline;
 - acceptance-generated immutable Publisher/App IDs and email-bound onboarding invitation;
-- authenticated Publisher manifest plus exact installable Review Package submission;
-- versioned validation and pending Submission record.
-- private package storage, digest, bounded archive/manifest intake, and Operator-only retrieval;
-- ownership evidence plus meaningful Operator package/behavior approval or rejection;
-- approved App/Distribution query used by the authority.
+- authenticated Publisher integration declaration containing the public manifest, store version, and Distribution identity;
+- successful connection verification from the accepted App/runtime pair;
+- connected App/Distribution query used by the catalog and authority;
 - one real extension repository integrates the SDK in its own source.
 
-Browser evidence: developer applies; Operator preliminarily accepts; Publisher onboards and submits the exact package; Operator inspects and approves; the real unpacked extension identifies itself through the approved Distribution without any fixture enumeration.
+Browser evidence: developer applies; Operator accepts the product; Publisher onboards, integrates, publishes, and registers the Distribution; the real extension connects through the accepted identity and becomes catalog-visible without another package-review decision.
 
-Earlier evidence: [STATUS.md](./STATUS.md). The public manifest contract, independent extension, wrong-role checks, technical rejection/resubmission, authority approval, and packaged SDK remain valid. They do not prove developer-initiated Application screening or exact-package review; this slice returns to incomplete until those corrected boundaries pass staging.
+Evidence: [STATUS.md](./STATUS.md). The accepted John Doe extension registered its generated App ID and stable runtime identity, then a real unpacked Chromium build called `verifyConnection()` from that origin. Staging recorded first/latest connection evidence and made the App catalog/linking-eligible without a package upload or second human approval. The earlier exact-package/R2 experiment remains historical evidence only.
 
 ## 4. Subscriber billing slice
 
@@ -88,7 +86,7 @@ Status: **implemented and browser-verified locally and on Cloudflare staging; re
 - entitlement reads normalized paid-through state;
 - session revocation and App suspension.
 
-Browser evidence: the real extension links and unlocks after purchase; another App cannot reuse its session; expiry and failure states are truthful.
+Browser evidence: the real extension links and receives the correct entitlement decision after purchase; another App cannot reuse its session; expiry and failure states are truthful. The example may demonstrate feature gating, but Publisher admission does not certify local enforcement.
 
 Local evidence uses the signed billing-fixture boundary only to establish paid-through authority without accessing Stripe. The independently built Publisher extension performs the request and exchange from its real `chrome-extension://` origin, the Subscriber approves through Better Auth, and D1 stores only the App-session token hash. Approve, deny, already-used, expiry, unpaid, paid-through active, cross-App rejection, scoped revocation, App suspension/reapproval, relinking, public-call rate limiting, and temporary authority failure all pass in Chromium. Staging proves the persistent hash-only App-session path across a Worker deployment and correctly remains `inactive`; it cannot prove real paid `active` until the approved Stripe test purchase exists.
 
@@ -127,8 +125,8 @@ Before the release gate, the deployed pilot must be understandable without readi
 
 - `/` explains the Pass and provides obvious Subscriber and Publisher entry points;
 - `/apps` lists only real approved D1 Apps and truthful availability;
-- `/submit` accepts a Publisher Application and explains preliminary screening, technical onboarding, package review, and final approval;
-- `/docs` explains the SDK, public IDs, manifest, rebuild, Submission, review, and activation boundaries;
+- `/submit` accepts a Publisher Application and explains product screening, onboarding, SDK integration, and connection verification;
+- `/docs` explains the SDK, public IDs, manifest, publication, connection verification, and activation boundaries;
 - signed-in role surfaces remain reachable from the shared site navigation.
 
 - all PRD acceptance criteria pass against deployed staging and staging D1;

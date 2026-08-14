@@ -1,9 +1,8 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { createHash, randomBytes } from "node:crypto";
+import { randomBytes } from "node:crypto";
 import path from "node:path";
 
-import { strToU8, zipSync } from "fflate";
 import { chromium, type Page } from "playwright";
 
 const appOrigin = process.env.APP_ORIGIN ?? "http://localhost:8788";
@@ -11,18 +10,6 @@ const operatorEmail = `operator-bootstrap-${Date.now()}@example.test`;
 const publisherEmail = `publisher-applicant-${Date.now()}@example.test`;
 const runtimeId = Array.from(randomBytes(16), (byte) => `${String.fromCharCode(97 + (byte >> 4))}${String.fromCharCode(97 + (byte & 15))}`).join("");
 const repositoryRoot = path.resolve(import.meta.dirname, "../../..");
-const reviewPackage = Buffer.from(zipSync({
-  "manifest.json": strToU8(JSON.stringify({
-    manifest_version: 3,
-    name: "Applicant Video Downloader",
-    version: "1.0.0",
-    permissions: ["storage"],
-    host_permissions: ["https://vimeo.com/*"],
-    action: { default_popup: "popup.html" },
-  })),
-  "popup.html": strToU8("<!doctype html><title>Applicant extension</title>"),
-}));
-const reviewPackageSha256 = createHash("sha256").update(reviewPackage).digest("hex");
 
 async function navigate(page: Page, pathname: string) {
   let lastError: unknown;
@@ -161,61 +148,54 @@ try {
   };
 
   const wrongRoleResponse = await operatorPage.evaluate(async () => {
-    const response = await fetch("/api/publisher/submissions", { method: "POST", body: new FormData() });
+    const response = await fetch("/api/publisher/submissions", { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
     return response.status;
   });
   assert.equal(wrongRoleResponse, 403);
 
-  const packageBase64 = reviewPackage.toString("base64");
-  const identityMismatchResponse = await publisherPage.evaluate(async ({ manifest, packageBase64 }) => {
-    const bytes = Uint8Array.from(atob(packageBase64), (character) => character.charCodeAt(0));
-    const form = new FormData();
-    form.set("manifest", JSON.stringify({ ...manifest, app_id: `${manifest.app_id}_unassigned` }));
-    form.set("ownershipEvidence", "This deliberately mismatched identity must be rejected before package storage.");
-    form.set("reviewPackage", new File([bytes], "extension.zip", { type: "application/zip" }));
-    return (await fetch("/api/publisher/submissions", { method: "POST", body: form })).status;
-  }, { manifest, packageBase64 });
-  assert.equal(identityMismatchResponse, 409);
+  const identityMismatchResponse = await publisherPage.evaluate(async (manifest) => {
+    const response = await fetch("/api/publisher/submissions", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ manifest: { ...manifest, app_id: "app_not_assigned_to_publisher" }, storeVersion: "1.0.0" }),
+    });
+    return { status: response.status, body: await response.text() };
+  }, manifest);
+  assert.equal(identityMismatchResponse.status, 409, identityMismatchResponse.body);
 
   await publisherPage.getByLabel("App manifest JSON").fill(JSON.stringify(manifest, null, 2));
-  await publisherPage.getByLabel("Ownership evidence").fill("Public listing and repository ownership were reviewed; this ZIP is the exact candidate intended for the private pilot.");
-  await publisherPage.getByLabel("Exact installable extension ZIP").setInputFiles({ name: "applicant-video-downloader.zip", mimeType: "application/zip", buffer: reviewPackage });
+  await publisherPage.getByLabel("Built or published extension version").fill("1.0.0");
   const submissionResponsePromise = publisherPage.waitForResponse((response) => response.url().endsWith("/api/publisher/submissions") && response.request().method() === "POST");
-  await publisherPage.getByRole("button", { name: "Submit App for review" }).click();
+  await publisherPage.getByRole("button", { name: "Register integration" }).click();
   const submissionResponse = await submissionResponsePromise;
   assert.equal(submissionResponse.status(), 201, await submissionResponse.text());
-  const submissionBody = await submissionResponse.json() as { packageSha256: string };
-  assert.equal(submissionBody.packageSha256, reviewPackageSha256);
-  await publisherPage.getByText(`${appId} · pending`).waitFor();
+  const declarationBody = await submissionResponse.json() as { submissionId: string; status: string };
+  assert.match(declarationBody.submissionId, /^[0-9a-f-]{36}$/u);
+  assert.equal(declarationBody.status, "disconnected");
+  await publisherPage.getByText(/Not connected yet/u).waitFor();
 
   await navigate(operatorPage, "/operator");
-  let reviewForm = operatorPage.locator("form").filter({ hasText: `${appId} · pending` });
-  await reviewForm.getByText("Inspect the developer submission").click();
-  assert.equal(await reviewForm.getByText(reviewPackageSha256).isVisible(), true);
-  assert.equal(await reviewForm.getByText("manifest_v3").isVisible(), true);
-  const packageHref = await reviewForm.getByRole("link", { name: "Download exact package for human review" }).getAttribute("href");
-  assert.ok(packageHref);
-  const packageResponse = await operatorPage.request.get(new URL(packageHref, appOrigin).toString());
-  assert.equal(packageResponse.status(), 200);
-  assert.equal(packageResponse.headers()["x-review-package-sha256"], reviewPackageSha256);
-  assert.deepEqual(await packageResponse.body(), reviewPackage);
+  await operatorPage.getByText(/Waiting for the integrated extension to connect/u).last().waitFor();
+  const wrongOriginResponse = await publisherPage.request.post(`${appOrigin}/api/app-pass/connections`, {
+    headers: { origin: `chrome-extension://${"a".repeat(32)}`, "content-type": "application/json" },
+    data: { appId, runtimeId },
+  });
+  assert.equal(wrongOriginResponse.status(), 400, "A different extension origin must not connect the declared runtime");
+  const connectionResponse = await publisherPage.request.post(`${appOrigin}/api/app-pass/connections`, {
+    headers: { origin: `chrome-extension://${runtimeId}`, "content-type": "application/json" },
+    data: { appId, runtimeId },
+  });
+  assert.equal(connectionResponse.status(), 200, await connectionResponse.text());
+  assert.equal((await connectionResponse.json() as { status: string }).status, "connected");
+  const repeatedConnection = await publisherPage.request.post(`${appOrigin}/api/app-pass/connections`, {
+    headers: { origin: `chrome-extension://${runtimeId}`, "content-type": "application/json" },
+    data: { appId, runtimeId },
+  });
+  assert.equal(repeatedConnection.status(), 200, await repeatedConnection.text());
+  assert.equal((await repeatedConnection.json() as { connectionCount: number }).connectionCount, 2);
 
-  await reviewForm.getByLabel("Review reason").fill("First technical review deliberately verifies rejection and immutable package resubmission.");
-  await reviewForm.getByRole("button", { name: "Reject Submission" }).click();
-  await waitForTextAfterNavigate(publisherPage, "/publisher", `${appId} · rejected`);
-
-  await publisherPage.getByLabel("App manifest JSON").fill(JSON.stringify(manifest, null, 2));
-  await publisherPage.getByLabel("Ownership evidence").fill("Corrected candidate retains verified ownership evidence and supplies the exact installable package again.");
-  await publisherPage.getByLabel("Exact installable extension ZIP").setInputFiles({ name: "applicant-video-downloader.zip", mimeType: "application/zip", buffer: reviewPackage });
-  await publisherPage.getByRole("button", { name: "Submit App for review" }).click();
-  await publisherPage.getByText(`${appId} · pending`).waitFor();
-
-  await navigate(operatorPage, "/operator");
-  reviewForm = operatorPage.locator("form").filter({ hasText: `${appId} · pending` });
-  await reviewForm.getByLabel("Review reason").fill("Exact package, digest, Manifest V3 metadata, permissions, ownership evidence, and behavior were reviewed.");
-  await reviewForm.getByRole("button", { name: "Approve Submission" }).click();
-
-  await waitForTextAfterNavigate(publisherPage, "/publisher", `${appId} · approved`);
+  await waitForTextAfterNavigate(publisherPage, "/publisher", "Connected 2 times");
+  await waitForTextAfterNavigate(operatorPage, "/operator", "Connected · first");
   const authorityIdentity = await publisherPage.evaluate(async ({ appId, runtimeId }) => {
     const response = await fetch(`/api/app-pass/apps/${appId}/distributions/${runtimeId}`);
     return { status: response.status, body: await response.json() };
@@ -245,7 +225,7 @@ try {
   await replayPage.getByRole("button", { name: "Accept Publisher invitation" }).click();
   await replayPage.getByText("Invitation is invalid, expired, already used, or assigned to another email.").waitFor();
 
-  process.stdout.write("PASS public Publisher Application, preliminary review, exact package intake, guarded technical approval, and canonical authority\n");
+  process.stdout.write("PASS public Publisher Application, product acceptance, integration declaration, runtime-bound connection, and canonical authority\n");
 } finally {
   await browser.close();
 }

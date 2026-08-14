@@ -16,7 +16,8 @@ const digest = createHash("sha256").update(Buffer.from(sourceManifest.key, "base
 const runtimeId = [...digest].flatMap((byte) => [byte >> 4, byte & 15]).map((nibble) => String.fromCharCode(97 + nibble)).join("");
 assert.equal(runtimeId, expectedRuntimeId, "The public key no longer derives the documented runtime ID");
 assert.equal(submission.distributions[0]?.runtime_id, expectedRuntimeId, "apppass.json does not describe this extension build");
-assert.equal(submission.app_id, "app_john_doe_focus_timer");
+assert.match(submission.publisher_id, /^pub_john_doe_studio(?:_[a-z0-9]{8})?$/);
+assert.match(submission.app_id, /^app_john_doe_focus_timer(?:_[a-z0-9]{8})?$/);
 
 const health = await fetch(`${stagingOrigin}/api/health`);
 assert.equal(health.ok, true, `Staging health failed with ${health.status}`);

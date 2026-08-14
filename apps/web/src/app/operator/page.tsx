@@ -1,15 +1,14 @@
 import Link from "next/link";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 
 import { getHumanIdentity } from "@/auth/identity";
 import { billingModeForEnvironment } from "@/billing/read";
 import { getDb } from "@/db/get-db";
-import { allocationRuns, appSubmissionPackages, appSubmissions, publisherApplications, publisherEarnings, publisherPayments, publishers } from "@/db/schema";
+import { allocationRuns, appAssignments, appConnectionVerifications, appSubmissions, publisherApplications, publisherEarnings, publisherPayments, publishers, submissionDistributionClaims } from "@/db/schema";
 import { AllocationForm } from "./allocation-form";
 import { PublisherApplicationReviewForm } from "./publisher-application-review-form";
 import { PublisherPaymentForm } from "./publisher-payment-form";
-import { SubmissionReviewForm } from "./submission-review-form";
 
 export const dynamic = "force-dynamic";
 
@@ -43,22 +42,31 @@ export default async function OperatorPage() {
   }
   const { env } = getCloudflareContext();
   const mode = billingModeForEnvironment(env.APP_ENV);
-  const [pendingApplications, pendingSubmissions, earningRows] = await Promise.all([
+  const [pendingApplications, integrations, earningRows] = await Promise.all([
     getDb().select().from(publisherApplications).where(eq(publisherApplications.status, "pending")),
     getDb()
       .select({
         id: appSubmissions.id,
         appId: appSubmissions.appId,
+        publisherName: publishers.name,
+        assignmentStatus: appAssignments.status,
+        storeVersion: appSubmissions.storeVersion,
         manifestJson: appSubmissions.manifestJson,
-        ownershipEvidence: appSubmissions.ownershipEvidence,
-        packageFilename: appSubmissionPackages.originalFilename,
-        packageSizeBytes: appSubmissionPackages.sizeBytes,
-        packageSha256: appSubmissionPackages.sha256,
-        packageInspectionJson: appSubmissionPackages.inspectionJson,
+        runtimeId: submissionDistributionClaims.runtimeId,
+        channel: submissionDistributionClaims.channel,
+        firstConnectedAt: appConnectionVerifications.firstConnectedAt,
+        lastConnectedAt: appConnectionVerifications.lastConnectedAt,
+        connectionCount: appConnectionVerifications.connectionCount,
       })
       .from(appSubmissions)
-      .leftJoin(appSubmissionPackages, eq(appSubmissionPackages.submissionId, appSubmissions.id))
-      .where(eq(appSubmissions.status, "pending")),
+      .innerJoin(appAssignments, eq(appAssignments.appId, appSubmissions.appId))
+      .innerJoin(publishers, eq(publishers.id, appSubmissions.publisherId))
+      .leftJoin(submissionDistributionClaims, eq(submissionDistributionClaims.submissionId, appSubmissions.id))
+      .leftJoin(appConnectionVerifications, and(
+        eq(appConnectionVerifications.appId, appSubmissions.appId),
+        eq(appConnectionVerifications.runtimeId, submissionDistributionClaims.runtimeId),
+      ))
+      .where(inArray(appSubmissions.status, ["pending", "approved"])),
     getDb().select({
       id: publisherEarnings.id,
       publisherName: publishers.name,
@@ -78,7 +86,7 @@ export default async function OperatorPage() {
       <section className="account-card">
         <span className="status active">Operator role active</span>
         <h1>Operator controls</h1>
-        <p className="muted">Applicants ask to join from the public site. Preliminary acceptance generates the Publisher/App identities and one-time onboarding invitation; final App approval requires a separate technical Submission and exact Review Package.</p>
+        <p className="muted">Developers apply from the public site. Product acceptance generates the Publisher/App identities and onboarding invitation. After the Publisher registers its manifest and runtime identity, Apps Pass marks the App connected only when that extension actually reaches the connection endpoint from its declared Chromium origin.</p>
         {pendingApplications.length === 0 ? <p className="muted">No pending Publisher Applications.</p> : (
           <div className="review-list">
             <h2>Pending Publisher Applications</h2>
@@ -110,10 +118,19 @@ export default async function OperatorPage() {
             </div>;
           })}
         </div>}
-        {pendingSubmissions.length > 0 && (
+        {integrations.length > 0 && (
           <div className="review-list">
-            <h2>Pending App Submissions</h2>
-            {pendingSubmissions.map((submission) => <SubmissionReviewForm key={submission.id} {...submission} submissionId={submission.id} />)}
+            <h2>App integrations</h2>
+            <p className="muted">This is connection evidence, not a source-code, malware, or local feature-enforcement review.</p>
+            {integrations.map((integration) => <div key={`${integration.id}:${integration.runtimeId ?? "none"}`}>
+              <p><strong>{integration.publisherName} · {integration.appId}</strong><br />
+                <span className="muted">Version {integration.storeVersion ?? "not recorded"} · {integration.channel ?? "no channel"} · <code>{integration.runtimeId ?? "no runtime"}</code></span>
+              </p>
+              <p className={integration.lastConnectedAt ? "" : "form-message"}>{integration.lastConnectedAt
+                ? `Connected · first ${integration.firstConnectedAt?.toISOString()} · last ${integration.lastConnectedAt.toISOString()} · ${integration.connectionCount ?? 1} successful call(s)`
+                : `Waiting for the integrated extension to connect · assignment ${integration.assignmentStatus}`}
+              </p>
+            </div>)}
           </div>
         )}
       </section>

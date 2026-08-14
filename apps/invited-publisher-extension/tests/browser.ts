@@ -42,7 +42,7 @@ try {
   assert.equal(await page.getByText("Third-party Publisher App").isVisible(), true);
   assert.equal(await page.getByText(expectedRuntimeId).isVisible(), true);
   if (process.env.EXPECT_APPROVED === "1") {
-    await page.getByText("Approved by Apps Pass").waitFor();
+    await page.getByText("Connected to Apps Pass").waitFor();
   }
   await page.getByRole("button", { name: "Check Apps Pass access" }).click();
   await page.getByText("unauthenticated").waitFor();

@@ -29,12 +29,12 @@ async function refreshLinkState() {
   return state;
 }
 
-void fetch(`${AUTHORITY}/api/app-pass/apps/${APP_ID}/distributions/${runtimeId}`)
-  .then((response) => {
-    identityElement.textContent = response.ok ? "Approved by Apps Pass" : "Not yet approved";
+void client.verifyConnection()
+  .then((connection) => {
+    identityElement.textContent = connection.status === "connected" ? "Connected to Apps Pass" : "Apps Pass connection suspended";
   })
-  .catch(() => {
-    identityElement.textContent = "Authority unavailable";
+  .catch((error) => {
+    identityElement.textContent = error instanceof Error ? error.message : "Apps Pass connection unavailable";
   });
 
 void refreshLinkState();

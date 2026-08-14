@@ -5,7 +5,6 @@ import { existsSync, readFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
-import { strToU8, zipSync } from "fflate";
 import { chromium, type BrowserContext, type Page } from "playwright";
 
 const appOrigin = process.env.APP_ORIGIN ?? "http://localhost:8788";
@@ -106,21 +105,15 @@ async function ensureRealApp(browserContext: BrowserContext) {
     await publisherPage.getByRole("button", { name: "Accept Publisher invitation" }).click();
     await publisherPage.getByRole("heading", { name: "Publisher pilot area" }).waitFor();
     const generatedManifest = { ...appManifest, publisher_id: generatedPublisherId, app_id: generatedAppId };
-    const reviewPackage = Buffer.from(zipSync({
-      "manifest.json": strToU8(JSON.stringify({ manifest_version: 3, name: appManifest.name, version: "1.0.0", permissions: ["storage"] })),
-      "popup.html": strToU8("<!doctype html><title>Activation reference</title>"),
-    }));
     await publisherPage.getByLabel("App manifest JSON").fill(JSON.stringify(generatedManifest, null, 2));
-    await publisherPage.getByLabel("Ownership evidence").fill("Independently built Publisher extension source and stable Chromium runtime reviewed for the activation slice.");
-    await publisherPage.getByLabel("Exact installable extension ZIP").setInputFiles({ name: "activation-reference.zip", mimeType: "application/zip", buffer: reviewPackage });
-    await publisherPage.getByRole("button", { name: "Submit App for review" }).click();
-    await publisherPage.getByText(`${generatedAppId} · pending`).waitFor();
-
-    await operatorPage.reload();
-    const review = operatorPage.locator("form").filter({ hasText: `${generatedAppId} · pending` });
-    await review.getByLabel("Review reason").fill("Independent extension source, manifest, ownership evidence, and runtime identity reviewed.");
-    await review.getByRole("button", { name: "Approve Submission" }).click();
-    await operatorPage.getByText(`${generatedAppId} · pending`).waitFor({ state: "detached" });
+    await publisherPage.getByLabel("Built or published extension version").fill("1.0.0");
+    await publisherPage.getByRole("button", { name: "Register integration" }).click();
+    await publisherPage.getByText(/Not connected yet/u).waitFor();
+    const connection = await publisherPage.request.post(`${appOrigin}/api/app-pass/connections`, {
+      headers: { origin: extensionOrigin, "content-type": "application/json" },
+      data: { appId: generatedAppId, runtimeId },
+    });
+    assert.equal(connection.status(), 200, await connection.text());
   } finally {
     await operatorContext.close();
     await publisherContext.close();
@@ -185,7 +178,7 @@ assert.match(localSql(`SELECT status FROM app WHERE id = '${appManifest.app_id}'
 runPnpm(["mvp:operator:bootstrap", "--", "--local", subscriberEmail]);
 
 await popup.reload();
-await popup.getByText("Approved by Apps Pass").waitFor();
+await popup.getByText("Connected to Apps Pass").waitFor();
 const activationPagePromise = persistentContext.waitForEvent("page");
 await popup.getByRole("button", { name: "Link with Apps Pass" }).click();
 const activationPage = await activationPagePromise;

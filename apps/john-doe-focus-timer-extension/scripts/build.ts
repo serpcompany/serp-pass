@@ -1,8 +1,9 @@
-import { cp, mkdir } from "node:fs/promises";
+import { cp, mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { build } from "esbuild";
+import { validatedManifest } from "@serp-apps-pass/contracts";
 
 const appRoot = fileURLToPath(new URL("..", import.meta.url));
 const sourceRoot = fileURLToPath(new URL("../src/", import.meta.url));
@@ -10,7 +11,8 @@ const outputRoot = process.env.EXTENSION_OUTPUT_DIR
   ? path.resolve(process.env.EXTENSION_OUTPUT_DIR)
   : fileURLToPath(new URL("../dist/", import.meta.url));
 const authorityBaseUrl = process.env.APP_PASS_AUTHORITY_URL ?? "https://serp-apps-pass-staging.serpcompany.workers.dev";
-const appId = process.env.APP_PASS_APP_ID ?? "app_john_doe_focus_timer";
+const integration = validatedManifest(JSON.parse(await readFile(`${appRoot}/apppass.json`, "utf8")));
+const appId = process.env.APP_PASS_APP_ID ?? integration.app_id;
 
 await mkdir(outputRoot, { recursive: true });
 await Promise.all([

@@ -1,9 +1,9 @@
 {
   "$schema": "https://pass.serp.co/schema/app-manifest-v1.json",
   "schema_version": 1,
-  "publisher_id": "pub_john_doe_studio",
+  "publisher_id": "pub_john_doe_studio_cf373931",
   "publisher_name": "John Doe Studio",
-  "app_id": "app_john_doe_focus_timer",
+  "app_id": "app_john_doe_focus_timer_cf373931",
   "name": "John Doe Focus Timer",
   "features": ["premium"],
   "distributions": [

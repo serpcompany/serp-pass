@@ -161,6 +161,7 @@ export const appSubmissions = sqliteTable(
       .references(() => publishers.id, { onDelete: "restrict" }),
     schemaVersion: integer("schema_version").notNull(),
     manifestJson: text("manifest_json").notNull(),
+    storeVersion: text("store_version"),
     ownershipEvidence: text("ownership_evidence").notNull(),
     status: text("status", { enum: ["pending", "approved", "rejected"] }).notNull(),
     submittedByUserId: text("submitted_by_user_id")
@@ -172,6 +173,28 @@ export const appSubmissions = sqliteTable(
     reviewReason: text("review_reason"),
   },
   (table) => [index("app_submission_publisher_status_idx").on(table.publisherId, table.status), index("app_submission_app_idx").on(table.appId)],
+);
+
+export const appConnectionVerifications = sqliteTable(
+  "app_connection_verification",
+  {
+    appId: text("app_id")
+      .notNull()
+      .references(() => appAssignments.appId, { onDelete: "cascade" }),
+    submissionId: text("submission_id")
+      .notNull()
+      .references(() => appSubmissions.id, { onDelete: "restrict" }),
+    browserFamily: text("browser_family", { enum: ["chromium"] }).notNull(),
+    channel: text("channel", { enum: ["unpacked", "chrome_web_store"] }).notNull(),
+    runtimeId: text("runtime_id").notNull(),
+    firstConnectedAt: integer("first_connected_at", { mode: "timestamp" }).notNull(),
+    lastConnectedAt: integer("last_connected_at", { mode: "timestamp" }).notNull(),
+    connectionCount: integer("connection_count").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.appId, table.browserFamily, table.runtimeId] }),
+    index("app_connection_verification_submission_idx").on(table.submissionId),
+  ],
 );
 
 export const appSubmissionPackages = sqliteTable(

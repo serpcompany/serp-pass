@@ -1,8 +1,8 @@
 import { sha256Hex } from "./crypto";
 
-export async function consumeAppLinkRateLimit(db: CloudflareEnv["DB"], request: Request, operation: "request" | "exchange") {
+export async function consumeAppLinkRateLimit(db: CloudflareEnv["DB"], request: Request, operation: "request" | "exchange" | "connection") {
   const now = Math.floor(Date.now() / 1000);
-  const windowSeconds = operation === "request" ? 600 : 60;
+  const windowSeconds = operation === "exchange" ? 60 : 600;
   const maximum = operation === "request" ? 20 : 60;
   const source = request.headers.get("cf-connecting-ip") ?? "local-or-unknown";
   const sourceHash = (await sha256Hex(source)).slice(0, 32);

@@ -88,6 +88,21 @@ export function createAppPass(options: AppPassClientOptions) {
   }
 
   return {
+    async verifyConnection() {
+      return await responseJson<{
+        appId: string;
+        runtimeId: string;
+        status: "connected" | "suspended";
+        firstConnectedAt: string;
+        lastConnectedAt: string;
+        connectionCount: number;
+      }>(await request(endpoint(`${apiPathPrefix}/connections`), {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ appId: options.appId, runtimeId: options.runtimeId }),
+      }));
+    },
+
     async beginLink() {
       const proofKey = randomToken();
       const link = await responseJson<{ requestId: string; expiresAt: string; activationUrl: string }>(await request(

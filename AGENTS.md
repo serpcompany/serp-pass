@@ -5,6 +5,7 @@ Read [PRD.md](./PRD.md), [ARCHITECTURE.md](./ARCHITECTURE.md), [CONTEXT.md](./CO
 The current branch builds a trustworthy private-pilot MVP. The completed local proof is historical evidence under `docs/prototype/`; do not relabel its fake Subscriber, deterministic Subscription, unauthenticated Operator routes, example popup shell, browser harness, or proof tests as production mechanisms.
 
 - Follow the delivery slices in order. A created table, endpoint, or mocked test does not complete a slice.
+- Treat exact-package/R2 review as a historical optional experiment. The binding MVP admits an accepted product after SDK connection verification and does not certify Publisher code or local feature enforcement.
 - Keep human sessions and App sessions separate.
 - Treat Checkout redirects as UX only; verified Stripe events project billing authority into D1.
 - Keep Cash Receipt, Publisher Earning, Publisher Payment, historical Stripe Transfer, and bank Payout distinct.

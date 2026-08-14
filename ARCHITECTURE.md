@@ -21,7 +21,7 @@ flowchart LR
 
     Subscriber -->|"human session, Checkout, activation"| App
     Applicant -->|"public Application"| App
-    Publisher -->|"human session, manifest, package, payment status"| App
+    Publisher -->|"human session, integration declaration, payment status"| App
     Extension -->|"App session, entitlement"| App
     Operator -->|"review, allocation, payment evidence"| App
     App --> D1
@@ -91,11 +91,11 @@ Interface:
 
 - submit a public Publisher Application;
 - preliminarily accept or decline an Application;
-- submit a complete versioned manifest and exact Review Package;
-- approve or reject a Submission;
-- read the approved App and Distribution identity.
+- register a versioned public manifest, store version, and Distribution identity;
+- verify a connection from the accepted App/runtime pair;
+- read the connected App and Distribution identity.
 
-The module hides Application state, whole-document validation, ID assignment rules, private package storage, digest/inspection facts, ownership evidence, conflict detection, compensated cross-store writes, and audit events.
+The module hides Application state, whole-document validation, ID assignment rules, connection evidence, ownership evidence, conflict detection, status transitions, and audit events.
 
 Implemented Slice 3 flow:
 
@@ -112,18 +112,17 @@ sequenceDiagram
     W->>D: Store pending Application without authority
     O->>W: Preliminary accept or decline with reason
     W->>D: On acceptance generate IDs, Assignment, and hashed invitation
-    P->>W: Accept invitation; submit manifest, evidence, and exact ZIP
-    W->>D: Validate contract; store digest and pending Submission
-    O->>W: Inspect package and approve or reject with reason
-    W->>D: Create approved App and Distribution only on approval
-    E->>W: Present App ID and chrome.runtime.id
-    W->>D: Read approved canonical identity
-    W-->>E: Approved identity or not found
+    P->>W: Accept invitation; register manifest, store version, and runtime ID
+    W->>D: Validate declaration; store disconnected Distribution
+    E->>W: Present App ID and chrome.runtime.id through SDK
+    W->>D: Bind successful connection to accepted identity
+    W-->>E: Connected identity or rejection
+    W->>D: Make connected App catalog- and linking-eligible
 ```
 
-The Submission contract lives in `packages/app-pass-contracts`. It contains the JSON Schema, generated Worker-safe validator, canonicalization, and public manifest types. Apps Pass generates Publisher and App IDs only after preliminary Application acceptance; neither human chooses storage identities. The generated App ID configures the extension client. The browser supplies `chrome.runtime.id` at runtime, while `apppass.json` declares the Distribution identity and facts the Operator reviews. One App may later have several Distributions, so an App ID is never derived from a browser runtime ID. None of these public artifacts contains a secret.
+The Integration Declaration contract lives in `packages/app-pass-contracts`. It contains the JSON Schema, generated Worker-safe validator, canonicalization, and public manifest types. Apps Pass generates Publisher and App IDs only after Product Acceptance; neither human chooses storage identities. The generated App ID configures the extension client. The browser supplies `chrome.runtime.id` at runtime, while `apppass.json` declares the Distribution identity and public facts. One App may later have several Distributions, so an App ID is never derived from a browser runtime ID. None of these public artifacts contains a secret.
 
-Review Package bytes live in a private environment-specific R2 bucket. D1 stores the immutable object key, SHA-256 digest, size, media type, extracted extension-manifest facts, and intake result. The Worker accepts a bounded ZIP, rejects unsafe paths and unsupported manifest shapes, and never executes submitted code. Package storage plus D1 recording is a compensated operation: a failed database write deletes the just-uploaded object. Only an authenticated Operator may retrieve a package for human review.
+The current repository also contains a private-R2 exact-package review experiment. It is retained as historical/risk-based evidence, not part of the binding private-pilot admission path. Connection verification does not claim code review, malware clearance, or certification that local features honor entitlement results.
 
 The monorepo reference extension uses a workspace link for live development. That is not the distribution proof. A separate clean-project check packs the SDK, installs the tarball with npm, imports its compiled module, exercises the public client, and bundles an extension entry without monorepo resolution. The SDK remains non-publishable until the Operator chooses and approves a registry; a pilot Publisher receives the exact tarball and checksum privately.
 
@@ -219,10 +218,9 @@ The exact route filenames may follow Next.js conventions, but the externally mea
 - `POST /api/billing/checkout`;
 - `POST /api/billing/portal`;
 - `POST /api/stripe/webhook` using the raw body;
-- `POST /api/publisher/submissions`;
+- a Publisher integration-declaration mutation and connection-status query;
 - `POST /api/publisher/applications`;
 - `POST /api/operator/publisher-applications/:id/review`;
-- `GET /api/operator/submissions/:id/package`;
 - `POST /api/app-pass/link-requests`;
 - `POST /api/app-pass/link-requests/:id/exchange`;
 - authenticated `/activate/:id` approval and denial;

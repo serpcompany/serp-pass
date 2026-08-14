@@ -12,7 +12,7 @@ SERP Apps Pass is one subscription that grants a Subscriber access to every appr
 
 The private-pilot MVP is complete only when this loop works on deployed Cloudflare staging:
 
-> A developer applies, SERP preliminarily accepts the product, the accepted Publisher submits the exact SDK-enabled Chromium extension package for technical review, an Operator explicitly approves it, a Subscriber buys the Pass through Stripe Checkout, the Subscriber links the extension and receives active access, the payment creates an auditable Publisher Earning, and an Operator records evidence that SERP paid that Earning through an approved external payment method.
+> A developer applies, SERP accepts the product, Apps Pass generates onboarding identities, the Publisher integrates the SDK, and the built or published extension proves that it can connect using the accepted App and runtime identities. A Subscriber then buys the Pass through Stripe Checkout, links the extension, and receives the authoritative Apps Pass status; the payment creates an auditable Publisher Earning, and an Operator records evidence that SERP paid that Earning through an approved external payment method.
 
 The local extension-inclusion proof is preserved under [`docs/prototype/`](./docs/prototype/). It established useful interfaces but is not the MVP implementation.
 
@@ -28,25 +28,26 @@ Submits contact, product, public listing or source URL, ownership, distribution,
 
 ### Publisher
 
-Has passed preliminary review, accepts an email-bound onboarding invitation, integrates the SDK using the generated App ID, and submits a versioned manifest plus the exact installable extension Review Package. The Publisher sees App, Earning, and Publisher Payment status relevant to that Publisher. Payment-account credentials are exchanged with SERP outside Apps Pass.
+Has passed product review, accepts an email-bound onboarding invitation, integrates the SDK using the generated App ID, builds or publishes the integrated extension, and registers its public manifest and Distribution for connection verification. The Publisher sees App, Earning, and Publisher Payment status relevant to that Publisher. Payment-account credentials are exchanged with SERP outside Apps Pass.
 
 ### Operator
 
-Reviews Publisher Applications, preliminarily accepts or declines them, reviews and approves or rejects technical App Submissions, suspends Apps, revokes App sessions, posts Publisher allocations, records completed Publisher Payments, reconciles Stripe billing events, and controls production rollout. Preliminary acceptance generates immutable Publisher and App IDs plus an email-bound onboarding invitation; the Operator does not invent them.
+Reviews Publisher Applications, accepts or declines products, inspects connection status, suspends Apps, revokes App sessions, posts Publisher allocations, records completed Publisher Payments, reconciles Stripe billing events, and controls production rollout. Product acceptance generates immutable Publisher and App IDs plus an email-bound onboarding invitation; the Operator does not invent them.
 
 ## 3. Required end-to-end journeys
 
 ### Publisher inclusion
 
 1. A developer submits a Publisher Application through the public site. Submission is never approval.
-2. The Operator inspects the applicant, product, public listing/source URL, ownership attestation, permissions/privacy answers, and product-quality evidence, then declines, requests follow-up outside the MVP, or preliminarily accepts it with a reason.
-3. Only preliminary acceptance generates immutable `publisher_id` and `app_id` values and one expiring, email-bound onboarding invitation.
+2. The Operator inspects the applicant, product, public listing, ownership attestation, permissions/privacy answers, and product-quality evidence, then declines, requests follow-up outside the MVP, or accepts it with a reason.
+3. Only product acceptance generates immutable `publisher_id` and `app_id` values and one expiring, email-bound onboarding invitation.
 4. The accepted Publisher signs in through that invitation.
-5. The Publisher configures the public SDK with the generated App ID; the SDK reads the installed extension's actual identity from `chrome.runtime.id`; the Publisher rebuilds the extension.
-6. The Publisher submits the versioned `apppass.json`, ownership evidence, and the exact installable extension ZIP intended for review.
-7. The system validates the manifest, stores the private Review Package outside D1, records its digest and package-inspection facts, and creates a pending technical Submission without approving the App.
-8. The Operator inspects the product facts, runtime identity, ownership evidence, Review Package metadata, automated intake results, permissions, and actual behavior, then explicitly approves or rejects that version with a reason.
-9. Only the approved Publisher, App, Distribution, and reviewed version become eligible for catalog display and linking. Material updates create a new immutable Submission and require review.
+5. The Publisher configures the public SDK with the generated App ID; the SDK reads the installed extension's actual identity from `chrome.runtime.id`; the Publisher builds or publishes the integrated extension.
+6. The Publisher registers the versioned `apppass.json`, public store version, and Distribution identity.
+7. Apps Pass validates the declaration and observes a successful SDK connection from the accepted App/runtime pair. A verified connection makes the App catalog- and linking-eligible; failed or absent connections remain visible as not connected.
+8. The Operator may suspend an App at any time. Runtime-identity changes require a new declaration and connection verification.
+
+The private-pilot admission path does not require source code, an extension ZIP, implementation inspection, or proof that local premium behavior honors `inactive`. Apps Pass guarantees its own entitlement decision and Publisher-earning eligibility, not control of arbitrary code already installed in a Subscriber's browser.
 
 ### Purchase
 
@@ -97,16 +98,16 @@ Reviews Publisher Applications, preliminarily accepts or declines them, reviews 
 
 ### Invited Publisher
 
-- `/submit` — public Publisher Application plus an explanation of preliminary review, technical onboarding, Submission, final review, and payment.
+- `/submit` — public Publisher Application plus an explanation of product review, onboarding, integration verification, and payment.
 - `/docs` — public private-pilot integration guide with SDK and manifest examples.
 - `/publisher/invitation` — authenticated one-time onboarding acceptance available only after preliminary Application acceptance.
-- `/publisher` — App Submission, approved App status, Earnings, and recorded Publisher Payment status.
+- `/publisher` — integration declaration, connection status, App status, Earnings, and recorded Publisher Payment status.
 
 Applications are public; technical onboarding and the Publisher area are private. Applying never self-grants Publisher authority.
 
 ### Operator
 
-A protected CLI or minimal protected form is sufficient for Application decisions, one-time invitation delivery, technical Submission approval, private Review Package retrieval, App suspension, session revocation, allocation posting, completed-payment recording, and reconciliation. There is no polished Operator dashboard requirement.
+A protected CLI or minimal protected form is sufficient for Application decisions, one-time invitation delivery, connection inspection, App suspension, session revocation, allocation posting, completed-payment recording, and reconciliation. There is no polished Operator dashboard requirement.
 
 ## 5. Required implementation shape
 
@@ -129,7 +130,7 @@ The MVP requires durable records for:
 - human users, sessions, accounts, and verification state;
 - Publisher Applications, preliminary decisions, Operator invitations, and role assignments;
 - Publishers and Publisher Memberships;
-- App Submissions, immutable Review Package metadata/digests, Apps, and Distributions;
+- integration declarations, connection-verification evidence, Apps, and Distributions;
 - Subscribers and normalized Subscriptions;
 - Stripe Customers, Subscriptions, Invoices, and processed Events;
 - Link Requests, App Links, and App Sessions;
@@ -146,8 +147,7 @@ Every external Stripe object is stored with its mode (`test` or `live`). Test an
 - Require an authenticated role and CSRF-safe method for every human state change.
 - Keep Operator mutation surfaces unavailable to unauthenticated public traffic.
 - Rate-limit public Applications and keep applicant data unavailable to other applicants and Publishers.
-- Validate Publisher ownership evidence and inspect the exact Review Package before approval; the exact pilot evidence and package digest are recorded per Submission.
-- Keep Review Packages private, authorize Operator retrieval server-side, reject unsafe archives and unsupported package shapes, and never execute submitted code in the application Worker.
+- Validate Publisher ownership evidence during product review and bind connection verification to the accepted App and browser runtime identity.
 - Never embed platform, Stripe, or Publisher secrets in an extension.
 - Store App-session tokens only as hashes and redact credentials, proof keys, account-link URLs, and personal/payment details from logs.
 - Preserve an audit trail for App approval, suspension, allocation, Publisher Payment recording, and reconciliation.
@@ -163,7 +163,7 @@ The MVP is staging-complete only when all of the following have durable evidence
 2. Subscriber and accepted-Publisher human sessions survive Worker restarts and enforce roles.
 3. A developer can apply without receiving Publisher authority; only a reasoned preliminary Operator acceptance generates identities and onboarding access.
 4. An accepted Publisher can participate without a Stripe connected account or payment credentials stored in Apps Pass.
-5. A real Chromium extension integrates the SDK in its own source, submits the standard manifest and exact installable package, passes package intake, is meaningfully reviewed and approved, and loads without prototype fixture enumeration.
+5. A real, independently built Chromium extension integrates the SDK in its own source, registers the standard manifest and Distribution, and proves a successful connection using the accepted App/runtime identity without prototype fixture enumeration.
 6. A Subscriber completes Stripe test-mode hosted Checkout.
 7. Signed, duplicate, delayed, and deliberately reordered webhook fixtures produce the correct normalized Subscription without double application.
 8. The Subscriber approves the real extension and it receives `active` through its own App session.
@@ -195,7 +195,8 @@ The live smoke test must use a deliberately limited price and settlement amount,
 
 - Public marketplace catalog, search, categories, ratings, reviews, or discovery.
 - Automated Publisher/Application approval or automatic catalog inclusion.
-- A promise of source-level audit or reproducible builds; the MVP reviews the submitted installable package. Source intake may be required later by an approved risk policy.
+- Source, ZIP, dependency, malware, reproducible-build, or implementation review. Those may be introduced later by an approved risk policy.
+- Certification that a Publisher's locally implemented features honor the Apps Pass entitlement response. The MVP verifies the platform decision and connection only.
 - Automated extension ownership verification.
 - Usage analytics or usage-weighted revenue allocation.
 - Automatic allocation or automatic Transfer release.

@@ -45,6 +45,9 @@ try {
   assert.equal(await page.getByText(expectedRuntimeId).isVisible(), true);
   assert.equal(await page.getByRole("button", { name: "Start free 5 min" }).isEnabled(), true);
   assert.equal(await page.getByRole("button", { name: "Start premium 25 min" }).isDisabled(), true);
+  if (process.env.EXPECT_CONNECTED === "1") {
+    await page.getByText("Connected to Apps Pass", { exact: true }).waitFor();
+  }
   await page.getByRole("button", { name: "Check Apps Pass access" }).click();
   await page.getByText("unauthenticated", { exact: true }).waitFor();
   assert.equal(await page.getByRole("button", { name: "Start premium 25 min" }).isDisabled(), true);

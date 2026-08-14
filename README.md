@@ -4,6 +4,8 @@ This branch converts the completed extension-inclusion proof into a minimal, tru
 
 The target and acceptance boundary are in [PRD.md](./PRD.md). The architecture is in [ARCHITECTURE.md](./ARCHITECTURE.md), delivery order in [docs/mvp/DELIVERY_PLAN.md](./docs/mvp/DELIVERY_PLAN.md), current criterion-by-criterion evidence in [docs/mvp/ACCEPTANCE_MATRIX.md](./docs/mvp/ACCEPTANCE_MATRIX.md), money invariants in [docs/mvp/MONEY_MODEL.md](./docs/mvp/MONEY_MODEL.md), and threats in [docs/mvp/SECURITY.md](./docs/mvp/SECURITY.md).
 
+**Trying the MVP as a human?** Start with [docs/mvp/HUMAN_EVALUATION_GUIDE.md](./docs/mvp/HUMAN_EVALUATION_GUIDE.md). It explains the roles, staged flow, exact pages, optional agent-assisted walkthrough, expected results, and a PASS/FAIL/UNCLEAR scorecard.
+
 The completed proof remains executable local software, not a visual mockup, but it is not the launchable subscription product. Its PRD, architecture, freeze, evaluation, and plan are preserved under [docs/prototype/](./docs/prototype/).
 
 Implementation is integrated on `main`. Curated Publisher Application/Product Acceptance, generated App identity, runtime connection verification, deployed Subscriber billing, real extension activation, paid-through entitlement, and two real-receipt `$7/$2/$1` test Allocations work on [serp-apps-pass-staging.serpcompany.workers.dev](https://serp-apps-pass-staging.serpcompany.workers.dev). The already-linked John Doe extension now receives `active` from a signed-event-derived Stripe test Subscription and has one accrued `$7` Publisher Earning. Stripe test account `acct_1MwbFJI9EPtyKcIs` (**SERP Pass**) handles Subscriber billing only. The local Operator/Publisher journey tests the optional immutable payment-recording boundary, but paying a fictional Publisher is not a staging gate. Connect is dormant post-MVP evidence. Production has not been created or deployed.
@@ -135,6 +137,7 @@ The disposable pre-MVP authority, example submissions, and contract tests remain
 - [ARCHITECTURE.md](./ARCHITECTURE.md) — target system, modules, trust domains, and environment path.
 - [docs/mvp/DELIVERY_PLAN.md](./docs/mvp/DELIVERY_PLAN.md) — binding vertical-slice order and promotion gates.
 - [docs/mvp/ACCEPTANCE_MATRIX.md](./docs/mvp/ACCEPTANCE_MATRIX.md) — PRD criteria mapped to passed, partial, and externally blocked evidence.
+- [docs/mvp/HUMAN_EVALUATION_GUIDE.md](./docs/mvp/HUMAN_EVALUATION_GUIDE.md) — human walkthrough and evaluation scorecard for deployed staging.
 - [docs/mvp/MONEY_MODEL.md](./docs/mvp/MONEY_MODEL.md) — earnings-ledger and settlement invariants.
 - [docs/mvp/SECURITY.md](./docs/mvp/SECURITY.md) — threat model and required evidence.
 - [docs/mvp/PUBLISHER_INTEGRATION.md](./docs/mvp/PUBLISHER_INTEGRATION.md) — the concrete extension integration and Submission handoff.

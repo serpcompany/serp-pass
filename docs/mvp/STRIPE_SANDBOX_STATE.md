@@ -27,7 +27,7 @@ Additional linked-Subscriber API acceptance objects:
 | Purpose | Stripe ID | Exact configuration |
 | --- | --- | --- |
 | John Doe linked Subscriber Customer | `cus_V4XBGBjZkW9mc8` | test mode; Apps Pass Subscriber metadata; public `pm_card_visa` test PaymentMethod |
-| John Doe linked Subscriber Subscription | `sub_1U4O88I9EPtyKcIs7zzm0R2T` | active; configured `$10/month` Price; Subscriber metadata |
+| John Doe linked Subscriber Subscription | `sub_1U4O88I9EPtyKcIs7zzm0R2T` | active through 2026-09-14T16:38:52Z; cancellation scheduled at period end; configured `$10/month` Price; Subscriber metadata |
 | John Doe linked Subscriber Invoice | `in_1U4O88I9EPtyKcIsF1n0X3N9` | paid in test mode; projected as one D1 Cash Receipt |
 
 The pre-mutation inventory contained zero Products, Prices, Portal configurations, webhook endpoints, and connected Accounts, so no unrelated object was reused or overwritten.
@@ -48,7 +48,7 @@ The pre-mutation inventory contained zero Products, Prices, Portal configuration
 
 `pnpm mvp:stripe-checkout:test-redirect-boundary` additionally disables only the newly created platform webhook, completes a fresh test Checkout, proves the browser return remains inactive, re-enables the endpoint, resends the exact recorded provider Events, and proves duplicate Invoice delivery leaves one Event and one Cash Receipt.
 
-On 2026-08-15 the user separately authorized API-driven test-mode mutation in this dedicated account. After re-verifying the exact Account and configured test Price, the acceptance run created a disposable Customer and Subscription for the already-linked John Doe Subscriber using Stripe's public `pm_card_visa` test PaymentMethod. The Subscription API response did not directly change Apps Pass state. The platform webhook delivered applied `invoice.paid` and `customer.subscription.created` evidence, D1 projected one normalized active Subscription and Cash Receipt `receipt:test:in_1U4O88I9EPtyKcIsF1n0X3N9`, and the same existing App session changed from `inactive` to `active`. This API path supplements the hosted-Checkout journey above; it does not claim to test Checkout UI.
+On 2026-08-15 the user separately authorized API-driven test-mode mutation in this dedicated account. After re-verifying the exact Account and configured test Price, the acceptance run created a disposable Customer and Subscription for the already-linked John Doe Subscriber using Stripe's public `pm_card_visa` test PaymentMethod. The Subscription API response did not directly change Apps Pass state. The platform webhook delivered applied `invoice.paid` and `customer.subscription.created` evidence, D1 projected one normalized active Subscription and Cash Receipt `receipt:test:in_1U4O88I9EPtyKcIsF1n0X3N9`, and the same existing App session changed from `inactive` to `active`. The disposable Subscription was then scheduled to cancel at period end; a third signed Subscription Event projected that state while preserving access through 2026-09-14T16:38:52Z. This API path supplements the hosted-Checkout journey above; it does not claim to test Checkout UI.
 
 ## Provider-shape findings
 

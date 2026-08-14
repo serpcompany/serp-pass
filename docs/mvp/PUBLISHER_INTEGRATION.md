@@ -14,8 +14,8 @@ This is the concrete handoff between SERP Apps Pass and an accepted Chromium-ext
 ## What SERP gives the Publisher
 
 1. A Publisher invitation tied to the preliminarily accepted email.
-2. A public `publisher_id`, such as `pub_invited_pilot_real`.
-3. A public `app_id`, such as `app_invited_pilot_real`.
+2. A public `publisher_id`, such as `pub_invited_publisher_pilot`.
+3. A public `app_id`, such as `app_invited_publisher_video_notes`.
 4. A versioned Apps Pass SDK pilot tarball, its SHA-256 checksum, and the authority hostname.
 
 These IDs are names assigned by SERP, not passwords. The Publisher may put them in source control and compiled extension code.

@@ -1,6 +1,6 @@
 # Subscriber billing projection
 
-Status: **normalized foundation safely deployed; real Stripe adapter and hosted billing routes pass account-independent checks locally; account configuration remains approval-gated**
+Status: **deployed staging billing projection, hosted Checkout, cancellation, failed-renewal, and paid-through-expiry evidence pass in the isolated Stripe sandbox**
 
 ## Authority boundary
 
@@ -80,10 +80,9 @@ The exact isolated Stripe account `acct_1MwbFJI9EPtyKcIs` (**SERP Pass**) is now
 
 Still incomplete:
 
-- a real provider-driven failed renewal and natural paid-through expiry;
 - refund, dispute, chargeback, and tax operational policy;
 - production credentials, live objects, and production deployment;
-- allocation and settlement from a successful real test Cash Receipt.
+- controlled live-Publisher settlement, which is deliberately outside staging MVP acceptance.
 
 The approved mutations and rollback are in [STRIPE_SANDBOX_APPROVAL.md](./STRIPE_SANDBOX_APPROVAL.md); current IDs and evidence are in [STRIPE_SANDBOX_STATE.md](./STRIPE_SANDBOX_STATE.md).
 

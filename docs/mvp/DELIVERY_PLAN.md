@@ -77,6 +77,8 @@ Browser evidence: test purchase changes the Subscriber UI only after the webhook
 
 Evidence: [STATUS.md](./STATUS.md). The rendered hosted-Checkout journey proves the actual Subscriber payment surface, durable Checkout-attempt reuse, signed Event projection, Portal cancellation, and paid extension access. A separate authorized Stripe API test on the exact project account created a test Customer and Subscription for the already-linked John Doe Subscriber; the extension remained dependent on the signed webhook projection and changed from `inactive` to `active` only after D1 recorded the paid Invoice and Cash Receipt. The API path supplements rather than replaces hosted-Checkout acceptance.
 
+A bounded Stripe test-clock simulation additionally began with a paid period already in the past, advanced through renewal with Stripe's decline-after-attach test PaymentMethod, and delivered a real failed-Invoice lifecycle to staging. D1 retained the original paid-through time, created no second Cash Receipt, and returned `inactive`; the disposable Stripe simulation was then finished.
+
 ## 5. Real activation and entitlement slice
 
 Status: **completed locally and on deployed Cloudflare staging 2026-08-15**
@@ -121,6 +123,8 @@ Current evidence starts with paid Stripe test Invoices and exercises the visible
 The existing provider-neutral Publisher Payment boundary remains locally tested supporting code. It is not a staging MVP acceptance requirement. Its real use, correction policy, and reconciliation are required only when SERP performs the first controlled settlement with an actual Publisher.
 
 ## 8. Staging release gate
+
+Status: **completed on deployed staging 2026-08-15; production and live-money gates remain closed**
 
 Before the release gate, the deployed pilot must be understandable without reading repository documentation:
 

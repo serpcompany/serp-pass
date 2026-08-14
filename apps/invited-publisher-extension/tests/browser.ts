@@ -7,7 +7,7 @@ import path from "node:path";
 import { chromium } from "playwright";
 
 const appRoot = path.resolve(import.meta.dirname, "..");
-const expectedRuntimeId = "deigfiokgenocbkifhkognjkhfljcfgi";
+const expectedRuntimeId = "pkenmpgagmnabdljhnjibgpbmakekahf";
 
 const testRoot = await mkdtemp(path.join(os.tmpdir(), "apps-pass-real-extension-"));
 const buildOutputRoot = path.join(testRoot, "extension");

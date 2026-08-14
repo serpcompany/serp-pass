@@ -18,6 +18,7 @@ const manifest = JSON.parse(await readFile(path.join(appRoot, "apppass.json"), "
 const runtimeId = manifest.distributions[0]?.runtime_id;
 assert.ok(runtimeId);
 const identityUrl = `${authority}/api/app-pass/apps/${manifest.app_id}/distributions/${runtimeId}`;
+let browserConnectionExercised = false;
 
 let response = await fetch(identityUrl);
 if (response.status === 404) {
@@ -38,15 +39,31 @@ if (response.status === 404) {
     await operatorPage.getByText("Human session active").waitFor();
     execFileSync("pnpm", ["mvp:operator:bootstrap", "--", "--staging", operatorEmail], { cwd: repositoryRoot, stdio: "pipe" });
 
-    await operatorPage.goto(`${authority}/operator`);
-    await operatorPage.getByLabel("Publisher email").fill(publisherEmail);
-    await operatorPage.getByLabel("Publisher name").fill(manifest.publisher_name);
-    await operatorPage.getByLabel("First App name").fill(manifest.name);
-    await operatorPage.getByRole("button", { name: "Create Publisher invitation" }).click();
-    const invitationCode = await operatorPage.getByTestId("invitation-code").innerText();
-
     const publisherContext = await browser.newContext();
     const publisherPage = await publisherContext.newPage();
+    await publisherPage.goto(`${authority}/submit`);
+    await publisherPage.getByLabel("Contact email").fill(publisherEmail);
+    await publisherPage.getByLabel("Publisher or company name").fill(manifest.publisher_name);
+    await publisherPage.getByLabel("Extension name").fill(manifest.name);
+    await publisherPage.getByLabel("Public extension listing URL").fill(`https://chromewebstore.google.com/detail/invited-publisher-${suffix}`);
+    await publisherPage.getByLabel("Source repository URL").fill("https://github.com/serpcompany/serp-appspass");
+    await publisherPage.getByLabel("What the extension does and why it belongs in the Pass").fill("A real independently built Manifest V3 reference extension that verifies the Publisher SDK handoff and runtime connection boundary.");
+    await publisherPage.getByLabel("Permissions, data collection, and privacy explanation").fill("Uses local extension storage for App-session state, requests no page host access, and sends only Apps Pass protocol requests to the staging authority.");
+    await publisherPage.getByLabel(/I attest that I own or am authorized/u).check();
+    await publisherPage.getByRole("button", { name: "Submit Publisher Application" }).click();
+    await publisherPage.getByText("Application received for preliminary SERP review.", { exact: false }).waitFor();
+    const applicationId = await publisherPage.getByTestId("application-id").innerText();
+
+    await operatorPage.goto(`${authority}/operator`);
+    const applicationForm = operatorPage.getByTestId(`publisher-application-${applicationId}`);
+    await applicationForm.getByLabel("Preliminary review reason").fill("Product ownership, narrow permissions, catalog fit, and the independently built reference extension are suitable for the private-pilot integration test.");
+    await applicationForm.getByRole("button", { name: "Accept for technical onboarding" }).click();
+    const generatedPublisherId = await applicationForm.getByTestId("generated-publisher-id").innerText();
+    const generatedAppId = await applicationForm.getByTestId("generated-app-id").innerText();
+    const invitationCode = await applicationForm.getByTestId("invitation-code").innerText();
+    assert.equal(generatedPublisherId, manifest.publisher_id, "Apps Pass must generate the Publisher ID expected by the accepted extension manifest");
+    assert.equal(generatedAppId, manifest.app_id, "Apps Pass must generate the App ID expected by the accepted extension manifest");
+
     await publisherPage.goto(`${authority}/account`);
     await publisherPage.getByRole("button", { name: "Need a pilot account? Create one" }).click();
     await publisherPage.getByLabel("Name").fill("Real Invited Publisher Pilot");
@@ -59,15 +76,19 @@ if (response.status === 404) {
     await publisherPage.getByRole("button", { name: "Accept Publisher invitation" }).click();
     await publisherPage.getByRole("heading", { name: "Publisher pilot area" }).waitFor();
     await publisherPage.getByLabel("App manifest JSON").fill(JSON.stringify(manifest, null, 2));
-    await publisherPage.getByLabel("Ownership evidence").fill("Repository-owned real extension source and stable unpacked Chromium runtime reviewed for the private pilot.");
-    await publisherPage.getByRole("button", { name: "Submit App for review" }).click();
-    await publisherPage.getByText(`${manifest.app_id} · pending`).waitFor();
+    await publisherPage.getByLabel("Built or published extension version").fill("0.0.1");
+    await publisherPage.getByRole("button", { name: "Register integration" }).click();
+    await publisherPage.getByText("Integration Declaration registered.", { exact: false }).waitFor();
+    await publisherPage.getByText("Not connected yet — open the integrated extension to verify").waitFor();
 
-    await operatorPage.reload();
-    const reviewForm = operatorPage.locator("form").filter({ hasText: `${manifest.app_id} · pending` });
-    await reviewForm.getByLabel("Review reason").fill("Real source project, public manifest, and stable runtime identity verified for staging.");
-    await reviewForm.getByRole("button", { name: "Approve Submission" }).click();
-    await operatorPage.getByText(`${manifest.app_id} · pending`).waitFor({ state: "detached" });
+    execFileSync("pnpm", ["test:browser"], {
+      cwd: appRoot,
+      env: { ...process.env, EXPECT_APPROVED: "1" },
+      stdio: "inherit",
+    });
+    browserConnectionExercised = true;
+    await publisherPage.reload();
+    await publisherPage.getByText(/Connected \d+ time/u).waitFor();
   } finally {
     await browser.close();
   }
@@ -82,10 +103,12 @@ assert.equal(identity.publisherId, manifest.publisher_id);
 assert.equal(identity.runtimeId, runtimeId);
 assert.equal(identity.appStatus, "approved");
 
-execFileSync("pnpm", ["test:browser"], {
-  cwd: appRoot,
-  env: { ...process.env, EXPECT_APPROVED: "1" },
-  stdio: "inherit",
-});
+if (!browserConnectionExercised) {
+  execFileSync("pnpm", ["test:browser"], {
+    cwd: appRoot,
+    env: { ...process.env, EXPECT_APPROVED: "1" },
+    stdio: "inherit",
+  });
+}
 
-process.stdout.write("PASS real Publisher extension is approved in staging and recognized by its runtime identity\n");
+process.stdout.write("PASS public Application, Product Acceptance, generated IDs, Publisher onboarding, Integration Declaration, and runtime connection make the real extension staging-eligible\n");
